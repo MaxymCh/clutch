@@ -6,6 +6,7 @@ d'ingestion n'y touche jamais.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -15,10 +16,15 @@ from app.schemas.community import (
     GroupCreateIn,
     GroupJoinIn,
     GroupOut,
+    GroupHistoryMatchOut,
     LeaderboardEntryOut,
+    PredictionHistoryItemOut,
     PredictionIn,
     PredictionOut,
+    PreferencesOut,
+    PreferencesPatchIn,
     UserOut,
+    UserPatchIn,
 )
 from app.services import community
 
@@ -32,6 +38,49 @@ async def get_me(
 ) -> UserOut:
     """Sert `useUser` — crée l'utilisateur anonyme au premier appel."""
     return await community.user_to_schema(session, user)
+
+
+@router.patch("/me", response_model=UserOut)
+async def patch_me(
+    payload: UserPatchIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> UserOut:
+    """Met à jour le pseudo de l'utilisateur."""
+    if payload.name is not None:
+        name = payload.name.strip()[:20]
+        if len(name) >= 2:
+            clash = await session.scalar(
+                select(User.id).where(User.name == name, User.id != user.id)
+            )
+            if clash:
+                raise HTTPException(status_code=409, detail="Ce pseudo est déjà pris")
+            user.name = name
+            words = [w for w in name.split() if w]
+            user.tag = "".join(w[0] for w in words).upper()[:3] or name[:3].upper()
+            await session.commit()
+    return await community.user_to_schema(session, user)
+
+
+@router.get("/me/preferences", response_model=PreferencesOut)
+async def get_preferences(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> PreferencesOut:
+    """Sert `usePreferences` — crée les préférences avec les défauts au premier appel."""
+    prefs = await community.get_or_create_preferences(session, user)
+    return PreferencesOut.model_validate(prefs)
+
+
+@router.patch("/me/preferences", response_model=PreferencesOut)
+async def patch_preferences(
+    payload: PreferencesPatchIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> PreferencesOut:
+    """Met à jour partiellement les préférences (seuls les champs fournis sont modifiés)."""
+    prefs = await community.update_preferences(session, user, payload)
+    return PreferencesOut.model_validate(prefs)
 
 
 @router.get("/leaderboard", response_model=list[LeaderboardEntryOut], response_model_exclude_none=True)
@@ -66,6 +115,19 @@ async def get_group(
     return community.group_to_schema(group, user.id)
 
 
+@router.get("/groups/{group_id}/history", response_model=list[GroupHistoryMatchOut], response_model_exclude_none=True)
+async def get_group_history(
+    group_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> list[GroupHistoryMatchOut]:
+    """Historique des matchs terminés pour les membres du groupe."""
+    group = await community.get_group_for_user(session, user, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail=f"Groupe introuvable : {group_id}")
+    return await community.group_history(session, group, user.id)
+
+
 @router.post("/groups", response_model=GroupOut, response_model_exclude_none=True, status_code=201)
 async def post_group(
     payload: GroupCreateIn,
@@ -97,6 +159,15 @@ async def get_predictions(
 ) -> dict[str, PredictionOut]:
     """PredictionMap du front : Record<matchId, Prediction>."""
     return await community.predictions_map(session, user)
+
+
+@router.get("/predictions/history", response_model=list[PredictionHistoryItemOut], response_model_exclude_none=True)
+async def get_prediction_history(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> list[PredictionHistoryItemOut]:
+    """Historique des pronostics du user sur les matchs terminés."""
+    return await community.prediction_history(session, user)
 
 
 @router.post("/predictions", response_model=PredictionOut, status_code=201)

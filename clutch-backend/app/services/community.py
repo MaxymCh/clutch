@@ -13,15 +13,22 @@ from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.catalog import Match
-from app.models.community import Group, GroupMembership, Prediction, User
+from app.services.catalog import match_to_schema
+from app.models.community import Group, GroupMembership, Prediction, User, UserPreferences
 from app.schemas.community import (
     GroupMemberOut,
+    GroupHistoryMatchOut,
+    GroupHistoryMemberOut,
     GroupOut,
     LeaderboardEntryOut,
     PredictionIn,
+    PredictionHistoryItemOut,
     PredictionOut,
+    PreferencesOut,
+    PreferencesPatchIn,
     UserOut,
 )
+from app.services.scoring import compute_points
 
 # Victoires nécessaires pour remporter la série, par format (contrat front)
 WINS_NEEDED = {"BO1": 1, "BO3": 2, "BO5": 3}
@@ -48,6 +55,36 @@ async def user_to_schema(session: AsyncSession, user: User) -> UserOut:
         global_rank=await global_rank(session, user),
         streak=user.streak,
     )
+
+
+# --- Préférences --------------------------------------------------------------
+
+
+async def get_or_create_preferences(session: AsyncSession, user: User) -> UserPreferences:
+    """Retourne les préférences de l'utilisateur, les crée avec les défauts si absentes."""
+    prefs = await session.get(UserPreferences, user.id)
+    if not prefs:
+        prefs = UserPreferences(user_id=user.id)
+        session.add(prefs)
+        await session.commit()
+    return prefs
+
+
+async def update_preferences(session: AsyncSession, user: User, patch: PreferencesPatchIn) -> UserPreferences:
+    """Mise à jour partielle des préférences (seuls les champs non-None sont appliqués)."""
+    prefs = await get_or_create_preferences(session, user)
+    if patch.theme is not None:
+        prefs.theme = patch.theme
+    if patch.notifications is not None:
+        prefs.notifications = patch.notifications
+    if patch.onboarded is not None:
+        prefs.onboarded = patch.onboarded
+    if patch.fav_teams is not None:
+        prefs.fav_teams = patch.fav_teams
+    if patch.fav_games is not None:
+        prefs.fav_games = patch.fav_games
+    await session.commit()
+    return prefs
 
 
 # --- Leaderboard --------------------------------------------------------------
@@ -118,6 +155,60 @@ async def get_group_for_user(session: AsyncSession, user: User, group_id: str) -
     return group
 
 
+async def group_history(session: AsyncSession, group: Group, current_user_id: str) -> list[GroupHistoryMatchOut]:
+    """Historique des matchs terminés pour les membres du groupe.
+
+    Seuls les matchs `done` sont exposés, afin de coller au besoin métier :
+    visualiser l'historique des pronostics sur des matchs déjà joués.
+    """
+    members = sorted(group.memberships, key=lambda m: m.user.points, reverse=True)
+    member_ids = [m.user_id for m in members]
+    if not member_ids:
+        return []
+
+    matches = list(
+        await session.scalars(
+            select(Match)
+            .where(Match.status == "done", Match.score_a.is_not(None), Match.score_b.is_not(None))
+            .order_by(desc(Match.start_time_utc), desc(Match.id))
+        )
+    )
+    if not matches:
+        return []
+
+    match_ids = [m.id for m in matches]
+    predictions = list(
+        await session.scalars(
+            select(Prediction).where(
+                Prediction.user_id.in_(member_ids),
+                Prediction.match_id.in_(match_ids),
+            )
+        )
+    )
+    prediction_map = {(p.match_id, p.user_id): p for p in predictions}
+
+    history: list[GroupHistoryMatchOut] = []
+    for match in matches:
+        members_history: list[GroupHistoryMemberOut] = []
+        for membership in members:
+            prediction = prediction_map.get((match.id, membership.user_id))
+            points = None
+            if prediction and match.score_a is not None and match.score_b is not None:
+                points = prediction.points if prediction.scored and prediction.points is not None else compute_points(prediction, match)
+            members_history.append(
+                GroupHistoryMemberOut(
+                    name=membership.user.name,
+                    tag=membership.user.tag,
+                    is_me=True if membership.user_id == current_user_id else None,
+                    prediction=PredictionOut.model_validate(prediction) if prediction else None,
+                    points=points,
+                )
+            )
+        history.append(GroupHistoryMatchOut(match=match_to_schema(match), members=members_history))
+
+    return history
+
+
 async def create_group(session: AsyncSession, user: User, name: str, emoji: str) -> Group:
     """Réplique du comportement mock front : nom vide → « Mon groupe »."""
     code = _generate_group_code()
@@ -161,6 +252,32 @@ async def predictions_map(session: AsyncSession, user: User) -> dict[str, Predic
         p.match_id: PredictionOut(pick=p.pick, score_a=p.score_a, score_b=p.score_b)
         for p in rows
     }
+
+
+async def prediction_history(session: AsyncSession, user: User) -> list[PredictionHistoryItemOut]:
+    """Historique des pronostics de l'utilisateur sur les matchs terminés."""
+    rows = await session.execute(
+        select(Prediction, Match)
+        .join(Match, Match.id == Prediction.match_id)
+        .where(
+            Prediction.user_id == user.id,
+            Match.status == "done",
+            Match.score_a.is_not(None),
+            Match.score_b.is_not(None),
+        )
+        .order_by(desc(Match.start_time_utc), desc(Match.id))
+    )
+    items: list[PredictionHistoryItemOut] = []
+    for prediction, match in rows.all():
+        points = prediction.points if prediction.scored and prediction.points is not None else compute_points(prediction, match)
+        items.append(
+            PredictionHistoryItemOut(
+                match=match_to_schema(match),
+                prediction=PredictionOut(pick=prediction.pick, score_a=prediction.score_a, score_b=prediction.score_b),
+                points=points,
+            )
+        )
+    return items
 
 
 class PredictionError(Exception):

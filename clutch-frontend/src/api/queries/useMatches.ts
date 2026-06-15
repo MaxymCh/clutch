@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { fetchPredictionHistory } from '../server';
 import { fetchMatch, fetchMatches } from '../server';
 
 /** Tous les matchs du tournoi (seule porte d'entrée des composants). */
@@ -15,4 +16,11 @@ export const useMatch = (id: string) =>
   useQuery({
     queryKey: ['matches', id],
     queryFn: () => fetchMatch(id),
+  });
+
+/** Historique des pronostics de l'utilisateur courant. */
+export const usePredictionHistory = () =>
+  useQuery({
+    queryKey: ['predictions', 'history'],
+    queryFn: fetchPredictionHistory,
   });

@@ -40,6 +40,14 @@ export interface LeaderboardEntry {
   countryCode?: string;
 }
 
+export interface Preferences {
+  theme: 'light' | 'dark';
+  notifications: boolean;
+  onboarded: boolean;
+  favTeams: string[];
+  favGames: string[];
+}
+
 /** Pronostic local sur un match (stocké côté client en attendant l'API) */
 export interface Prediction {
   pick: 'a' | 'b';
@@ -48,3 +56,23 @@ export interface Prediction {
 }
 
 export type PredictionMap = Record<string, Prediction>;
+
+export interface PredictionHistoryItem {
+  match: import('./esports').Match;
+  prediction: Prediction;
+  points?: number;
+}
+
+export interface GroupHistoryMember {
+  name: string;
+  tag: string;
+  /** true si c'est l'utilisateur courant */
+  isMe?: boolean;
+  prediction?: Prediction;
+  points?: number;
+}
+
+export interface GroupHistoryMatch {
+  match: import('./esports').Match;
+  members: GroupHistoryMember[];
+}
