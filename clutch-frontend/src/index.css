@@ -30,6 +30,10 @@
   --color-upcoming: #45454c;
   --color-done: #ababb2;
 
+  /* Veto des cartes : pick = vert, ban = rouge (sémantique) */
+  --color-pick: #16955a;
+  --color-ban: #d23b3b;
+
   /* Ombres */
   --shadow-card: 0 1px 2px rgb(20 20 28 / 0.06), 0 4px 12px rgb(20 20 28 / 0.05);
 

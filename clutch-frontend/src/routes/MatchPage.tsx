@@ -5,9 +5,10 @@ import { useMatch } from '../api/queries/useMatches';
 import { Page } from '../components/layout/Page';
 import { TopBar } from '../components/layout/TopBar';
 import { PageSpinner } from '../components/ui/Spinner';
-import { MapList } from '../features/matches/MapList';
 import { MatchHero } from '../features/matches/MatchHero';
-import { MatchInfoGrid } from '../features/matches/MatchInfoGrid';
+import { MatchMaps } from '../features/matches/MatchMaps';
+import { MatchStreams } from '../features/matches/MatchStreams';
+import { MatchVeto } from '../features/matches/MatchVeto';
 import { PredictionSummary } from '../features/prono/PredictionSummary';
 import { PredictSheet } from '../features/prono/PredictSheet';
 import { usePredictions } from '../features/prono/predictionsContext';
@@ -43,8 +44,13 @@ export const MatchPage = () => {
             onPredict={() => setPredicting(true)}
           />
           <PredictionSummary match={match} />
-          {match.maps && match.maps.length > 0 && <MapList maps={match.maps} />}
-          <MatchInfoGrid match={match} />
+          {match.streams && match.streams.length > 0 && <MatchStreams streams={match.streams} />}
+          {match.veto && match.veto.length > 0 && (
+            <MatchVeto veto={match.veto} teamA={match.teamA} teamB={match.teamB} />
+          )}
+          {match.maps && match.maps.length > 0 && (
+            <MatchMaps maps={match.maps} teamA={match.teamA} teamB={match.teamB} />
+          )}
           <PredictSheet match={predicting ? match : null} onClose={() => setPredicting(false)} />
         </>
       )}

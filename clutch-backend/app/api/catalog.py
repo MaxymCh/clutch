@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
-from app.schemas.esports import GameOut, MatchOut, TeamOut
+from app.schemas.esports import GameOut, MatchOut, PlayerOut, TeamOut
 from app.services import catalog
 
 router = APIRouter(tags=["catalog"])
@@ -34,6 +34,14 @@ async def get_team(team_id: str, session: AsyncSession = Depends(get_session)) -
     if not team:
         raise HTTPException(status_code=404, detail=f"Équipe introuvable : {team_id}")
     return team
+
+
+@router.get("/teams/{team_id}/players", response_model=list[PlayerOut], response_model_exclude_none=True)
+async def get_team_players(
+    team_id: str, session: AsyncSession = Depends(get_session)
+) -> list[PlayerOut]:
+    """Sert `useTeamPlayers` — roster d'une équipe (joueurs ingérés)."""
+    return await catalog.list_players(session, team_id)
 
 
 @router.get("/matches", response_model=list[MatchOut], response_model_exclude_none=True)

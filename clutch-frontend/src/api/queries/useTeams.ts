@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTeam, fetchTeams } from '../server';
+import { fetchTeam, fetchTeamPlayers, fetchTeams } from '../server';
 
 /** Toutes les équipes (barre de filtres, listes). */
 export const useTeams = () =>
@@ -15,4 +15,13 @@ export const useTeam = (id: string) =>
     queryKey: ['teams', id],
     queryFn: () => fetchTeam(id),
     staleTime: Infinity,
+  });
+
+/** Roster d'une équipe (joueurs) — n'est lancé que si `id` est fourni. */
+export const useTeamPlayers = (id: string) =>
+  useQuery({
+    queryKey: ['teams', id, 'players'],
+    queryFn: () => fetchTeamPlayers(id),
+    enabled: Boolean(id),
+    staleTime: Infinity, // le roster ne change pas pendant le tournoi
   });
