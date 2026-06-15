@@ -1,0 +1,83 @@
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useGroup } from '../api/queries/useGroups';
+import { Page } from '../components/layout/Page';
+import { TopBar } from '../components/layout/TopBar';
+import { Button } from '../components/ui/Button';
+import { Icon } from '../components/ui/Icon';
+import { PageSpinner } from '../components/ui/Spinner';
+import { RankRow } from '../features/prono/RankRow';
+
+/** Détail d'un groupe de pronostics : /prono/group/:id */
+export const GroupPage = () => {
+  const { id = '' } = useParams();
+  const { data: group, isPending, isError } = useGroup(id);
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    if (!group) return;
+    navigator.clipboard?.writeText(group.code).catch(() => undefined);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
+  const ranked = group ? [...group.members].sort((a, b) => b.points - a.points) : [];
+
+  return (
+    <Page>
+      <TopBar title={group?.name ?? 'Groupe'} />
+      {isPending && <PageSpinner />}
+      {isError && (
+        <p className="px-5 py-16 text-center text-sm font-medium text-dim">Groupe introuvable.</p>
+      )}
+      {group && (
+        <div className="px-5">
+          <div className="flex flex-col items-center gap-2.5 border-b border-line pt-3 pb-5">
+            <span className="text-[44px] leading-none">{group.emoji}</span>
+            <h1 className="text-[22px] leading-none font-bold tracking-tight text-ink">
+              {group.name}
+            </h1>
+            <p className="text-xs leading-none font-semibold text-dim">
+              {group.members.length} membres
+            </p>
+            <button
+              onClick={copy}
+              className="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-xl border-[1.5px] border-line-2 bg-surface px-3.5 py-2.5 text-[13px] font-bold text-ink transition-transform active:scale-[.97]"
+            >
+              <Icon name={copied ? 'check' : 'copy'} size={15} className={copied ? 'text-accent' : 'text-dim'} />
+              {copied ? (
+                'Code copié !'
+              ) : (
+                <>
+                  Code : <span className="tracking-wide text-accent">{group.code}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <h2 className="mt-5 mb-1 text-[11px] font-bold tracking-[.1em] text-dim uppercase">
+            Classement du groupe
+          </h2>
+          {ranked.map((member, i) => (
+            <RankRow
+              key={member.name}
+              rank={i + 1}
+              name={member.name}
+              tag={member.tag}
+              points={member.points}
+              isMe={member.isMe}
+              topHighlight={i === 0}
+            />
+          ))}
+
+          <div className="mt-4.5">
+            <Button full variant="ghost" onClick={copy}>
+              <Icon name="share" size={17} strokeWidth={2} />
+              Inviter des amis
+            </Button>
+          </div>
+        </div>
+      )}
+    </Page>
+  );
+};

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "PowerShell($bin = \"C:\\\\Users\\\\Maxym\\\\.claude\\\\projects\\\\c--etna-clutch-frontend\\\\618dfb54-7871-4da4-a61b-248a734bfe47\\\\tool-results\\\\webfetch-1781035051598-5qns8j.bin\"; $dest = \"$env:TEMP\\\\clutch-design\"; New-Item -ItemType Directory -Force $dest | Out-Null; tar -xzf $bin -C $dest; Get-ChildItem -Recurse $dest | Select-Object FullName, Length)",
+      "PowerShell(npm install react-router-dom @tanstack/react-query)",
+      "PowerShell(npm install -D vite-plugin-pwa)",
+      "PowerShell(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\({deps:p.dependencies, dev:{'vite-plugin-pwa':p.devDependencies['vite-plugin-pwa']}}, null, 1\\)\\)\")",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run dev)",
+      "PowerShell(Start-Sleep -Seconds 3; Get-Content \"C:\\\\Users\\\\Maxym\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--etna-clutch-frontend\\\\618dfb54-7871-4da4-a61b-248a734bfe47\\\\tasks\\\\b029jqfg2.output\"; \\(Invoke-WebRequest -UseBasicParsing http://localhost:5173/\\).StatusCode)",
+      "PowerShell(Test-Path \"$env:TEMP\\\\clutch-design\\\\clutch\\\\project\\\\clutch\\\\clutch-prono.jsx\"; Select-String -Path C:\\\\etna\\\\clutch-frontend\\\\Clutch.html -Pattern 'clutch-prono|clutch-onboarding' -SimpleMatch:$false | Select-Object -First 5 LineNumber)",
+      "PowerShell(npm run build)",
+      "PowerShell(try { \\(Invoke-WebRequest -UseBasicParsing http://localhost:5173/ -TimeoutSec 5\\).StatusCode } catch { \"DOWN\" })",
+      "PowerShell(Start-Sleep -Seconds 3; try { \\(Invoke-WebRequest -UseBasicParsing http://localhost:5173/ -TimeoutSec 5\\).StatusCode } catch { \"DOWN: $\\($_.Exception.Message\\)\" }; try { \\(Invoke-WebRequest -UseBasicParsing http://localhost:5173/prono -TimeoutSec 5\\).StatusCode } catch { \"DOWN\" })"
+    ]
+  }
+}

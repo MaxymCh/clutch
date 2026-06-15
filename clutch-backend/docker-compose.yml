@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clutch
+      POSTGRES_PASSWORD: clutch
+      POSTGRES_DB: clutch
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clutch"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    # Migrations puis serveur — l'API ne parle JAMAIS à Liquipedia.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://clutch:clutch@db:5432/clutch
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: .
+    # Processus séparé : ingestion Liquipedia → base (catalog uniquement).
+    command: python -m ingestion.worker
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://clutch:clutch@db:5432/clutch
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+volumes:
+  pgdata:

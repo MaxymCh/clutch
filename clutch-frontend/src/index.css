@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Thème Clutch — direction « Pulse » (maquette Claude Design).
+   Base claire/blanche dominante + accent orange #e2260a.
+   TOUTES les couleurs de l'app vivent ici : les composants n'utilisent que
+   les tokens (text-ink, bg-surface-2, border-line, text-accent…).
+   ───────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans:
+    'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Identité : blanc + orange */
+  --color-accent: #e2260a;
+  --color-accent-press: #c11f08;
+  --color-on-accent: #ffffff;
+
+  /* Neutres (du plus contrasté au plus discret) */
+  --color-surface: #ffffff; /* fond principal */
+  --color-surface-2: #f6f6f4; /* zones légèrement enfoncées */
+  --color-ink: #17171b; /* texte principal */
+  --color-ink-2: #45454c; /* texte secondaire */
+  --color-dim: #76767e; /* méta-infos */
+  --color-faint: #ababb2; /* infos tertiaires */
+  --color-line: #ececea; /* filets */
+  --color-line-2: #e0e0dd; /* bordures de contrôles */
+
+  /* Statuts de match */
+  --color-live: #e2260a; /* en direct = l'orange brille */
+  --color-upcoming: #45454c;
+  --color-done: #ababb2;
+
+  /* Ombres */
+  --shadow-card: 0 1px 2px rgb(20 20 28 / 0.06), 0 4px 12px rgb(20 20 28 / 0.05);
+
+  /* Le live « qui respire » — seule animation permanente (brief Pulse) */
+  --animate-live-ping: live-ping 1.8s cubic-bezier(0.2, 0.7, 0.4, 1) infinite;
+  --animate-live-blink: live-blink 1.3s ease-in-out infinite;
+
+  @keyframes live-ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    70%,
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  @keyframes live-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+  }
+}
+
+/* Thème sombre (maquette Pulse) : surcharge des tokens générés par @theme.
+   Basculé via l'attribut data-theme sur <html> (cf. features/settings). */
+[data-theme='dark'] {
+  --color-surface: #15161a;
+  --color-surface-2: #1c1d22;
+  --color-ink: #f3f3f1;
+  --color-ink-2: #c4c4c9;
+  --color-dim: #8c8c95;
+  --color-faint: #56565f;
+  --color-line: #232429;
+  --color-line-2: #2e2f35;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.4);
+}
+
+/* Rangées scrollables au doigt, sans barre de défilement visible */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-surface font-sans text-ink antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-live-ping,
+    .animate-live-blink {
+      animation: none;
+    }
+  }
+}

@@ -1,0 +1,50 @@
+/**
+ * Types communauté / pronostics — TEMPORAIRES (mêmes règles que esports.ts) :
+ * remplacés par les types générés depuis OpenAPI quand le backend existera.
+ */
+
+export interface User {
+  id: string;
+  name: string;
+  tag: string;
+  countryCode: string;
+  points: number;
+  globalRank: number;
+  /** Pronostics gagnants d'affilée */
+  streak: number;
+}
+
+export interface GroupMember {
+  name: string;
+  tag: string;
+  points: number;
+  /** true si c'est l'utilisateur courant */
+  isMe?: boolean;
+}
+
+/** Groupe de pronostics entre amis (style MPG) */
+export interface Group {
+  id: string;
+  name: string;
+  emoji: string;
+  /** Code d'invitation partageable */
+  code: string;
+  members: GroupMember[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  tag: string;
+  points: number;
+  countryCode?: string;
+}
+
+/** Pronostic local sur un match (stocké côté client en attendant l'API) */
+export interface Prediction {
+  pick: 'a' | 'b';
+  scoreA: number;
+  scoreB: number;
+}
+
+export type PredictionMap = Record<string, Prediction>;
