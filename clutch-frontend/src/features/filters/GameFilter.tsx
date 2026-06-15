@@ -1,34 +1,66 @@
-import { useGames } from '../../api/queries/useGames';
+import { useGames } from "../../api/queries/useGames";
+import { Icon } from "../../components/ui/Icon";
+import { useFavorites } from "../favorites/favoritesContext";
 
 type GameFilterProps = {
-  value: string | null;
-  onChange: (gameId: string | null) => void;
+  value: string[];
+  onToggle: (gameId: string) => void;
+  onClear: () => void;
 };
 
-/** Filtre par jeu : onglets texte soulignés d'orange (style Pulse). */
-export const GameFilter = ({ value, onChange }: GameFilterProps) => {
+/** Filtre par jeu : multi-sélection, favoris en premier avec ❤. */
+export const GameFilter = ({ value, onToggle, onClear }: GameFilterProps) => {
   const { data: games } = useGames();
-  if (!games) return <div className="h-7" />; // réserve la hauteur pendant le chargement
+  const { games: favGames } = useFavorites();
+  if (!games) return <div className="h-8" />;
 
-  const items = [{ id: null as string | null, label: 'Tous' }].concat(
-    games.map((g) => ({ id: g.id as string | null, label: g.short })),
+  // Favoris en premier
+  const sorted = [...games].sort(
+    (a, b) => Number(favGames.includes(b.id)) - Number(favGames.includes(a.id)),
   );
 
   return (
-    <div className="scrollbar-none flex gap-4.5 overflow-x-auto px-5" role="tablist">
-      {items.map(({ id, label }) => {
-        const active = id === value;
+    <div
+      className="scrollbar-none flex gap-2 overflow-x-auto lg:flex-wrap lg:overflow-visible"
+      role="tablist"
+    >
+      <button
+        role="tab"
+        aria-selected={value.length === 0}
+        onClick={onClear}
+        className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-transform active:scale-95 ${
+          value.length === 0
+            ? "border-accent bg-accent/8 text-accent"
+            : "border-line-2 text-dim"
+        }`}
+      >
+        <Icon name="filter" size={13} strokeWidth={2} />
+        Tous
+      </button>
+      {sorted.map((game) => {
+        const active = value.includes(game.id);
+        const isFav = favGames.includes(game.id);
         return (
           <button
-            key={label}
+            key={game.id}
             role="tab"
             aria-selected={active}
-            onClick={() => onChange(id)}
-            className={`shrink-0 cursor-pointer border-b-2 pb-2 text-sm leading-none tracking-tight ${
-              active ? 'border-accent font-bold text-ink' : 'border-transparent font-medium text-dim'
+            onClick={() => onToggle(game.id)}
+            className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 transition-transform active:scale-95 ${
+              active ? "border-accent bg-accent/8" : "border-line-2"
             }`}
           >
-            {label}
+            <img
+              src={`/games/${game.id}.jpg`}
+              alt={game.short}
+              className="size-5 rounded-full object-cover"
+            />
+            <span
+              className={`text-xs font-semibold ${active ? "text-accent" : "text-ink"}`}
+            >
+              {game.short}
+            </span>
+            {isFav && <span className="text-[10px] text-accent">♥</span>}
           </button>
         );
       })}

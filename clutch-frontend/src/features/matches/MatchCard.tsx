@@ -1,13 +1,12 @@
-import { type MouseEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
-import type { Match, Team } from '../../types/esports';
-import { Icon } from '../../components/ui/Icon';
-import { TeamLogo } from '../../components/ui/TeamLogo';
-import { formatDayMonth, formatWeekdayShort } from '../../lib/date';
-import { StatusPill } from './StatusPill';
-import { usePredictions } from '../prono/predictionsContext';
-import type { Prediction } from '../../types/community';
+import { type MouseEvent } from "react";
+import { Link } from "react-router-dom";
+import type { Match } from "../../types/esports";
+import { Icon } from "../../components/ui/Icon";
+import { TeamLogo } from "../../components/ui/TeamLogo";
+import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
+import { StatusPill } from "./StatusPill";
+import { usePredictions } from "../prono/predictionsContext";
+import type { Prediction } from "../../types/community";
 
 type MatchCardProps = {
   match: Match;
@@ -24,59 +23,10 @@ type MatchCardProps = {
 };
 
 const computePoints = (prediction: Prediction, match: Match): number => {
-  if (prediction.scoreA === match.scoreA && prediction.scoreB === match.scoreB) return 25;
-  const winner = (match.scoreA ?? 0) > (match.scoreB ?? 0) ? 'a' : 'b';
+  if (prediction.scoreA === match.scoreA && prediction.scoreB === match.scoreB)
+    return 25;
+  const winner = (match.scoreA ?? 0) > (match.scoreB ?? 0) ? "a" : "b";
   return prediction.pick === winner ? 10 : 0;
-};
-
-/** Ligne équipe : logo, nom (tronqué), score ou "vs". */
-const TeamLine = ({
-  team,
-  score,
-  match,
-  isFirst,
-  predicted,
-}: {
-  team: Team;
-  score?: number;
-  match: Match;
-  isFirst: boolean;
-  predicted?: boolean;
-}) => {
-  const done = match.status === 'done';
-  const showScore = match.status === 'live' || done;
-  const won = done && score !== undefined && score === Math.max(match.scoreA ?? 0, match.scoreB ?? 0);
-  return (
-    <div className="flex items-center gap-2.5 py-1">
-      <TeamLogo tag={team.tag} size={22} logoUrl={team.logoUrl} />
-      <span
-        className={`min-w-0 flex-1 truncate text-[16px] leading-tight tracking-tight ${
-          done && !won ? 'font-medium text-dim' : won ? 'font-bold text-ink' : 'font-medium text-ink'
-        }`}
-      >
-        {team.name}
-      </span>
-      {predicted && !done && (
-        <span
-          title="Ton prono"
-          className="rounded-[5px] border border-accent/40 px-1 py-0.5 text-[8.5px] font-extrabold tracking-[.06em] text-accent"
-        >
-          PRONO
-        </span>
-      )}
-      {showScore ? (
-        <span
-          className={`min-w-3.5 text-right text-lg font-semibold tabular-nums ${
-            done && !won ? 'text-faint' : 'text-ink'
-          }`}
-        >
-          {score}
-        </span>
-      ) : (
-        isFirst && <span className="text-xs font-medium text-faint">vs</span>
-      )}
-    </div>
-  );
 };
 
 /**
@@ -92,11 +42,18 @@ export const MatchCard = ({
   onPredict,
 }: MatchCardProps) => {
   const { predictions } = usePredictions();
-  const live = match.status === 'live';
+  const live = match.status === "live";
   const pred = predictions[match.id];
-  const showFooter = showPredictionFooter && (pred || (match.status === 'upcoming' && onPredict));
-  const points = match.status === 'done' && pred ? computePoints(pred, match) : null;
-  const pickedTeam = pred ? (pred.pick === 'a' ? match.teamA : match.teamB) : null;
+  const showFooter =
+    showPredictionFooter &&
+    (pred || (match.status === "upcoming" && onPredict));
+  const points =
+    match.status === "done" && pred ? computePoints(pred, match) : null;
+  const pickedTeam = pred
+    ? pred.pick === "a"
+      ? match.teamA
+      : match.teamB
+    : null;
 
   const predictClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -105,97 +62,143 @@ export const MatchCard = ({
   };
 
   return (
-    <div className={`border-b border-line py-3.5 pr-1 ${live ? 'pl-3.5' : 'pl-1'}`}>
-      <div className="relative grid grid-cols-[58px_1fr_auto] items-center gap-3 transition-colors active:bg-surface-2">
-        {/* barre latérale orange = signal live */}
-        {live && <span className="absolute top-0 bottom-0 left-0 w-[3px] rounded-full bg-live" />}
+    <div
+      className={`rounded-2xl border border-line bg-surface-2 p-4 ${live ? "relative overflow-hidden" : ""}`}
+    >
+      {/* barre latérale orange = signal live */}
+      {live && (
+        <span className="absolute top-0 bottom-0 left-0 w-1 bg-live" />
+      )}
 
-        {/* colonne heure / statut */}
-        <Link to={`/match/${match.id}`} className="contents">
-          <div className="flex flex-col gap-1.5">
+      <Link
+        to={`/match/${match.id}`}
+        className="block"
+      >
+        {/* Méta : jeu · phase · statut */}
+        <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
+          <span className="flex items-center gap-1.5">
+            {gameTag}
+            <span className="size-0.75 rounded-full bg-dim" />
+            {match.phase}
+            {match.bestOf && (
+              <>
+                <span className="size-0.75 rounded-full bg-dim" />
+                <span>{match.bestOf}</span>
+              </>
+            )}
+          </span>
+          <span className="flex items-center gap-2">
+            {showDay && (
+              <span className="text-dim">
+                {formatWeekdayShort(match.date)} {formatDayMonth(match.date)}
+              </span>
+            )}
+            <StatusPill match={match} />
+          </span>
+        </div>
+
+        {/* Équipes face-à-face : logo gros + nom en dessous */}
+        <div className="flex items-center justify-between">
+          {/* Équipe A */}
+          <div className="flex flex-1 flex-col items-center gap-1.5">
+            <TeamLogo
+              tag={match.teamA.tag}
+              size={44}
+              logoUrl={match.teamA.logoUrl}
+            />
             <span
-              className={`text-xl leading-none font-medium tracking-tight tabular-nums ${
-                live ? 'text-live' : match.status === 'done' ? 'text-dim' : 'text-ink'
+              className={`max-w-full truncate text-center text-[13px] font-bold ${
+                match.status === "done" &&
+                (match.scoreA ?? 0) < (match.scoreB ?? 0)
+                  ? "text-dim"
+                  : "text-ink"
               }`}
             >
-              {match.time}
+              {match.teamA.name}
             </span>
-            <StatusPill match={match} />
           </div>
 
-          {/* contenu : méta + équipes */}
-          <div className="min-w-0 py-0.5">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-[11px] font-bold tracking-[.06em] uppercase">{gameTag}</span>
-              <span className="size-[3px] rounded-full bg-faint" />
-              <span className="truncate text-[11px] font-semibold tracking-wide text-dim uppercase">
-                {match.phase}
+          {/* Score / heure au centre */}
+          <div className="shrink-0 px-3 text-center">
+            {match.status === "live" || match.status === "done" ? (
+              <span
+                className={`text-xl font-bold tabular-nums ${live ? "text-live" : "text-ink"}`}
+              >
+                {match.scoreA} – {match.scoreB}
               </span>
-              {showDay && (
-                <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-faint">
-                  {formatWeekdayShort(match.date)} {formatDayMonth(match.date)}
-                </span>
-              )}
-            </div>
-            <TeamLine
-              team={match.teamA}
-              score={match.scoreA}
-              match={match}
-              isFirst
-              predicted={predictedWinnerId === match.teamA.id}
-            />
-            <TeamLine
-              team={match.teamB}
-              score={match.scoreB}
-              match={match}
-              isFirst={false}
-              predicted={predictedWinnerId === match.teamB.id}
-            />
-            {live && match.currentMapLabel && (
-              <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-accent">
-                {match.currentMapLabel}
-                {match.viewers && (
-                  <span className="font-medium text-faint">· {match.viewers} spect.</span>
-                )}
-              </div>
+            ) : (
+              <span className="text-xl font-semibold tabular-nums text-ink">
+                {match.time}
+              </span>
             )}
           </div>
 
-          <Icon name="chevron" size={16} strokeWidth={2} className="text-faint" />
-        </Link>
-      </div>
+          {/* Équipe B */}
+          <div className="flex flex-1 flex-col items-center gap-1.5">
+            <TeamLogo
+              tag={match.teamB.tag}
+              size={44}
+              logoUrl={match.teamB.logoUrl}
+            />
+            <span
+              className={`max-w-full truncate text-center text-[13px] font-bold ${
+                match.status === "done" &&
+                (match.scoreB ?? 0) < (match.scoreA ?? 0)
+                  ? "text-dim"
+                  : "text-ink"
+              }`}
+            >
+              {match.teamB.name}
+            </span>
+          </div>
+        </div>
+
+        {/* Info live */}
+        {live && match.currentMapLabel && (
+          <div className="mt-2.5 text-center text-[11px] font-semibold text-accent">
+            {match.currentMapLabel}
+            {match.viewers && (
+              <span className="font-medium text-dim">
+                {" "}
+                · {match.viewers} spect.
+              </span>
+            )}
+          </div>
+        )}
+      </Link>
 
       {showFooter && (
-        <div className="ml-[58px] mt-2.5 flex items-center gap-2.5">
+        <div className="mt-3 border-t border-line pt-3">
           {pred && pickedTeam ? (
-            <div className="min-w-0 flex-1 rounded-2xl bg-surface-2 px-3 py-2">
-              <div className="text-[10px] font-bold tracking-[.1em] text-dim uppercase">
-                {match.status === 'done' ? 'Ton prono terminé' : 'Ton prono'}
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <div className="inline-flex items-center gap-2 rounded-xl bg-accent/8 px-3 py-1.5">
+                <Icon name="check" size={14} strokeWidth={2.4} className="text-accent" />
+                <span className="text-[13px] font-bold text-accent">
+                  {pickedTeam.tag} {pred.scoreA}–{pred.scoreB}
+                </span>
+                {match.status === "done" && points !== null && (
+                  <span className="rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                    +{points}
+                  </span>
+                )}
               </div>
-              <div className="mt-0.5 truncate text-[13px] font-bold text-ink">
-                {pickedTeam.tag} {pred.scoreA}–{pred.scoreB}
-              </div>
-              {match.status === 'done' && points !== null && (
-                <div className="mt-0.5 text-[11px] font-semibold text-accent">
-                  +{points} pts gagnés
-                </div>
+              {match.status === "upcoming" && onPredict && (
+                <button onClick={predictClick} className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-ink transition-transform active:scale-95">
+                  Modifier
+                </button>
               )}
             </div>
-          ) : match.status === 'done' ? (
-            <div className="min-w-0 flex-1 rounded-2xl bg-surface-2 px-3 py-2 text-[12px] font-semibold text-dim">
-              Pas de prono posé
-            </div>
+          ) : match.status === "done" ? (
+            <p className="text-center text-[11px] font-semibold text-dim">
+              Pas de prono
+            </p>
           ) : (
-            <Button size="sm" variant="soft" onClick={predictClick} className="ml-auto">
-              <Icon name="trophy" size={15} strokeWidth={2.2} />
-              Pronostiquer
-            </Button>
-          )}
-
-          {pred && match.status === 'upcoming' && onPredict && (
-            <Button size="sm" variant="ghost" onClick={predictClick}>
-              Modifier
-            </Button>
+            <div className="flex justify-center">
+              <button onClick={predictClick} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[12px] font-bold text-on-accent transition-transform active:scale-95">
+                <Icon name="trophy" size={14} strokeWidth={2.2} />
+                Pronostiquer
+              </button>
+            </div>
           )}
         </div>
       )}

@@ -6,12 +6,12 @@ import type { Game, GameId, Team } from '../../types/esports';
  */
 
 export const GAMES: Record<GameId, Game> = {
-  val: { id: 'val', name: 'Valorant', short: 'Valorant', tag: 'VAL', bgUrl: '' },
-  lol: { id: 'lol', name: 'League of Legends', short: 'LoL', tag: 'LOL', bgUrl: '' },
-  cs2: { id: 'cs2', name: 'Counter-Strike 2', short: 'CS2', tag: 'CS2', bgUrl: '' },
-  dota: { id: 'dota', name: 'Dota 2', short: 'Dota 2', tag: 'DOTA', bgUrl: '' },
-  rl: { id: 'rl', name: 'Rocket League', short: 'Rocket L.', tag: 'RL', bgUrl: '' },
-  ow: { id: 'ow', name: 'Overwatch 2', short: 'Overwatch', tag: 'OW', bgUrl: '' },
+  val: { id: 'val', name: 'Valorant', short: 'Valorant', tag: 'VAL', bgUrl: '/games/val.jpg' },
+  lol: { id: 'lol', name: 'League of Legends', short: 'LoL', tag: 'LOL', bgUrl: '/games/lol.jpg' },
+  cs2: { id: 'cs2', name: 'Counter-Strike 2', short: 'CS2', tag: 'CS2', bgUrl: '/games/cs2.jpg' },
+  dota: { id: 'dota', name: 'Dota 2', short: 'Dota 2', tag: 'DOTA', bgUrl: '/games/dota.jpg' },
+  rl: { id: 'rl', name: 'Rocket League', short: 'Rocket L.', tag: 'RL', bgUrl: '/games/rl.jpg' },
+  ow: { id: 'ow', name: 'Overwatch 2', short: 'Overwatch', tag: 'OW', bgUrl: '/games/ow.jpg' },
 };
 
 export const GAME_ORDER: GameId[] = ['val', 'lol', 'cs2', 'dota', 'rl', 'ow'];

@@ -1,10 +1,9 @@
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Icon } from '../../components/ui/Icon';
-import { TeamLogo } from '../../components/ui/TeamLogo';
-import { formatDayMonth, formatWeekdayShort } from '../../lib/date';
-import type { Match } from '../../types/esports';
-import { usePredictions } from './predictionsContext';
+import { Card } from "../../components/ui/Card";
+import { Icon } from "../../components/ui/Icon";
+import { TeamLogo } from "../../components/ui/TeamLogo";
+import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
+import type { Match } from "../../types/esports";
+import { usePredictions } from "./predictionsContext";
 
 type PredictCardProps = {
   match: Match;
@@ -12,47 +11,80 @@ type PredictCardProps = {
   onPredict: (match: Match) => void;
 };
 
-/** Carte compacte « à pronostiquer » (liste de l'écran Prono). */
-export const PredictCard = ({ match, gameTag, onPredict }: PredictCardProps) => {
+/** Carte « à pronostiquer » — logos centraux, bouton discret intégré. */
+export const PredictCard = ({
+  match,
+  gameTag,
+  onPredict,
+}: PredictCardProps) => {
   const { predictions } = usePredictions();
   const pred = predictions[match.id];
-  const pickedTeam = pred ? (pred.pick === 'a' ? match.teamA : match.teamB) : null;
+  const pickedTeam = pred
+    ? pred.pick === "a"
+      ? match.teamA
+      : match.teamB
+    : null;
 
   return (
-    <Card className="p-3.5">
-      <div className="mb-3 flex items-center gap-2 text-[10.5px] font-semibold tracking-wide text-dim uppercase">
-        {gameTag}
-        <span className="size-[3px] rounded-full bg-faint" />
-        {match.phase}
-        <span className="ml-auto text-faint">
-          {formatWeekdayShort(match.date)} {formatDayMonth(match.date)} · {match.time}
+    <Card
+      inset
+      className="cursor-pointer p-4 transition-transform active:scale-[.98]"
+      onClick={() => onPredict(match)}
+    >
+      {/* Méta : jeu · phase · date */}
+      <div className="mb-4 flex items-center justify-between text-[10.5px] font-semibold tracking-wide text-ink-2 uppercase">
+        <span className="flex items-center gap-1.5">
+          {gameTag}
+          <span className="size-[3px] rounded-full bg-dim" />
+          {match.phase}
+        </span>
+        <span className="text-dim">
+          {formatWeekdayShort(match.date)} {formatDayMonth(match.date)} ·{" "}
+          {match.time}
         </span>
       </div>
-      <div className="flex items-center gap-2.5">
-        <TeamLogo tag={match.teamA.tag} size={26} logoUrl={match.teamA.logoUrl} />
-        <span className="min-w-0 flex-1 truncate text-sm leading-tight font-bold text-ink">
-          {match.teamA.name}
+
+      {/* Équipes face-à-face : logo gros + nom en dessous */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-1 flex-col items-center gap-1.5">
+          <TeamLogo
+            tag={match.teamA.tag}
+            size={40}
+            logoUrl={match.teamA.logoUrl}
+          />
+          <span className="max-w-full truncate text-center text-xs font-bold text-ink">
+            {match.teamA.name}
+          </span>
+        </div>
+
+        <span className="mx-3 text-[11px] font-semibold text-dim uppercase">
+          vs
         </span>
-        <span className="text-xs font-medium text-faint">vs</span>
-        <span className="min-w-0 flex-1 truncate text-right text-sm leading-tight font-bold text-ink">
-          {match.teamB.name}
-        </span>
-        <TeamLogo tag={match.teamB.tag} size={26} logoUrl={match.teamB.logoUrl} />
+
+        <div className="flex flex-1 flex-col items-center gap-1.5">
+          <TeamLogo
+            tag={match.teamB.tag}
+            size={40}
+            logoUrl={match.teamB.logoUrl}
+          />
+          <span className="max-w-full truncate text-center text-xs font-bold text-ink">
+            {match.teamB.name}
+          </span>
+        </div>
       </div>
-      <div className="mt-3">
+
+      {/* Bouton / état du prono — discret, intégré */}
+      <div className="mt-4 flex justify-center">
         {pred && pickedTeam ? (
-          <button
-            onClick={() => onPredict(match)}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-accent/35 bg-accent/5 py-2.5 text-[13px] font-bold text-accent transition-transform active:scale-[.97]"
-          >
-            <Icon name="check" size={15} strokeWidth={2.2} />
-            Prono : {pickedTeam.tag} {pred.scoreA}–{pred.scoreB} · modifier
-          </button>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/8 px-3 py-1.5 text-[12px] font-bold text-accent">
+            <Icon name="check" size={13} strokeWidth={2.4} />
+            {pickedTeam.tag} {pred.scoreA}–{pred.scoreB}
+          </span>
         ) : (
-          <Button full size="sm" onClick={() => onPredict(match)}>
-            <Icon name="trophy" size={15} strokeWidth={2.1} />
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-[12px] font-semibold text-on-accent">
+            <Icon name="trophy" size={13} strokeWidth={2} />
             Pronostiquer
-          </Button>
+          </span>
         )}
       </div>
     </Card>

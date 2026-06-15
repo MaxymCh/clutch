@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import { LiveDot } from '../../components/ui/Badge';
-import { formatDayMonth, formatWeekdayShort } from '../../lib/date';
+import { useEffect, useRef } from "react";
+import { LiveDot } from "../../components/ui/Badge";
+import { formatWeekdayShort } from "../../lib/date";
 
 export type DayInfo = {
   /** Date ISO "YYYY-MM-DD" */
@@ -10,7 +10,7 @@ export type DayInfo = {
 };
 
 /** Valeur spéciale de l'onglet « Tous » (portée par l'URL : ?day=all) */
-export const ALL_DAYS = 'all';
+export const ALL_DAYS = "all";
 
 type DayTabsProps = {
   days: DayInfo[];
@@ -20,75 +20,90 @@ type DayTabsProps = {
   withAll?: boolean;
 };
 
-/** Pastille d'onglet commune (jour ou « Tous »). */
-const Tab = ({
-  active,
-  onClick,
-  top,
-  bottom,
-}: {
-  active: boolean;
-  onClick: () => void;
-  top: ReactNode;
-  bottom: string;
-}) => (
-  <button
-    role="tab"
-    aria-selected={active}
-    onClick={onClick}
-    className={`shrink-0 cursor-pointer rounded-[14px] border-[1.5px] px-3 py-2 text-left transition-transform active:scale-[.97] ${
-      active ? 'border-ink bg-ink' : 'border-line-2 bg-transparent'
-    }`}
-  >
-    <span
-      className={`flex items-center gap-1.5 text-[13px] leading-none font-bold tracking-tight ${
-        active ? 'text-surface' : 'text-ink'
-      }`}
-    >
-      {top}
-    </span>
-    <span
-      className={`mt-1 block text-[10.5px] leading-none font-medium ${
-        active ? 'text-surface/70' : 'text-dim'
-      }`}
-    >
-      {bottom}
-    </span>
-  </button>
-);
-
-/** Onglets de jours du tournoi — pastille live si un match est en cours. */
-export const DayTabs = ({ days, value, onChange, withAll = false }: DayTabsProps) => {
+/** Calendrier horizontal — jour sélectionné centré automatiquement. */
+export const DayTabs = ({
+  days,
+  value,
+  onChange,
+  withAll = false,
+}: DayTabsProps) => {
   const liveTotal = days.reduce((total, day) => total + day.liveCount, 0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-scroll pour centrer l'onglet actif
+  useEffect(() => {
+    const container = containerRef.current;
+    const activeTab = activeRef.current;
+    if (!container || !activeTab) return;
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+    const scrollLeft =
+      container.scrollLeft +
+      tabRect.left -
+      containerRect.left -
+      containerRect.width / 2 +
+      tabRect.width / 2;
+    container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+  }, [value]);
+
+  const today = new Date().toISOString().slice(0, 10);
+
   return (
-    <div className="scrollbar-none flex gap-2 overflow-x-auto px-5" role="tablist">
+    <div
+      ref={containerRef}
+      className="scrollbar-none flex items-center gap-1 overflow-x-auto px-[30%]"
+      role="tablist"
+    >
       {withAll && (
-        <Tab
-          active={value === ALL_DAYS}
+        <button
+          ref={value === ALL_DAYS ? activeRef : undefined}
+          role="tab"
+          aria-selected={value === ALL_DAYS}
           onClick={() => onChange(ALL_DAYS)}
-          top={
-            <>
-              Tous
-              {liveTotal > 0 && <LiveDot size={6} />}
-            </>
-          }
-          bottom="le tournoi"
-        />
+          className={`flex shrink-0 cursor-pointer flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-all active:scale-95 ${
+            value === ALL_DAYS
+              ? "bg-ink text-surface"
+              : "text-dim hover:text-ink"
+          }`}
+        >
+          <span className="text-[11px] font-medium">Tous</span>
+          <span className="flex items-center gap-1 text-base font-bold">
+            ∞{liveTotal > 0 && <LiveDot size={5} />}
+          </span>
+        </button>
       )}
-      {days.map((day) => (
-        <Tab
-          key={day.date}
-          active={day.date === value}
-          onClick={() => onChange(day.date)}
-          top={
-            <>
-              {formatWeekdayShort(day.date)}
-              {day.liveCount > 0 && <LiveDot size={6} />}
-            </>
-          }
-          bottom={formatDayMonth(day.date)}
-        />
-      ))}
+      {days.map((day) => {
+        const active = day.date === value;
+        const isToday = day.date === today;
+        const dayNum = day.date.slice(8);
+        return (
+          <button
+            key={day.date}
+            ref={active ? activeRef : undefined}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(day.date)}
+            className={`flex shrink-0 cursor-pointer flex-col items-center gap-0.5 rounded-xl px-4 py-2.5 transition-all active:scale-95 ${
+              active
+                ? "bg-ink text-surface"
+                : isToday
+                  ? "text-accent"
+                  : "text-dim hover:text-ink"
+            }`}
+          >
+            <span className="text-[11px] font-medium">
+              {isToday && !active
+                ? "Auj."
+                : formatWeekdayShort(day.date).toLowerCase() + "."}
+            </span>
+            <span className="flex items-center gap-1 text-base font-bold">
+              {dayNum}
+              {day.liveCount > 0 && <LiveDot size={5} />}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 };
