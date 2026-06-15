@@ -29,7 +29,7 @@ def verify_supabase_token(token: str) -> str:
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expiré")
-    except jwt.PyJWTError as e:
+    except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Token invalide")
 
     supabase_id: str | None = payload.get("sub")
