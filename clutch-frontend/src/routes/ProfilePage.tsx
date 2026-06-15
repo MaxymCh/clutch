@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useGames } from '../api/queries/useGames';
 import { useTeams } from '../api/queries/useTeams';
 import { useUser } from '../api/queries/useUser';
 import { Page } from '../components/layout/Page';
@@ -38,14 +39,14 @@ const SectionTitle = ({ children }: { children: string }) => (
   <h2 className="mt-6 mb-0.5 px-1 text-[11px] font-bold tracking-[.1em] text-dim uppercase">{children}</h2>
 );
 
-const chevron = <Icon name="chevron" size={16} className="text-faint" />;
-
 /** Onglet Moi : profil, préférences (thème, notifs), application. */
 export const ProfilePage = () => {
+  const chevron = <Icon name="chevron" size={16} className="text-faint" />;
   const { data: user } = useUser();
   const { data: teams } = useTeams();
   const { theme, setTheme, notifications, setNotifications, setOnboarded } = useSettings();
-  const { teams: favTeams } = useFavorites();
+  const { teams: favTeams, games: favGames, toggleGame } = useFavorites();
+  const { data: games } = useGames();
   const dark = theme === 'dark';
 
   const followedTags =
@@ -86,6 +87,33 @@ export const ProfilePage = () => {
           right={<Toggle on={notifications} onChange={setNotifications} label="Notifications" />}
         />
         <Row icon="shield" label="Équipes suivies" sub={followedTags} right={chevron} to="/teams" />
+
+        <SectionTitle>Jeux suivis</SectionTitle>
+        <div className="grid grid-cols-3 gap-2 py-2 px-1">
+          {(games ?? []).map((game) => {
+            const on = favGames.includes(game.id);
+            return (
+              <button
+                key={game.id}
+                onClick={() => toggleGame(game.id)}
+                className={`flex cursor-pointer items-center gap-2 rounded-2xl border-[1.5px] px-3 py-2.5 transition-all active:scale-[.97] ${
+                  on ? 'border-accent bg-accent/5' : 'border-line-2 bg-surface'
+                }`}
+              >
+                <span
+                  className={`grid size-7 shrink-0 place-items-center rounded-[7px] text-[10px] font-extrabold text-on-accent ${
+                    on ? 'bg-accent' : 'bg-ink'
+                  }`}
+                >
+                  {game.tag.slice(0, 3)}
+                </span>
+                <span className={`truncate text-[12px] font-bold leading-tight ${on ? 'text-accent' : 'text-ink'}`}>
+                  {game.short}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <SectionTitle>Application</SectionTitle>
         <Row icon="trophy" label="Mes pronostics" sub="Historique & points" right={chevron} to="/prono" />
