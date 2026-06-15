@@ -41,8 +41,8 @@ def ensure_games(session: Session) -> None:
         if game is None:
             session.add(Game(**row))
         else:
-            game.name, game.short, game.tag, game.sort_order = (
-                row["name"], row["short"], row["tag"], row["sort_order"],
+            game.name, game.short, game.tag, game.sort_order, game.bg_url = (
+                row["name"], row["short"], row["tag"], row["sort_order"], row["bg_url"],
             )
 
 

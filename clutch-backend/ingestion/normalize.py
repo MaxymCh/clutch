@@ -17,12 +17,12 @@ from typing import Any
 # Copie de GAMES/GAME_ORDER du front (src/api/mocks/catalog.ts).
 
 GAME_CATALOG: list[dict[str, Any]] = [
-    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0},
-    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1},
-    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2},
-    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3},
-    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4},
-    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5},
+    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0, "bg_url": "/games/val.jpg"},
+    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1, "bg_url": "/games/lol.jpg"},
+    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2, "bg_url": "/games/cs2.jpg"},
+    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3, "bg_url": "/games/dota.jpg"},
+    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4, "bg_url": "/games/rl.jpg"},
+    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5, "bg_url": "/games/ow.jpg"},
 ]
 
 # GameId front → wiki Liquipedia

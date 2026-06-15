@@ -19,6 +19,8 @@ export interface Game {
   short: string;
   /** Tag majuscule ("VAL", "DOTA"…) */
   tag: string;
+  /** URL de l'image de fond de la carte jeu */
+  bgUrl: string;
 }
 
 export interface Team {

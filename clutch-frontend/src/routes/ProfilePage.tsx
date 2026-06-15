@@ -96,20 +96,22 @@ export const ProfilePage = () => {
               <button
                 key={game.id}
                 onClick={() => toggleGame(game.id)}
-                className={`flex cursor-pointer items-center gap-2 rounded-2xl border-[1.5px] px-3 py-2.5 transition-all active:scale-[.97] ${
-                  on ? 'border-accent bg-accent/5' : 'border-line-2 bg-surface'
+                className={`relative overflow-hidden cursor-pointer rounded-2xl border-[1.5px] h-16 transition-all active:scale-[.97] ${
+                  on ? 'border-accent' : 'border-line-2'
                 }`}
               >
-                <span
-                  className={`grid size-7 shrink-0 place-items-center rounded-[7px] text-[10px] font-extrabold text-on-accent ${
-                    on ? 'bg-accent' : 'bg-ink'
-                  }`}
-                >
-                  {game.tag.slice(0, 3)}
-                </span>
-                <span className={`truncate text-[12px] font-bold leading-tight ${on ? 'text-accent' : 'text-ink'}`}>
-                  {game.short}
-                </span>
+                {game.bgUrl && (
+                  <img src={game.bgUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                )}
+                <div className={`absolute inset-0 ${on ? 'bg-black/50' : 'bg-black/70'}`} />
+                <div className="relative flex h-full flex-col items-center justify-center gap-0.5 px-1">
+                  <span className={`text-[10px] font-extrabold ${on ? 'text-accent' : 'text-white/60'}`}>
+                    {game.tag.slice(0, 3)}
+                  </span>
+                  <span className="truncate text-[11px] font-bold leading-tight text-white">
+                    {game.short}
+                  </span>
+                </div>
               </button>
             );
           })}
