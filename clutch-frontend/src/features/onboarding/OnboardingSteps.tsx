@@ -84,7 +84,7 @@ export const GamesStep = () => {
     <div className="flex min-h-0 flex-1 flex-col px-6 pt-2">
       <StepTitle title="Quels jeux tu suis ?" sub="On mettra tes jeux en avant dans l'agenda." />
       <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="grid grid-cols-1 gap-2 pb-4">
+      <div className="grid grid-cols-1 gap-2 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {(games ?? []).map((game) => {
           const on = favGames.includes(game.id);
           return (
