@@ -9,19 +9,21 @@ Lancement : `python -m ingestion.worker`
 import logging
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, exists, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
-from app.models.catalog import Game, Match, Team, utcnow
+from app.models.catalog import Game, Match, Player, Team, utcnow
 from ingestion.liquipedia import LiquipediaGateway
 from ingestion.normalize import (
     GAME_CATALOG,
     WIKI_BY_GAME,
     country_to_iso,
     normalize_match,
+    slugify,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -159,6 +161,70 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
             team.updated_at = utcnow()
 
 
+def _player_logo_url(wiki: str, link: str) -> str | None:
+    filename = link.strip()
+    if not filename:
+        return None
+    filename = quote(filename.replace(" ", "_"), safe="._-")
+    return f"https://liquipedia.net/{wiki}/Special:FilePath/{filename}.png"
+
+
+def enrich_players(session: Session, gateway: LiquipediaGateway) -> None:
+    """Fetch le roster des équipes qui n'ont pas encore de joueurs en base."""
+    pending = list(session.scalars(
+        select(Team).where(
+            Team.enriched.is_(True),
+            Team.template.isnot(None),
+            Team.wiki.isnot(None),
+            ~exists(select(Player.id).where(Player.team_id == Team.id)),
+        )
+    ))
+    if not pending:
+        return
+
+    budget = MAX_ENRICH_CALLS_PER_RUN
+    for team in pending:
+        if budget <= 0:
+            break
+        budget -= 1
+        players = gateway.fetch_squad_players(team.wiki, team.template)
+        logger.info("squadplayer %s/%s → %d joueur(s)", team.wiki, team.template, len(players))
+        for p in players:
+            link = str(p.get("link") or "").strip()
+            name = str(p.get("name") or link or "").strip()
+            if not name:
+                continue
+            player_id = f"{team.wiki}_{slugify(link or name)}"
+            nationality = str(p.get("nationality") or "").strip()
+            country_code = country_to_iso(nationality)
+            role_raw = str(p.get("role") or p.get("position") or "").strip()
+            # Exclure les rôles de management (CEO, Founder, etc.)
+            _mgmt = {"chief", "founder", "owner", "director", "president", "vice", "officer"}
+            if any(w in role_raw.lower() for w in _mgmt):
+                continue
+            role = (role_raw[:64] if role_raw else None)
+            logo_url = _player_logo_url(team.wiki, link) if link else None
+
+            existing = session.get(Player, player_id)
+            if existing is None:
+                session.add(Player(
+                    id=player_id,
+                    name=name,
+                    country_code=country_code,
+                    role=role,
+                    team_id=team.id,
+                    logo_url=logo_url,
+                    wiki=team.wiki,
+                ))
+            else:
+                existing.name = name
+                existing.country_code = country_code
+                existing.role = role
+                existing.team_id = team.id
+                if not existing.logo_url:
+                    existing.logo_url = logo_url
+
+
 def run_ingestion() -> None:
     """Un cycle complet : fetch → normalise → upsert. Logue appels et erreurs."""
     settings = get_settings()
@@ -208,6 +274,7 @@ def run_ingestion() -> None:
                     errors += 1
 
         enrich_teams(session, gateway)
+        enrich_players(session, gateway)
         session.commit()
         logger.info(
             "Ingestion terminée : %d match(s) upsertés, %d ignoré(s), %d erreur(s), %d appel(s) API Liquipedia.",

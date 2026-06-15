@@ -86,3 +86,17 @@ class Match(Base):
 
     team_a: Mapped[Team] = relationship(foreign_keys=[team_a_id], lazy="joined")
     team_b: Mapped[Team] = relationship(foreign_keys=[team_b_id], lazy="joined")
+
+
+class Player(Base):
+    """Joueur d'une équipe (roster EWC, ingéré via /squadplayer Liquipedia)."""
+
+    __tablename__ = "players"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)  # {wiki}_{pagename_slug}
+    name: Mapped[str] = mapped_column(String(128))  # pseudo in-game
+    country_code: Mapped[str] = mapped_column(String(2), default="XX")
+    role: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    team_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("teams.id"), nullable=True, index=True)
+    logo_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    wiki: Mapped[str | None] = mapped_column(String(32), nullable=True)
