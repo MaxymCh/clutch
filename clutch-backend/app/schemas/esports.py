@@ -13,16 +13,6 @@ MatchStatus = Literal["upcoming", "live", "done"]
 BestOf = Literal["BO1", "BO3", "BO5"]
 
 
-class PlayerOut(ApiModel):
-    """Miroir de `Player` (front)."""
-
-    id: str
-    name: str
-    country_code: str  # JSON : countryCode
-    role: str | None = None
-    logo_url: str | None = None  # JSON : logoUrl
-
-
 class GameOut(ApiModel):
     """Miroir de `Game` (front)."""
 
@@ -42,7 +32,6 @@ class TeamOut(ApiModel):
     tag: str
     country_code: str  # JSON : countryCode
     logo_url: str | None = None  # JSON : logoUrl
-    players: list[PlayerOut] = []
 
 
 class MapScoreOut(ApiModel):

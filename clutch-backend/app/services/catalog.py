@@ -12,8 +12,8 @@ from sqlalchemy import asc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models.catalog import Game, Match, Player, Team
-from app.schemas.esports import GameOut, MapScoreOut, MatchOut, PlayerOut, TeamOut
+from app.models.catalog import Game, Match, Team
+from app.schemas.esports import GameOut, MapScoreOut, MatchOut, TeamOut
 
 
 def _display_tz() -> ZoneInfo:
@@ -62,13 +62,7 @@ async def get_team(session: AsyncSession, team_id: str) -> TeamOut | None:
     team = await session.get(Team, team_id)
     if not team:
         return None
-    players_rows = await session.scalars(
-        select(Player).where(Player.team_id == team_id).order_by(asc(Player.name))
-    )
-    players = [PlayerOut.model_validate(p) for p in players_rows]
-    out = TeamOut.model_validate(team)
-    out.players = players
-    return out
+    return TeamOut.model_validate(team)
 
 
 async def list_matches(

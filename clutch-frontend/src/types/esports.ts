@@ -25,15 +25,6 @@ export interface Game {
   logoUrl?: string;
 }
 
-export interface Player {
-  id: string;
-  /** Pseudo in-game */
-  name: string;
-  countryCode: string;
-  role?: string;
-  logoUrl?: string;
-}
-
 export interface Team {
   id: string;
   name: string;
@@ -42,8 +33,6 @@ export interface Team {
   countryCode: string;
   /** URL du logo Liquipedia (Special:FilePath) — absent si pas encore enrichi */
   logoUrl?: string;
-  /** Roster de l'équipe (présent uniquement sur GET /teams/:id) */
-  players?: Player[];
 }
 
 /** Score d'une carte (map) jouée ou en cours dans un match */

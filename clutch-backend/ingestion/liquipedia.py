@@ -101,34 +101,6 @@ class LiquipediaGateway:
         )
         return list(response.result)
 
-    def fetch_squad_players(self, wiki: str, template: str) -> list[dict[str, Any]]:
-        """Roster actif d'une équipe via /squadplayer.
-
-        Filtre status=active côté client car LPDB ne supporte pas ce filtre en condition.
-        """
-        self.calls += 1
-        try:
-            response = self._client.squad_players.list(
-                wiki,
-                conditions=f"[[teamtemplate::{template}]]",
-                query="link,name,nationality,position,role,status",
-                limit=50,
-            )
-            # On ne garde que les membres actifs (pas les anciens)
-            seen: set[str] = set()
-            result = []
-            for p in response.result:
-                if str(p.get("status") or "").lower() != "active":
-                    continue
-                key = str(p.get("link") or p.get("name") or "")
-                if key and key not in seen:
-                    seen.add(key)
-                    result.append(p)
-            return result
-        except Exception as exc:
-            logger.info("squadplayer %s/%s non disponible : %s", wiki, template, exc)
-            return []
-
     def fetch_team_template(self, wiki: str, template: str) -> dict[str, Any] | None:
         """Shortname/bracketname d'une équipe via /teamtemplate (1 requête)."""
         self.calls += 1
