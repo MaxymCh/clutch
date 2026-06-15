@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGames } from '../api/queries/useGames';
 import { useGroups } from '../api/queries/useGroups';
@@ -8,6 +8,9 @@ import { useUser } from '../api/queries/useUser';
 import { Page } from '../components/layout/Page';
 import { Icon } from '../components/ui/Icon';
 import { PageSpinner } from '../components/ui/Spinner';
+import { FilterBar } from '../features/filters/FilterBar';
+import { filterMatches } from '../features/filters/filterMatches';
+import { useMatchFilters } from '../features/filters/useMatchFilters';
 import { GroupCard } from '../features/prono/GroupCard';
 import { PredictCard } from '../features/prono/PredictCard';
 import { PredictSheet } from '../features/prono/PredictSheet';
@@ -21,10 +24,19 @@ export const PronoPage = () => {
   const { data: matches, isPending } = useMatches();
   const { data: history = [], isPending: isHistoryPending } = usePredictionHistory();
   const { data: games } = useGames();
+  const { game, team } = useMatchFilters();
   const [predicting, setPredicting] = useState<Match | null>(null);
 
-  const toPredict = (matches ?? []).filter((m) => m.status === 'upcoming');
+  const toPredict = useMemo(
+    () => filterMatches((matches ?? []).filter((m) => m.status === 'upcoming'), game, team),
+    [matches, game, team],
+  );
+  const filteredHistory = useMemo(
+    () => history.filter(({ match }) => filterMatches([match], game, team).length > 0),
+    [history, game, team],
+  );
   const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
+  const hasFilters = game !== null || team !== null;
 
   return (
     <Page>
@@ -50,38 +62,61 @@ export const PronoPage = () => {
 
       <div className="flex items-baseline justify-between px-5 pt-6 pb-3">
         <h2 className="text-base leading-none font-bold tracking-tight text-ink">Tes groupes</h2>
-        <Link
-          to="/prono/group/new"
-          className="inline-flex items-center gap-1 text-[13px] font-bold text-accent"
-        >
-          <Icon name="plus" size={14} strokeWidth={2.4} />
-          Créer / rejoindre
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/prono/group/create"
+            className="inline-flex items-center gap-1 text-[13px] font-bold text-accent"
+          >
+            <Icon name="plus" size={14} strokeWidth={2.4} />
+            Créer
+          </Link>
+          <Link
+            to="/prono/group/join"
+            className="inline-flex items-center gap-1 text-[13px] font-bold text-ink"
+          >
+            <Icon name="users" size={14} strokeWidth={2.1} />
+            Rejoindre
+          </Link>
+        </div>
       </div>
       <div className="scrollbar-none flex gap-3 overflow-x-auto px-5 pb-1">
         {(groups ?? []).map((g) => (
           <GroupCard key={g.id} group={g} />
         ))}
         <Link
-          to="/prono/group/new"
-          className="flex w-32 shrink-0 flex-col items-center justify-center gap-2.5 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
+          to="/prono/group/create"
+          className="flex w-28 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
         >
-          <span className="grid size-9.5 place-items-center rounded-xl bg-surface-2 text-ink">
-            <Icon name="plus" size={19} />
+          <span className="grid size-9 place-items-center rounded-xl bg-surface-2 text-ink">
+            <Icon name="plus" size={18} />
           </span>
-          <span className="text-center text-xs leading-tight font-bold">
-            Nouveau
-            <br />
-            groupe
+          <span className="text-center text-xs leading-tight font-bold">Créer</span>
+        </Link>
+        <Link
+          to="/prono/group/join"
+          className="flex w-28 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
+        >
+          <span className="grid size-9 place-items-center rounded-xl bg-surface-2 text-ink">
+            <Icon name="users" size={18} />
           </span>
+          <span className="text-center text-xs leading-tight font-bold">Rejoindre</span>
         </Link>
       </div>
 
       <h2 className="px-5 pt-6 pb-3 text-base leading-none font-bold tracking-tight text-ink">
         À pronostiquer <span className="text-faint">{toPredict.length}</span>
       </h2>
+      <FilterBar />
+      <div className="mt-3.5 h-0.5 bg-line" />
       {isPending && <PageSpinner />}
-      <div className="flex flex-col gap-3 px-5">
+      {!isPending && toPredict.length === 0 && (
+        <p className="px-5 py-10 text-center text-sm font-medium text-dim">
+          {hasFilters
+            ? 'Aucun match à pronostiquer ne correspond à ces filtres.'
+            : "Aucun match à pronostiquer pour l'instant."}
+        </p>
+      )}
+      <div className="flex flex-col gap-3 px-5 pt-3">
         {toPredict.map((m) => (
           <PredictCard key={m.id} match={m} gameTag={tagOf(m)} onPredict={setPredicting} />
         ))}
@@ -89,14 +124,16 @@ export const PronoPage = () => {
 
       <div className="flex items-baseline justify-between px-5 pt-7 pb-3">
         <h2 className="text-base leading-none font-bold tracking-tight text-ink">Mes pronos passés</h2>
-        <span className="text-[13px] font-bold text-dim">{history.length}</span>
+        <span className="text-[13px] font-bold text-dim">{filteredHistory.length}</span>
       </div>
       {isHistoryPending && <PageSpinner />}
-      {!isHistoryPending && history.length === 0 && (
-        <p className="px-5 pb-6 text-sm font-medium text-dim">Aucun prono terminé pour l'instant.</p>
+      {!isHistoryPending && filteredHistory.length === 0 && (
+        <p className="px-5 pb-6 text-sm font-medium text-dim">
+          {hasFilters ? 'Aucun prono passé ne correspond à ces filtres.' : "Aucun prono terminé pour l'instant."}
+        </p>
       )}
       <div className="flex flex-col gap-3 px-5 pb-6">
-        {history.map(({ match, prediction, points }) => {
+        {filteredHistory.map(({ match, prediction, points }) => {
           const pickedTeam = prediction.pick === 'a' ? match.teamA : match.teamB;
           const actualWinner = (match.scoreA ?? 0) > (match.scoreB ?? 0) ? match.teamA : match.teamB;
           const exact = prediction.scoreA === (match.scoreA ?? 0) && prediction.scoreB === (match.scoreB ?? 0);

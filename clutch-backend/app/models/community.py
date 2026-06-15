@@ -59,6 +59,9 @@ class Group(Base):
     emoji: Mapped[str] = mapped_column(String(8))
     # Code d'invitation partageable, unique (format type CLTCH-XXXX)
     code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
+    # Périmètre optionnel : seuls les matchs correspondants comptent pour le groupe
+    game_id: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    team_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     memberships: Mapped[list["GroupMembership"]] = relationship(

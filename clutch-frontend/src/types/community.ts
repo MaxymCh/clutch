@@ -29,6 +29,10 @@ export interface Group {
   emoji: string;
   /** Code d'invitation partageable */
   code: string;
+  /** Périmètre optionnel : seuls les matchs de ce jeu comptent */
+  gameId?: string;
+  /** Périmètre optionnel : seuls les matchs impliquant cette équipe comptent */
+  teamId?: string;
   members: GroupMember[];
 }
 

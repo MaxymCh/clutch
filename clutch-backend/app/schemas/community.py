@@ -64,6 +64,8 @@ class GroupOut(ApiModel):
     name: str
     emoji: str
     code: str
+    game_id: str | None = None  # JSON : gameId
+    team_id: str | None = None  # JSON : teamId
     members: list[GroupMemberOut]
 
 
@@ -118,6 +120,8 @@ class GroupCreateIn(ApiModel):
 
     name: str = ""
     emoji: str = "🎮"
+    game_id: str | None = None  # JSON : gameId
+    team_id: str | None = None  # JSON : teamId
 
 
 class GroupJoinIn(ApiModel):

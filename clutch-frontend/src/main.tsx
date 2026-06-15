@@ -8,7 +8,8 @@ import { AppLayout } from './routes/AppLayout';
 import { CalendarPage } from './routes/CalendarPage';
 import { GamePage } from './routes/GamePage';
 import { GamesPage } from './routes/GamesPage';
-import { GroupNewPage } from './routes/GroupNewPage';
+import { GroupCreatePage } from './routes/GroupCreatePage';
+import { GroupJoinPage } from './routes/GroupJoinPage';
 import { GroupPage } from './routes/GroupPage';
 import { LeaderboardPage } from './routes/LeaderboardPage';
 import { LoginPage } from './routes/LoginPage';
@@ -45,7 +46,9 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/teams" element={<TeamsPage />} />
                 <Route path="/prono" element={<PronoPage />} />
-                <Route path="/prono/group/new" element={<GroupNewPage />} />
+                <Route path="/prono/group/create" element={<GroupCreatePage />} />
+                <Route path="/prono/group/join" element={<GroupJoinPage />} />
+                <Route path="/prono/group/new" element={<Navigate to="/prono/group/create" replace />} />
                 <Route path="/prono/group/:id" element={<GroupPage />} />
                 <Route path="/prono/classement" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

@@ -109,19 +109,63 @@ async def leaderboard(session: AsyncSession, limit: int = DEFAULT_LEADERBOARD_LI
 # --- Groupes ------------------------------------------------------------------
 
 
-def group_to_schema(group: Group, current_user_id: str) -> GroupOut:
-    """Membres triés par points desc ; `isMe` relatif au demandeur (cf. front)."""
+def match_matches_group_scope(match: Match, group: Group) -> bool:
+    """True si le match entre dans le périmètre du groupe (tous si aucun filtre)."""
+    if group.game_id and match.game_id != group.game_id:
+        return False
+    if group.team_id and match.team_a_id != group.team_id and match.team_b_id != group.team_id:
+        return False
+    return True
+
+
+async def _member_group_points(session: AsyncSession, user_id: str, group: Group) -> int:
+    """Points d'un membre dans le périmètre du groupe (global si pas de filtre)."""
+    if not group.game_id and not group.team_id:
+        user = await session.get(User, user_id)
+        return user.points if user else 0
+
+    rows = await session.execute(
+        select(Prediction, Match)
+        .join(Match, Match.id == Prediction.match_id)
+        .where(
+            Prediction.user_id == user_id,
+            Match.status == "done",
+            Match.score_a.is_not(None),
+            Match.score_b.is_not(None),
+        )
+    )
+    total = 0
+    for prediction, match in rows.all():
+        if not match_matches_group_scope(match, group):
+            continue
+        points = (
+            prediction.points
+            if prediction.scored and prediction.points is not None
+            else compute_points(prediction, match)
+        )
+        total += points or 0
+    return total
+
+
+async def group_to_schema(session: AsyncSession, group: Group, current_user_id: str) -> GroupOut:
+    """Membres triés par points desc dans le périmètre ; `isMe` relatif au demandeur."""
     members = sorted(group.memberships, key=lambda m: m.user.points, reverse=True)
+    member_points = {
+        m.user_id: await _member_group_points(session, m.user_id, group) for m in members
+    }
+    members = sorted(members, key=lambda m: member_points[m.user_id], reverse=True)
     return GroupOut(
         id=group.id,
         name=group.name,
         emoji=group.emoji,
         code=group.code,
+        game_id=group.game_id,
+        team_id=group.team_id,
         members=[
             GroupMemberOut(
                 name=m.user.name,
                 tag=m.user.tag,
-                points=m.user.points,
+                points=member_points[m.user_id],
                 is_me=True if m.user_id == current_user_id else None,
             )
             for m in members
@@ -188,6 +232,8 @@ async def group_history(session: AsyncSession, group: Group, current_user_id: st
 
     history: list[GroupHistoryMatchOut] = []
     for match in matches:
+        if not match_matches_group_scope(match, group):
+            continue
         members_history: list[GroupHistoryMemberOut] = []
         for membership in members:
             prediction = prediction_map.get((match.id, membership.user_id))
@@ -208,7 +254,14 @@ async def group_history(session: AsyncSession, group: Group, current_user_id: st
     return history
 
 
-async def create_group(session: AsyncSession, user: User, name: str, emoji: str) -> Group:
+async def create_group(
+    session: AsyncSession,
+    user: User,
+    name: str,
+    emoji: str,
+    game_id: str | None = None,
+    team_id: str | None = None,
+) -> Group:
     """Réplique du comportement mock front : nom vide → « Mon groupe »."""
     code = _generate_group_code()
     # Collision de code improbable mais possible : on retire jusqu'à unicité.
@@ -220,6 +273,8 @@ async def create_group(session: AsyncSession, user: User, name: str, emoji: str)
         name=name.strip() or "Mon groupe",
         emoji=emoji or "🎮",
         code=code,
+        game_id=game_id,
+        team_id=team_id,
     )
     session.add(group)
     session.add(GroupMembership(group=group, user_id=user.id))

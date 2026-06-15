@@ -6,6 +6,7 @@ import { TopBar } from '../components/layout/TopBar';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { PageSpinner } from '../components/ui/Spinner';
+import { GroupScopeBadge } from '../features/prono/GroupScope';
 import { RankRow } from '../features/prono/RankRow';
 
 /** Détail d'un groupe de pronostics : /prono/group/:id */
@@ -41,6 +42,7 @@ export const GroupPage = () => {
             <p className="text-xs leading-none font-semibold text-dim">
               {group.members.length} membres
             </p>
+            <GroupScopeBadge group={group} />
             <button
               onClick={copy}
               className="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-xl border-[1.5px] border-line-2 bg-surface px-3.5 py-2.5 text-[13px] font-bold text-ink transition-transform active:scale-[.97]"

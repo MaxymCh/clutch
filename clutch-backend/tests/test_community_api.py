@@ -99,6 +99,64 @@ async def test_historique_de_groupe_limite_aux_matchs_termines(client, second_cl
     assert history[0]["members"][1]["points"] == 0
 
 
+async def test_groupe_scope_par_jeu_filtre_historique_et_points(client, second_client, session_factory):
+    me_a = (await client.get("/me")).json()
+
+    created = (
+        await client.post("/groups", json={"name": "LoL only", "emoji": "🎮", "gameId": "lol"})
+    ).json()
+    assert created["gameId"] == "lol"
+    assert "teamId" not in created
+
+    val_done = make_match(
+        id="val-done",
+        game_id="val",
+        status="done",
+        start_time_utc=datetime(2026, 7, 10, 18, 0, tzinfo=UTC),
+        score_a=2,
+        score_b=1,
+        maps=None,
+        current_map_label=None,
+        viewers=None,
+    )
+    lol_done = make_match(
+        id="lol-done",
+        game_id="lol",
+        team_a_id="navi",
+        team_b_id="faze",
+        status="done",
+        start_time_utc=datetime(2026, 7, 11, 18, 0, tzinfo=UTC),
+        score_a=2,
+        score_b=0,
+        maps=None,
+        current_map_label=None,
+        viewers=None,
+    )
+
+    async with session_factory() as session:
+        await seed_catalog(session)
+        session.add_all([val_done, lol_done])
+        await session.commit()
+
+    async with session_factory() as session:
+        from app.models.community import Prediction
+
+        session.add_all(
+            [
+                Prediction(user_id=me_a["id"], match_id="val-done", pick="a", score_a=2, score_b=1, scored=True, points=25),
+                Prediction(user_id=me_a["id"], match_id="lol-done", pick="a", score_a=2, score_b=0, scored=True, points=25),
+            ]
+        )
+        await session.commit()
+
+    history = (await client.get(f"/groups/{created['id']}/history")).json()
+    assert len(history) == 1
+    assert history[0]["match"]["id"] == "lol-done"
+
+    detail = (await client.get(f"/groups/{created['id']}")).json()
+    assert detail["members"][0]["points"] == 25
+
+
 async def test_prono_regles_du_front(client, session_factory):
     """Prono : match upcoming non commencé uniquement, scoreline cohérente."""
     future = datetime.now(UTC) + timedelta(hours=4)

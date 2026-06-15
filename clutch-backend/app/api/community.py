@@ -99,7 +99,7 @@ async def get_groups(
 ) -> list[GroupOut]:
     """Sert `useGroups` — les groupes dont l'utilisateur est membre."""
     groups = await community.list_user_groups(session, user)
-    return [community.group_to_schema(g, user.id) for g in groups]
+    return [await community.group_to_schema(session, g, user.id) for g in groups]
 
 
 @router.get("/groups/{group_id}", response_model=GroupOut, response_model_exclude_none=True)
@@ -112,7 +112,7 @@ async def get_group(
     group = await community.get_group_for_user(session, user, group_id)
     if not group:
         raise HTTPException(status_code=404, detail=f"Groupe introuvable : {group_id}")
-    return community.group_to_schema(group, user.id)
+    return await community.group_to_schema(session, group, user.id)
 
 
 @router.get("/groups/{group_id}/history", response_model=list[GroupHistoryMatchOut], response_model_exclude_none=True)
@@ -135,8 +135,10 @@ async def post_group(
     user: User = Depends(get_current_user),
 ) -> GroupOut:
     """Sert `useCreateGroup` — body { name, emoji } (cf. mock front)."""
-    group = await community.create_group(session, user, payload.name, payload.emoji)
-    return community.group_to_schema(group, user.id)
+    group = await community.create_group(
+        session, user, payload.name, payload.emoji, payload.game_id, payload.team_id
+    )
+    return await community.group_to_schema(session, group, user.id)
 
 
 @router.post("/groups/join", response_model=GroupOut, response_model_exclude_none=True)
@@ -149,7 +151,7 @@ async def post_join_group(
     group = await community.join_group(session, user, payload.code)
     if not group:
         raise HTTPException(status_code=404, detail=f"Code d'invitation inconnu : {payload.code}")
-    return community.group_to_schema(group, user.id)
+    return await community.group_to_schema(session, group, user.id)
 
 
 @router.get("/predictions", response_model=dict[str, PredictionOut])

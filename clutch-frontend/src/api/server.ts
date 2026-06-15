@@ -52,8 +52,12 @@ export const fetchGroupHistory = (id: string): Promise<GroupHistoryMatch[]> =>
   apiGet<GroupHistoryMatch[]>(`/groups/${encodeURIComponent(id)}/history`);
 
 /** POST /groups */
-export const createGroup = (input: { name: string; emoji: string }): Promise<Group> =>
-  apiPost<Group>('/groups', input);
+export const createGroup = (input: {
+  name: string;
+  emoji: string;
+  gameId?: string;
+  teamId?: string;
+}): Promise<Group> => apiPost<Group>('/groups', input);
 
 /** POST /groups/join */
 export const joinGroup = (code: string): Promise<Group> => apiPost<Group>('/groups/join', { code });
