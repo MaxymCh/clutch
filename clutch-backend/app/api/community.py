@@ -15,7 +15,9 @@ from app.schemas.community import (
     GroupCreateIn,
     GroupJoinIn,
     GroupOut,
+    GroupHistoryMatchOut,
     LeaderboardEntryOut,
+    PredictionHistoryItemOut,
     PredictionIn,
     PredictionOut,
     UserOut,
@@ -66,6 +68,19 @@ async def get_group(
     return community.group_to_schema(group, user.id)
 
 
+@router.get("/groups/{group_id}/history", response_model=list[GroupHistoryMatchOut], response_model_exclude_none=True)
+async def get_group_history(
+    group_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> list[GroupHistoryMatchOut]:
+    """Historique des matchs terminés pour les membres du groupe."""
+    group = await community.get_group_for_user(session, user, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail=f"Groupe introuvable : {group_id}")
+    return await community.group_history(session, group, user.id)
+
+
 @router.post("/groups", response_model=GroupOut, response_model_exclude_none=True, status_code=201)
 async def post_group(
     payload: GroupCreateIn,
@@ -97,6 +112,15 @@ async def get_predictions(
 ) -> dict[str, PredictionOut]:
     """PredictionMap du front : Record<matchId, Prediction>."""
     return await community.predictions_map(session, user)
+
+
+@router.get("/predictions/history", response_model=list[PredictionHistoryItemOut], response_model_exclude_none=True)
+async def get_prediction_history(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> list[PredictionHistoryItemOut]:
+    """Historique des pronostics du user sur les matchs terminés."""
+    return await community.prediction_history(session, user)
 
 
 @router.post("/predictions", response_model=PredictionOut, status_code=201)

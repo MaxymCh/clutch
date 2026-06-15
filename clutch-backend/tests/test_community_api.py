@@ -46,6 +46,59 @@ async def test_creation_et_rejointe_de_groupe(client, second_client):
     assert [g["id"] for g in groups] == [created["id"]]
 
 
+async def test_historique_de_groupe_limite_aux_matchs_termines(client, second_client, session_factory):
+    me_a = (await client.get("/me")).json()
+    me_b = (await second_client.get("/me")).json()
+
+    created = (await client.post("/groups", json={"name": "Historique", "emoji": "📚"})).json()
+    await second_client.post("/groups/join", json={"code": created["code"]})
+
+    done_match = make_match(
+        id="done-history",
+        status="done",
+        start_time_utc=datetime(2026, 7, 10, 18, 0, tzinfo=UTC),
+        score_a=2,
+        score_b=1,
+        maps=None,
+        current_map_label=None,
+        viewers=None,
+    )
+    upcoming_match = make_match(
+        id="upcoming-history",
+        status="upcoming",
+        start_time_utc=datetime(2026, 7, 12, 18, 0, tzinfo=UTC),
+        score_a=None,
+        score_b=None,
+        maps=None,
+        current_map_label=None,
+        viewers=None,
+    )
+
+    async with session_factory() as session:
+        await seed_catalog(session)
+        session.add_all([done_match, upcoming_match])
+        await session.commit()
+
+    async with session_factory() as session:
+        from app.models.community import Prediction
+
+        session.add_all(
+            [
+                Prediction(user_id=me_a["id"], match_id="done-history", pick="a", score_a=2, score_b=1, scored=True, points=25),
+                Prediction(user_id=me_b["id"], match_id="done-history", pick="b", score_a=1, score_b=2, scored=True, points=0),
+                Prediction(user_id=me_a["id"], match_id="upcoming-history", pick="a", score_a=2, score_b=0),
+            ]
+        )
+        await session.commit()
+
+    history = (await client.get(f"/groups/{created['id']}/history")).json()
+    assert len(history) == 1
+    assert history[0]["match"]["id"] == "done-history"
+    assert all(member.get("prediction") is not None for member in history[0]["members"])
+    assert history[0]["members"][0]["points"] == 25
+    assert history[0]["members"][1]["points"] == 0
+
+
 async def test_prono_regles_du_front(client, session_factory):
     """Prono : match upcoming non commencé uniquement, scoreline cohérente."""
     future = datetime.now(UTC) + timedelta(hours=4)
@@ -95,6 +148,48 @@ async def test_prono_regles_du_front(client, session_factory):
     # GET /predictions : PredictionMap, dernière valeur retenue
     predictions = (await client.get("/predictions")).json()
     assert predictions == {"next": {"pick": "b", "scoreA": 1, "scoreB": 3}}
+
+
+async def test_historique_pronostics_ne_retourne_que_les_matchs_termines(client, session_factory):
+    future = datetime.now(UTC) + timedelta(hours=4)
+    past = datetime.now(UTC) - timedelta(hours=6)
+
+    async with session_factory() as session:
+        await seed_catalog(session)
+        session.add_all(
+            [
+                make_match(
+                    id="done-past",
+                    status="done",
+                    start_time_utc=past,
+                    score_a=2,
+                    score_b=1,
+                    maps=None,
+                    current_map_label=None,
+                    viewers=None,
+                ),
+                make_match(
+                    id="upcoming-future",
+                    status="upcoming",
+                    start_time_utc=future,
+                    score_a=None,
+                    score_b=None,
+                    maps=None,
+                    current_map_label=None,
+                    viewers=None,
+                ),
+            ]
+        )
+        await session.commit()
+
+    await client.post("/predictions", json={"matchId": "done-past", "pick": "a", "scoreA": 2, "scoreB": 1})
+    await client.post("/predictions", json={"matchId": "upcoming-future", "pick": "a", "scoreA": 2, "scoreB": 0})
+
+    history = (await client.get("/predictions/history")).json()
+    assert len(history) == 1
+    assert history[0]["match"]["id"] == "done-past"
+    assert history[0]["points"] == 25
+    assert history[0]["prediction"] == {"pick": "a", "scoreA": 2, "scoreB": 1}
 
 
 async def test_leaderboard_trie_et_limite(client, second_client):

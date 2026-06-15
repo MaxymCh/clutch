@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 logger = logging.getLogger("clutch.seed.future")
 
 SEED_ID_PREFIX = "seed-"
+SEED_YEAR = 2026
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -64,11 +65,15 @@ def build_seed_payloads(
 
     base = _as_utc(now) + timedelta(hours=start_in_hours)
     base = base.replace(minute=0, second=0, microsecond=0)
+    if base.year != SEED_YEAR:
+        raise ValueError(f"Le seed futur est figé sur {SEED_YEAR} ; date de départ invalide: {base:%Y-%m-%d}")
 
     payloads: list[dict[str, object]] = []
     for index in range(count):
         source = sources[index % len(sources)]
         slot = base + timedelta(hours=index * spacing_hours)
+        if slot.year != SEED_YEAR:
+            break
         payloads.append(
             {
                 "id": _seed_match_id(source, slot, index),
@@ -124,6 +129,9 @@ def seed_future_matches(*, count: int, start_in_hours: int, spacing_hours: int, 
             start_in_hours=start_in_hours,
             spacing_hours=spacing_hours,
         )
+
+        if not payloads:
+            raise ValueError(f"Aucun match n'a pu être généré dans l'année {SEED_YEAR}")
 
         for payload in payloads:
             _upsert_seed_match(session, payload)

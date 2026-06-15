@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.schemas.base import ApiModel
+from app.schemas.esports import MatchOut
 
 Pick = Literal["a", "b"]
 
@@ -56,6 +57,31 @@ class PredictionOut(ApiModel):
     pick: Pick
     score_a: int  # JSON : scoreA
     score_b: int  # JSON : scoreB
+
+
+class PredictionHistoryItemOut(ApiModel):
+    """Historique d'un prono utilisateur sur un match terminé."""
+
+    match: MatchOut
+    prediction: PredictionOut
+    points: int | None = None
+
+
+class GroupHistoryMemberOut(ApiModel):
+    """Pronostic d'un membre du groupe sur un match terminé."""
+
+    name: str
+    tag: str
+    is_me: bool | None = None  # JSON : isMe
+    prediction: PredictionOut | None = None
+    points: int | None = None
+
+
+class GroupHistoryMatchOut(ApiModel):
+    """Historique d'un match terminé pour les membres du groupe."""
+
+    match: MatchOut
+    members: list[GroupHistoryMemberOut]
 
 
 # --- Corps de requêtes (entrées) ---

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createGroup, fetchGroup, fetchGroups, joinGroup } from '../server';
+import { createGroup, fetchGroup, fetchGroupHistory, fetchGroups, joinGroup } from '../server';
 
 /** Les groupes de pronostics de l'utilisateur. */
 export const useGroups = () =>
@@ -13,6 +13,13 @@ export const useGroup = (id: string) =>
   useQuery({
     queryKey: ['groups', id],
     queryFn: () => fetchGroup(id),
+  });
+
+/** Historique des matchs terminés d'un groupe. */
+export const useGroupHistory = (id: string) =>
+  useQuery({
+    queryKey: ['groups', id, 'history'],
+    queryFn: () => fetchGroupHistory(id),
   });
 
 /** Création d'un groupe — invalide la liste après succès. */

@@ -4,7 +4,9 @@
  */
 import type {
   Group,
+  GroupHistoryMatch,
   LeaderboardEntry,
+  PredictionHistoryItem,
   Prediction,
   PredictionMap,
   User,
@@ -40,6 +42,10 @@ export const fetchGroups = (): Promise<Group[]> => apiGet<Group[]>('/groups');
 /** GET /groups/:id */
 export const fetchGroup = (id: string): Promise<Group> => apiGet<Group>(`/groups/${encodeURIComponent(id)}`);
 
+/** GET /groups/:id/history */
+export const fetchGroupHistory = (id: string): Promise<GroupHistoryMatch[]> =>
+  apiGet<GroupHistoryMatch[]>(`/groups/${encodeURIComponent(id)}/history`);
+
 /** POST /groups */
 export const createGroup = (input: { name: string; emoji: string }): Promise<Group> =>
   apiPost<Group>('/groups', input);
@@ -49,6 +55,10 @@ export const joinGroup = (code: string): Promise<Group> => apiPost<Group>('/grou
 
 /** GET /predictions — PredictionMap de l'utilisateur courant */
 export const fetchPredictions = (): Promise<PredictionMap> => apiGet<PredictionMap>('/predictions');
+
+/** GET /predictions/history — historique des pronostics terminés */
+export const fetchPredictionHistory = (): Promise<PredictionHistoryItem[]> =>
+  apiGet<PredictionHistoryItem[]>('/predictions/history');
 
 /** POST /predictions — refusé par l'API si le match a déjà commencé */
 export const postPrediction = (matchId: string, prediction: Prediction): Promise<Prediction> =>

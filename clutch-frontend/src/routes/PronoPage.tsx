@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGames } from '../api/queries/useGames';
 import { useGroups } from '../api/queries/useGroups';
 import { useMatches } from '../api/queries/useMatches';
+import { usePredictionHistory } from '../api/queries/useMatches';
 import { useUser } from '../api/queries/useUser';
 import { Page } from '../components/layout/Page';
 import { Icon } from '../components/ui/Icon';
@@ -18,6 +19,7 @@ export const PronoPage = () => {
   const { data: user } = useUser();
   const { data: groups } = useGroups();
   const { data: matches, isPending } = useMatches();
+  const { data: history = [], isPending: isHistoryPending } = usePredictionHistory();
   const { data: games } = useGames();
   const [predicting, setPredicting] = useState<Match | null>(null);
 
@@ -83,6 +85,63 @@ export const PronoPage = () => {
         {toPredict.map((m) => (
           <PredictCard key={m.id} match={m} gameTag={tagOf(m)} onPredict={setPredicting} />
         ))}
+      </div>
+
+      <div className="flex items-baseline justify-between px-5 pt-7 pb-3">
+        <h2 className="text-base leading-none font-bold tracking-tight text-ink">Mes pronos passés</h2>
+        <span className="text-[13px] font-bold text-dim">{history.length}</span>
+      </div>
+      {isHistoryPending && <PageSpinner />}
+      {!isHistoryPending && history.length === 0 && (
+        <p className="px-5 pb-6 text-sm font-medium text-dim">Aucun prono terminé pour l'instant.</p>
+      )}
+      <div className="flex flex-col gap-3 px-5 pb-6">
+        {history.map(({ match, prediction, points }) => {
+          const pickedTeam = prediction.pick === 'a' ? match.teamA : match.teamB;
+          const actualWinner = (match.scoreA ?? 0) > (match.scoreB ?? 0) ? match.teamA : match.teamB;
+          const exact = prediction.scoreA === (match.scoreA ?? 0) && prediction.scoreB === (match.scoreB ?? 0);
+
+          return (
+            <div key={match.id} className="rounded-3xl border border-line-2 bg-surface p-4 shadow-soft">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10.5px] font-semibold tracking-wide text-dim uppercase">
+                    {match.gameId.toUpperCase()} · {match.phase}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-ink">
+                    {match.teamA.tag} vs {match.teamB.tag}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-dim">
+                    {match.date} · {match.time}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-ink px-3 py-2 text-right text-white">
+                  <div className="text-xs font-bold uppercase tracking-[.1em] opacity-70">Points</div>
+                  <div className="text-lg font-black leading-none">{points ?? 0}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-cream px-3 py-2">
+                  <div className="text-[11px] font-bold uppercase tracking-[.1em] text-dim">Mon prono</div>
+                  <div className="mt-1 font-bold text-ink">
+                    {pickedTeam.tag} {prediction.scoreA}–{prediction.scoreB}
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-cream px-3 py-2">
+                  <div className="text-[11px] font-bold uppercase tracking-[.1em] text-dim">Résultat</div>
+                  <div className="mt-1 font-bold text-ink">
+                    {actualWinner.tag} {match.scoreA ?? 0}–{match.scoreB ?? 0}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2 text-xs font-semibold text-dim">
+                {exact ? 'Score exact.' : pickedTeam.tag === actualWinner.tag ? 'Bon vainqueur.' : 'Mauvais vainqueur.'}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <PredictSheet match={predicting} onClose={() => setPredicting(null)} />
