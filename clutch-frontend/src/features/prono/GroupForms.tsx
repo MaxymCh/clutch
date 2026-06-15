@@ -45,6 +45,7 @@ export const CreateGroupForm = () => {
       {
         name,
         emoji,
+        scopeMode,
         gameId: scopeMode === 'game' ? (gameId ?? undefined) : undefined,
         teamId: scopeMode === 'team' ? (teamId ?? undefined) : undefined,
       },

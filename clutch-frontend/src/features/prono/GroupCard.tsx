@@ -9,8 +9,8 @@ export const GroupCard = ({ group }: { group: Group }) => {
     [...group.members].sort((a, b) => b.points - a.points).findIndex((m) => m.isMe) + 1;
 
   return (
-    <Link to={`/prono/group/${group.id}`} className="shrink-0">
-      <Card className="w-50 p-4 transition-transform active:scale-[.97]">
+    <Link to={`/prono/group/${group.id}`} className="shrink-0 snap-start">
+      <Card className="w-[12.5rem] min-w-[12.5rem] p-4 transition-transform active:scale-[.97]">
         <div className="flex items-center justify-between">
           <span className="text-[26px] leading-none">{group.emoji}</span>
           {rank > 0 && (

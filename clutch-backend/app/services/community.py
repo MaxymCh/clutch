@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.catalog import Match
+from app.models.catalog import Game, Match, Team
 from app.services.catalog import match_to_schema
 from app.models.community import Group, GroupMembership, Prediction, User, UserPreferences
 from app.schemas.community import (
@@ -107,6 +107,15 @@ async def leaderboard(session: AsyncSession, limit: int = DEFAULT_LEADERBOARD_LI
 
 
 # --- Groupes ------------------------------------------------------------------
+
+
+class GroupError(Exception):
+    """Erreur métier liée aux groupes (scope invalide, etc.)."""
+
+    def __init__(self, status_code: int, detail: str) -> None:
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(detail)
 
 
 def match_matches_group_scope(match: Match, group: Group) -> bool:
@@ -259,14 +268,43 @@ async def create_group(
     user: User,
     name: str,
     emoji: str,
+    scope_mode: str = "all",
     game_id: str | None = None,
     team_id: str | None = None,
 ) -> Group:
     """Réplique du comportement mock front : nom vide → « Mon groupe »."""
+    scope_mode = (scope_mode or "all").strip().lower()
     game_id = game_id.strip() if game_id else None
     team_id = team_id.strip() if team_id else None
-    if game_id and team_id:
-        team_id = None  # jeu prioritaire si les deux sont fournis
+
+    if scope_mode == "all":
+        if game_id and not team_id:
+            scope_mode = "game"
+        elif team_id and not game_id:
+            scope_mode = "team"
+        elif game_id and team_id:
+            raise GroupError(422, "Choisis soit un jeu, soit une équipe")
+
+    if scope_mode not in {"all", "game", "team"}:
+        raise GroupError(422, "Périmètre de groupe invalide")
+
+    if scope_mode == "all":
+        game_id = None
+        team_id = None
+    elif scope_mode == "game":
+        if not game_id:
+            raise GroupError(422, "Choisis un jeu pour ce périmètre")
+        game_exists = await session.scalar(select(Game.id).where(Game.id == game_id))
+        if not game_exists:
+            raise GroupError(422, f"Jeu introuvable : {game_id}")
+        team_id = None
+    else:
+        if not team_id:
+            raise GroupError(422, "Choisis une équipe pour ce périmètre")
+        team_exists = await session.scalar(select(Team.id).where(Team.id == team_id))
+        if not team_exists:
+            raise GroupError(422, f"Équipe introuvable : {team_id}")
+        game_id = None
 
     code = _generate_group_code()
     # Collision de code improbable mais possible : on retire jusqu'à unicité.

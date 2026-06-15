@@ -135,9 +135,18 @@ async def post_group(
     user: User = Depends(get_current_user),
 ) -> GroupOut:
     """Sert `useCreateGroup` — body { name, emoji } (cf. mock front)."""
-    group = await community.create_group(
-        session, user, payload.name, payload.emoji, payload.game_id, payload.team_id
-    )
+    try:
+        group = await community.create_group(
+            session,
+            user,
+            payload.name,
+            payload.emoji,
+            payload.scope_mode,
+            payload.game_id,
+            payload.team_id,
+        )
+    except community.GroupError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
     return await community.group_to_schema(session, group, user.id)
 
 

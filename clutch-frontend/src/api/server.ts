@@ -55,6 +55,7 @@ export const fetchGroupHistory = (id: string): Promise<GroupHistoryMatch[]> =>
 export const createGroup = (input: {
   name: string;
   emoji: string;
+  scopeMode?: 'all' | 'game' | 'team';
   gameId?: string;
   teamId?: string;
 }): Promise<Group> => apiPost<Group>('/groups', input);

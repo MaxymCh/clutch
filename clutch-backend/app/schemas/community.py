@@ -8,6 +8,7 @@ from app.schemas.base import ApiModel
 from app.schemas.esports import MatchOut
 
 Pick = Literal["a", "b"]
+GroupScopeMode = Literal["all", "game", "team"]
 
 
 class PreferencesOut(ApiModel):
@@ -120,6 +121,7 @@ class GroupCreateIn(ApiModel):
 
     name: str = ""
     emoji: str = "🎮"
+    scope_mode: GroupScopeMode = "all"  # JSON : scopeMode
     game_id: str | None = None  # JSON : gameId
     team_id: str | None = None  # JSON : teamId
 

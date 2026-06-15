@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type WheelEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useGames } from '../api/queries/useGames';
 import { useGroups } from '../api/queries/useGroups';
@@ -26,6 +26,7 @@ export const PronoPage = () => {
   const { data: games } = useGames();
   const { game, team } = useMatchFilters();
   const [predicting, setPredicting] = useState<Match | null>(null);
+  const groupsCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const toPredict = useMemo(
     () => filterMatches((matches ?? []).filter((m) => m.status === 'upcoming'), game, team),
@@ -37,6 +38,14 @@ export const PronoPage = () => {
   );
   const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
   const hasFilters = game !== null || team !== null;
+
+  const onGroupsWheel = (event: WheelEvent<HTMLDivElement>) => {
+    const host = groupsCarouselRef.current;
+    if (!host) return;
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    event.preventDefault();
+    host.scrollBy({ left: event.deltaY, behavior: 'smooth' });
+  };
 
   return (
     <Page>
@@ -79,13 +88,17 @@ export const PronoPage = () => {
           </Link>
         </div>
       </div>
-      <div className="scrollbar-none flex gap-3 overflow-x-auto px-5 pb-1">
+      <div
+        ref={groupsCarouselRef}
+        onWheel={onGroupsWheel}
+        className="scrollbar-none flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 scroll-px-5 scroll-smooth"
+      >
         {(groups ?? []).map((g) => (
           <GroupCard key={g.id} group={g} />
         ))}
         <Link
           to="/prono/group/create"
-          className="flex w-28 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
+          className="flex w-28 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-surface-2 text-ink">
             <Icon name="plus" size={18} />
@@ -94,7 +107,7 @@ export const PronoPage = () => {
         </Link>
         <Link
           to="/prono/group/join"
-          className="flex w-28 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
+          className="flex w-28 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line-2 text-dim transition-transform active:scale-[.97]"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-surface-2 text-ink">
             <Icon name="users" size={18} />
