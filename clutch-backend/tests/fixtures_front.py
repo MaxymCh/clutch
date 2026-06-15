@@ -46,7 +46,7 @@ FRONT_MATCH_M17 = {
 
 # Équipe et jeu tels que servis par le mock front (catalog.ts)
 FRONT_TEAM_FLCN = {"id": "flcn", "name": "Team Falcons", "tag": "FLCN", "countryCode": "SA"}
-FRONT_GAME_VAL = {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL"}
+FRONT_GAME_VAL = {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "bgUrl": ""}
 
 # Seul écart autorisé entre mock front et API (décision actée)
 OMITTED_BY_API = {"oddsA"}

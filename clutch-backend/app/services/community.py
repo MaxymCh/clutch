@@ -24,7 +24,6 @@ from app.schemas.community import (
     PredictionIn,
     PredictionHistoryItemOut,
     PredictionOut,
-    PreferencesOut,
     PreferencesPatchIn,
     UserOut,
 )
