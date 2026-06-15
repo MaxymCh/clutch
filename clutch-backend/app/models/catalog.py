@@ -32,6 +32,8 @@ class Game(Base):
     tag: Mapped[str] = mapped_column(String(8))
     # Ordre d'affichage imposé par le front (GAME_ORDER)
     sort_order: Mapped[int] = mapped_column(Integer)
+    # URL de l'image de fond des cartes jeu (chemin local ou CDN)
+    bg_url: Mapped[str] = mapped_column(String(256), default="")
 
 
 class Team(Base):

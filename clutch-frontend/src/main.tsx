@@ -1,10 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
 import { AuthProvider } from './features/auth/AuthProvider';
-import { useAuth } from './features/auth/authContext';
 import { AppLayout } from './routes/AppLayout';
 import { CalendarPage } from './routes/CalendarPage';
 import { GamePage } from './routes/GamePage';
@@ -14,6 +13,7 @@ import { GroupPage } from './routes/GroupPage';
 import { LeaderboardPage } from './routes/LeaderboardPage';
 import { LoginPage } from './routes/LoginPage';
 import { MatchPage } from './routes/MatchPage';
+import { ProtectedRoute } from './routes/ProtectedRoute';
 import { ProfilePage } from './routes/ProfilePage';
 import { PronoPage } from './routes/PronoPage';
 import { SearchPage } from './routes/SearchPage';
@@ -27,12 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Redirige vers /login si l'utilisateur n'est pas connecté. */
-const ProtectedRoute = () => {
-  const { session, loading } = useAuth();
-  if (loading) return null;
-  return session ? <Outlet /> : <Navigate to="/login" replace />;
-};
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

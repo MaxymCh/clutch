@@ -26,7 +26,7 @@ export const PseudoStep = ({ pseudo, onChange, error }: PseudoStepProps) => {
   }, []);
 
   return (
-    <div className="flex flex-1 flex-col items-center px-6 pt-4">
+    <div className="flex min-h-0 flex-1 flex-col items-center px-6 pt-4">
       <span className="mb-5 grid size-16 place-items-center rounded-[18px] bg-accent text-on-accent shadow-[0_10px_30px] shadow-accent/30">
         <Icon name="bolt" size={32} strokeWidth={2.2} />
       </span>
@@ -81,36 +81,62 @@ export const GamesStep = () => {
   const { data: games } = useGames();
   const { games: favGames, toggleGame } = useFavorites();
   return (
-    <div className="flex flex-1 flex-col px-6 pt-2">
+    <div className="flex min-h-0 flex-1 flex-col px-6 pt-2">
       <StepTitle title="Quels jeux tu suis ?" sub="On mettra tes jeux en avant dans l'agenda." />
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="grid grid-cols-1 gap-2 pb-4">
         {(games ?? []).map((game) => {
           const on = favGames.includes(game.id);
           return (
             <button
               key={game.id}
               onClick={() => toggleGame(game.id)}
-              className={`flex cursor-pointer items-center gap-2.5 rounded-2xl border-[1.5px] p-3.5 text-left transition-transform active:scale-[.97] ${
-                on ? 'border-accent bg-accent/5' : 'border-line-2 bg-surface'
+              className={`group relative aspect-[4/1.5] w-full cursor-pointer overflow-hidden rounded-2xl transition-all duration-200 active:scale-[.96] ${
+                on ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface' : 'ring-1 ring-line-2'
               }`}
             >
-              <span
-                className={`grid size-9 shrink-0 place-items-center rounded-[10px] text-[11px] font-extrabold text-on-accent ${
-                  on ? 'bg-accent' : 'bg-ink'
-                }`}
-              >
-                {game.tag.slice(0, 3)}
-              </span>
-              <span className={`text-[13px] leading-tight font-bold ${on ? 'text-accent' : 'text-ink'}`}>
-                {game.short}
-              </span>
+              {/* Image de fond */}
+              {game.bgUrl ? (
+                <img
+                  src={game.bgUrl}
+                  alt={game.name}
+                  className={`absolute inset-0 h-full w-full object-cover transition-transform duration-300 ${on ? 'scale-105' : 'group-active:scale-105'}`}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-ink" />
+              )}
+
+              {/* Overlay gradient — plus léger si sélectionné pour laisser voir l'image */}
+              <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-200 ${
+                on
+                  ? 'from-black/75 via-black/20 to-black/0'
+                  : 'from-black/85 via-black/40 to-black/10'
+              }`} />
+
+              {/* Badge check */}
+              {on && (
+                <div className="absolute top-2 right-2 grid size-5 place-items-center rounded-full bg-accent shadow-sm">
+                  <Icon name="check" size={11} strokeWidth={2.8} className="text-white" />
+                </div>
+              )}
+
+              {/* Nom en bas */}
+              <div className="absolute inset-x-0 bottom-0 p-2.5">
+                <p className="text-center text-[12px] font-bold leading-tight text-white drop-shadow-sm">
+                  {game.short}
+                </p>
+              </div>
             </button>
           );
         })}
       </div>
+      </div>
     </div>
   );
 };
+
+const toFlag = (code: string) =>
+  [...code.toUpperCase()].map((c) => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('');
 
 /** Étape 2 — choix des équipes favorites. */
 export const TeamsStep = () => {
@@ -119,24 +145,36 @@ export const TeamsStep = () => {
   return (
     <div className="flex min-h-0 flex-1 flex-col px-6 pt-2">
       <StepTitle title="Tes équipes favorites" sub="Filtre rapide + accès direct à leurs matchs." />
-      <div className="grid flex-1 content-start gap-2 overflow-auto sm:grid-cols-2">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="grid grid-cols-2 gap-2 pb-4">
         {(teams ?? []).map((team) => {
           const on = favTeams.includes(team.id);
           return (
             <button
               key={team.id}
               onClick={() => toggleTeam(team.id)}
-              className={`flex cursor-pointer items-center gap-2.5 rounded-[14px] border-[1.5px] px-3 py-2.5 text-left transition-transform active:scale-[.97] ${
-                on ? 'border-accent bg-accent/5' : 'border-line-2 bg-surface'
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] px-3 py-3 text-left transition-all duration-150 active:scale-[.97] ${
+                on ? 'border-accent bg-accent/8' : 'border-line-2 bg-surface'
               }`}
             >
-              <TeamLogo tag={team.tag} size={28} solid={on} />
-              <span className={`truncate text-[12.5px] font-semibold ${on ? 'text-accent' : 'text-ink'}`}>
-                {team.name}
-              </span>
+              <TeamLogo tag={team.tag} size={36} solid={on} />
+              <div className="min-w-0 flex-1">
+                <p className={`truncate text-[12px] font-bold leading-tight ${on ? 'text-accent' : 'text-ink'}`}>
+                  {team.name}
+                </p>
+                <p className="mt-0.5 text-[10.5px] font-semibold text-dim">
+                  {toFlag(team.countryCode)} {team.tag}
+                </p>
+              </div>
+              {on && (
+                <div className="grid size-5 shrink-0 place-items-center rounded-full bg-accent">
+                  <Icon name="check" size={11} strokeWidth={2.8} className="text-white" />
+                </div>
+              )}
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );

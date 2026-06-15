@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../features/auth/authContext';
 import { supabase } from '../lib/supabase';
 
 export const LoginPage = () => {
+  const { session, loading: authLoading } = useAuth();
+  if (!authLoading && session) return <Navigate to="/" replace />;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);

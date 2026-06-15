@@ -20,6 +20,7 @@ class GameOut(ApiModel):
     name: str
     short: str
     tag: str
+    bg_url: str  # JSON : bgUrl
 
 
 class TeamOut(ApiModel):

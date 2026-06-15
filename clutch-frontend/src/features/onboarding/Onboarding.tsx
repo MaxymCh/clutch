@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useUpdateUser } from '../../api/queries/useUser';
 import { Button } from '../../components/ui/Button';
@@ -18,6 +18,12 @@ const prefillFromAuth = (email?: string | null, fullName?: string | null): strin
 export const Onboarding = ({ onDone }: { onDone: () => void }) => {
   const { user: authUser } = useAuth();
   const { mutateAsync: updateUser } = useUpdateUser();
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   const [step, setStep] = useState(0);
   const [pseudo, setPseudo] = useState(
@@ -87,9 +93,11 @@ export const Onboarding = ({ onDone }: { onDone: () => void }) => {
         </button>
       </div>
 
-      {step === 0 && <PseudoStep pseudo={pseudo} onChange={(v) => { setPseudo(v); setPseudoError(null); }} error={pseudoError} />}
-      {step === 1 && <GamesStep />}
-      {step === 2 && <TeamsStep />}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {step === 0 && <PseudoStep pseudo={pseudo} onChange={(v) => { setPseudo(v); setPseudoError(null); }} error={pseudoError} />}
+        {step === 1 && <GamesStep />}
+        {step === 2 && <TeamsStep />}
+      </div>
 
       {/* Navigation */}
       <div className="flex shrink-0 gap-3 px-6 pt-4 pb-7">
