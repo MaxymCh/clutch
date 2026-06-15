@@ -141,15 +141,53 @@ docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --b
 
 ---
 
-## 5. CI/CD — ce qui est automatique
+## 5. CI/CD — entièrement automatique
+
+À chaque `git push origin main` :
 
 | Brique | Statut | Comment |
 |---|---|---|
-| **Front** | ✅ automatique | push → GitHub → Cloudflare Pages rebuild & déploie |
-| **Back** | ⚠️ manuel (par défaut) | `git pull` + `docker compose up -d` sur le VPS |
-| **Tests** | ✅ (GitLab CI) | `ruff`+`pytest` (back), `lint`+`build` (front) à chaque MR |
+| **Front** | ✅ automatique | push → GitHub (double-remote) → Cloudflare Pages rebuild & déploie |
+| **Back** | ✅ automatique | pipeline GitLab → job `deploy:backend` sur le runner du VPS |
 
-### Redéployer le backend à la main
+### Pipeline GitLab ([.gitlab-ci.yml](.gitlab-ci.yml))
+Le runner est un **runner self-hosted installé SUR le VPS** (executor `shell`).
+Comme le VPS n'a ni Python ni Node, les jobs de qualité tournent **dans des
+conteneurs Docker** lancés par le runner ; le déploiement, lui, tourne
+directement sur l'hôte (accès Docker local).
+
+| Job | Stage | Bloquant ? | Rôle |
+|---|---|---|---|
+| `lint:backend` | test | ✅ oui | `ruff` (conteneur `python:3.12-slim`) |
+| `test:backend` | test | ⚠️ `allow_failure` | `pytest` (conteneur `python`) |
+| `test:frontend` | test | ⚠️ `allow_failure` | `npm lint`+`build` (conteneur `node:22-alpine`) |
+| `deploy:backend` | deploy | — | resync `main` + `docker compose up -d` sur le VPS |
+
+> ⚠️ **`allow_failure` temporaire** sur `test:backend` et `test:frontend` :
+> 6 tests communauté datent de l'ancienne auth cookie et tombent en 401 avec le
+> JWT Supabase. À réécrire (override d'auth JWT dans `conftest`), puis retirer
+> les `allow_failure` pour réactiver les barrières.
+> Le build front reste protégé par **Cloudflare Pages** (un build cassé n'est
+> pas déployé), même si le job GitLab est non-bloquant.
+
+### Installation du runner (déjà fait — pour mémoire)
+```bash
+# Sur le VPS
+curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+sudo apt-get install -y gitlab-runner
+sudo gitlab-runner register \
+  --url https://rendu-git.etna-alternance.net --token <glrt-...> \
+  --executor shell --description "VPS Clutch"   # tag : vps
+sudo usermod -aG docker gitlab-runner
+sudo systemctl restart gitlab-runner
+```
+Variable CI/CD à définir (GitLab → Settings → CI/CD → Variables) :
+`DEPLOY_PATH = /home/chape_m/group-1076817`. Le `deploy:backend` se resynchronise
+via le token de job CI (`CI_JOB_TOKEN`), pas de secret SSH à stocker.
+Le paramètre global `GIT_CLEAN_FLAGS: none` évite les erreurs de nettoyage dues
+aux fichiers créés en root par les conteneurs de test.
+
+### Redéployer le backend à la main (si besoin, hors CI)
 ```bash
 ssh chape_m@172.16.248.100
 cd ~/group-1076817
@@ -157,25 +195,6 @@ git pull
 docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --build
 docker image prune -f
 ```
-
-### Rendre le backend automatique (runner GitLab self-hosted)
-Le VPS étant **VPN-only**, le runner cloud GitLab ne peut pas l'atteindre. Pour
-automatiser, installer un runner **sur le VPS** :
-```bash
-# Sur le VPS
-curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
-sudo apt-get install gitlab-runner
-sudo gitlab-runner register      # URL + token du projet (GitLab → Settings → CI/CD → Runners)
-                                 # executor: shell
-sudo usermod -aG docker gitlab-runner
-```
-Puis variables CI/CD (GitLab → Settings → CI/CD → Variables) :
-`SSH_*` ne sont plus nécessaires si le job tourne en local sur le VPS — adapter
-`deploy:backend` dans `.gitlab-ci.yml` pour exécuter directement
-`cd $DEPLOY_PATH && git pull && docker compose ... up -d` sur le runner shell.
-
-> Le fichier [.gitlab-ci.yml](.gitlab-ci.yml) contient déjà un job `deploy:backend`
-> en version SSH ; il suffit de l'activer via un runner joignable.
 
 ---
 
@@ -214,6 +233,30 @@ docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml logs clou
 - ⚠️ **Rate limit Liquipedia : 60 req/h.** Ne pas relancer le worker en boucle.
 - gameIds valides : `val, lol, cs2, dota, rl, ow`.
 
+### Seed de matchs futurs (démo des pronostics)
+Une édition passée (2025) ne contient que des matchs `done`. Pour avoir des
+matchs **`upcoming`** (calendrier à venir + pronostics), un script génère des
+rencontres futures fictives à partir des vrais matchs en base (vraies équipes,
+créneaux inventés en 2026, phase suffixée « (Simulation) »).
+
+```bash
+# En local
+docker compose run --rm api \
+  python -m ingestion.seed_future_matches --count 24 --replace
+
+# En prod (sur le VPS)
+docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml \
+  run --rm api python -m ingestion.seed_future_matches --count 24 --replace
+```
+- **Prérequis** : avoir déjà ingéré de vraies données (les matchs source à cloner).
+- `--replace` : **sans danger** — supprime uniquement les matchs seedés
+  (id préfixé `seed-`), jamais les données ingérées depuis Liquipedia.
+- Le **worker ne touche jamais** les matchs `seed-` (ids distincts) : ils
+  cohabitent avec les vrais sans conflit, et restent `upcoming`.
+- ⚠️ Ce sont des matchs **fictifs** : à ne seeder en prod que si tu assumes des
+  rencontres « Simulation » sur le site public. Options : `--count`,
+  `--start-in-hours`, `--spacing-hours`.
+
 ### Sauvegarde de la base (cron sur le VPS)
 ```bash
 0 3 * * * cd ~/group-1076817 && docker compose -f docker-compose.prod.yml exec -T db \
@@ -243,6 +286,9 @@ gunzip -c ~/backups/clutch-AAAA-MM-JJ.sql.gz | \
 | API vide, worker `0 upsertés / N ignorés` | matchs TBD (édition future) | pointer une édition passée (2025) |
 | Erreur CORS au login | origine front absente | ajouter l'origine à `CORS_ORIGINS` + redéployer |
 | Settings Supabase inaccessibles (Owner) | MFA/permission compte | activer la 2FA, se reconnecter |
+| Login local redirige vers la prod | `redirectTo` non matché / Site URL figé | `redirectTo`/`emailRedirectTo` = `` `${origin}/` `` + `http://localhost:5173/**` dans Redirect URLs |
+| CI : `pip`/`npm: command not found` | runner shell (pas de Python/Node sur l'hôte) | exécuter le job dans un conteneur (`docker run … python/node`) |
+| CI : `permission denied` build dir | fichiers root créés par les conteneurs | `variables: GIT_CLEAN_FLAGS: none` |
 
 ---
 
@@ -255,4 +301,5 @@ gunzip -c ~/backups/clutch-AAAA-MM-JJ.sql.gz | \
 | [.env.prod.example](.env.prod.example) | modèle de config backend |
 | [.gitlab-ci.yml](.gitlab-ci.yml) | tests + déploiement backend |
 | [clutch-backend/Dockerfile](clutch-backend/Dockerfile) | image API/worker |
+| [clutch-backend/ingestion/seed_future_matches.py](clutch-backend/ingestion/seed_future_matches.py) | seed de matchs futurs `upcoming` (démo pronostics) |
 | [clutch-frontend/vite.config.ts](clutch-frontend/vite.config.ts) | build front + proxy `/api` en dev |
