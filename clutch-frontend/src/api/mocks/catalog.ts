@@ -6,12 +6,12 @@ import type { Game, GameId, Team } from '../../types/esports';
  */
 
 export const GAMES: Record<GameId, Game> = {
-  val: { id: 'val', name: 'Valorant', short: 'Valorant', tag: 'VAL' },
-  lol: { id: 'lol', name: 'League of Legends', short: 'LoL', tag: 'LOL' },
-  cs2: { id: 'cs2', name: 'Counter-Strike 2', short: 'CS2', tag: 'CS2' },
-  dota: { id: 'dota', name: 'Dota 2', short: 'Dota 2', tag: 'DOTA' },
-  rl: { id: 'rl', name: 'Rocket League', short: 'Rocket L.', tag: 'RL' },
-  ow: { id: 'ow', name: 'Overwatch 2', short: 'Overwatch', tag: 'OW' },
+  val: { id: 'val', name: 'Valorant', short: 'Valorant', tag: 'VAL', bgUrl: '' },
+  lol: { id: 'lol', name: 'League of Legends', short: 'LoL', tag: 'LOL', bgUrl: '' },
+  cs2: { id: 'cs2', name: 'Counter-Strike 2', short: 'CS2', tag: 'CS2', bgUrl: '' },
+  dota: { id: 'dota', name: 'Dota 2', short: 'Dota 2', tag: 'DOTA', bgUrl: '' },
+  rl: { id: 'rl', name: 'Rocket League', short: 'Rocket L.', tag: 'RL', bgUrl: '' },
+  ow: { id: 'ow', name: 'Overwatch 2', short: 'Overwatch', tag: 'OW', bgUrl: '' },
 };
 
 export const GAME_ORDER: GameId[] = ['val', 'lol', 'cs2', 'dota', 'rl', 'ow'];
