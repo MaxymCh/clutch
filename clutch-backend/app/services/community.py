@@ -13,8 +13,8 @@ from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.catalog import Match
-from app.models.community import Group, GroupMembership, Prediction, User
 from app.services.catalog import match_to_schema
+from app.models.community import Group, GroupMembership, Prediction, User, UserPreferences
 from app.schemas.community import (
     GroupMemberOut,
     GroupHistoryMatchOut,
@@ -24,6 +24,8 @@ from app.schemas.community import (
     PredictionIn,
     PredictionHistoryItemOut,
     PredictionOut,
+    PreferencesOut,
+    PreferencesPatchIn,
     UserOut,
 )
 from app.services.scoring import compute_points
@@ -53,6 +55,36 @@ async def user_to_schema(session: AsyncSession, user: User) -> UserOut:
         global_rank=await global_rank(session, user),
         streak=user.streak,
     )
+
+
+# --- Préférences --------------------------------------------------------------
+
+
+async def get_or_create_preferences(session: AsyncSession, user: User) -> UserPreferences:
+    """Retourne les préférences de l'utilisateur, les crée avec les défauts si absentes."""
+    prefs = await session.get(UserPreferences, user.id)
+    if not prefs:
+        prefs = UserPreferences(user_id=user.id)
+        session.add(prefs)
+        await session.commit()
+    return prefs
+
+
+async def update_preferences(session: AsyncSession, user: User, patch: PreferencesPatchIn) -> UserPreferences:
+    """Mise à jour partielle des préférences (seuls les champs non-None sont appliqués)."""
+    prefs = await get_or_create_preferences(session, user)
+    if patch.theme is not None:
+        prefs.theme = patch.theme
+    if patch.notifications is not None:
+        prefs.notifications = patch.notifications
+    if patch.onboarded is not None:
+        prefs.onboarded = patch.onboarded
+    if patch.fav_teams is not None:
+        prefs.fav_teams = patch.fav_teams
+    if patch.fav_games is not None:
+        prefs.fav_games = patch.fav_games
+    await session.commit()
+    return prefs
 
 
 # --- Leaderboard --------------------------------------------------------------

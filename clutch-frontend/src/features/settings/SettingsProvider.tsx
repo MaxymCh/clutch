@@ -1,12 +1,15 @@
 import { useEffect, type ReactNode } from 'react';
-import { useLocalStorage } from '../../lib/useLocalStorage';
+import { usePreferences, useUpdatePreferences } from '../../api/queries/usePreferences';
 import { SettingsContext, type Theme } from './settingsContext';
 
-/** Réglages utilisateur persistés : thème, notifications, onboarding vu. */
+/** Réglages utilisateur persistés en base via /me/preferences. */
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useLocalStorage<Theme>('theme', 'light');
-  const [notifications, setNotifications] = useLocalStorage('notifications', true);
-  const [onboarded, setOnboarded] = useLocalStorage('onboarded', false);
+  const { data: prefs } = usePreferences();
+  const { mutate: updatePrefs } = useUpdatePreferences();
+
+  const theme = prefs?.theme ?? 'light';
+  const notifications = prefs?.notifications ?? true;
+  const onboarded = prefs?.onboarded ?? false;
 
   // applique le thème sur <html> → les tokens [data-theme="dark"] prennent le relais
   useEffect(() => {
@@ -15,7 +18,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <SettingsContext.Provider
-      value={{ theme, setTheme, notifications, setNotifications, onboarded, setOnboarded }}
+      value={{
+        theme,
+        setTheme: (t: Theme) => updatePrefs({ theme: t }),
+        notifications,
+        setNotifications: (on: boolean) => updatePrefs({ notifications: on }),
+        onboarded,
+        setOnboarded: (done: boolean) => updatePrefs({ onboarded: done }),
+      }}
     >
       {children}
     </SettingsContext.Provider>
