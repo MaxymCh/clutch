@@ -18,6 +18,8 @@ from app.schemas.community import (
     LeaderboardEntryOut,
     PredictionIn,
     PredictionOut,
+    PreferencesOut,
+    PreferencesPatchIn,
     UserOut,
 )
 from app.services import community
@@ -32,6 +34,27 @@ async def get_me(
 ) -> UserOut:
     """Sert `useUser` — crée l'utilisateur anonyme au premier appel."""
     return await community.user_to_schema(session, user)
+
+
+@router.get("/me/preferences", response_model=PreferencesOut)
+async def get_preferences(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> PreferencesOut:
+    """Sert `usePreferences` — crée les préférences avec les défauts au premier appel."""
+    prefs = await community.get_or_create_preferences(session, user)
+    return PreferencesOut.model_validate(prefs)
+
+
+@router.patch("/me/preferences", response_model=PreferencesOut)
+async def patch_preferences(
+    payload: PreferencesPatchIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> PreferencesOut:
+    """Met à jour partiellement les préférences (seuls les champs fournis sont modifiés)."""
+    prefs = await community.update_preferences(session, user, payload)
+    return PreferencesOut.model_validate(prefs)
 
 
 @router.get("/leaderboard", response_model=list[LeaderboardEntryOut], response_model_exclude_none=True)

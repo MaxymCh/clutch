@@ -5,12 +5,13 @@
 import type {
   Group,
   LeaderboardEntry,
+  Preferences,
   Prediction,
   PredictionMap,
   User,
 } from '../types/community';
 import type { Game, Match, Team } from '../types/esports';
-import { apiGet, apiPost } from './client';
+import { apiGet, apiPatch, apiPost } from './client';
 
 /** GET /games */
 export const fetchGames = (): Promise<Game[]> => apiGet<Game[]>('/games');
@@ -53,3 +54,10 @@ export const fetchPredictions = (): Promise<PredictionMap> => apiGet<PredictionM
 /** POST /predictions — refusé par l'API si le match a déjà commencé */
 export const postPrediction = (matchId: string, prediction: Prediction): Promise<Prediction> =>
   apiPost<Prediction>('/predictions', { matchId, ...prediction });
+
+/** GET /me/preferences */
+export const fetchPreferences = (): Promise<Preferences> => apiGet<Preferences>('/me/preferences');
+
+/** PATCH /me/preferences — mise à jour partielle */
+export const patchPreferences = (patch: Partial<Preferences>): Promise<Preferences> =>
+  apiPatch<Preferences>('/me/preferences', patch);

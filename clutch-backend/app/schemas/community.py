@@ -9,6 +9,26 @@ from app.schemas.base import ApiModel
 Pick = Literal["a", "b"]
 
 
+class PreferencesOut(ApiModel):
+    """Miroir de `Preferences` (front)."""
+
+    theme: str
+    notifications: bool
+    onboarded: bool
+    fav_teams: list[str]  # JSON : favTeams
+    fav_games: list[str]  # JSON : favGames
+
+
+class PreferencesPatchIn(ApiModel):
+    """Body de PATCH /me/preferences — tous les champs sont optionnels."""
+
+    theme: str | None = None
+    notifications: bool | None = None
+    onboarded: bool | None = None
+    fav_teams: list[str] | None = None  # JSON : favTeams
+    fav_games: list[str] | None = None  # JSON : favGames
+
+
 class UserOut(ApiModel):
     """Miroir de `User` (front)."""
 

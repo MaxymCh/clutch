@@ -47,3 +47,10 @@ export const apiPost = <T>(path: string, body: unknown): Promise<T> =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+
+export const apiPatch = <T>(path: string, body: unknown): Promise<T> =>
+  request<T>(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });

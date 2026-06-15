@@ -40,6 +40,14 @@ export interface LeaderboardEntry {
   countryCode?: string;
 }
 
+export interface Preferences {
+  theme: 'light' | 'dark';
+  notifications: boolean;
+  onboarded: boolean;
+  favTeams: string[];
+  favGames: string[];
+}
+
 /** Pronostic local sur un match (stocké côté client en attendant l'API) */
 export interface Prediction {
   pick: 'a' | 'b';

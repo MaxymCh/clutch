@@ -8,7 +8,7 @@ d'ingestion ne touche JAMAIS à ces tables (et n'importe pas ce module).
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -28,6 +28,25 @@ class User(Base):
     # Pronostics gagnants d'affilée (bon vainqueur)
     streak: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    preferences: Mapped["UserPreferences | None"] = relationship(
+        back_populates="user", lazy="selectin", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class UserPreferences(Base):
+    """Préférences utilisateur synchronisées avec la base (thème, notifs, favoris)."""
+
+    __tablename__ = "user_preferences"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    theme: Mapped[str] = mapped_column(String(8), default="light")
+    notifications: Mapped[bool] = mapped_column(Boolean, default=True)
+    onboarded: Mapped[bool] = mapped_column(Boolean, default=False)
+    fav_teams: Mapped[list] = mapped_column(JSON, default=list)
+    fav_games: Mapped[list] = mapped_column(JSON, default=list)
+
+    user: Mapped[User] = relationship(back_populates="preferences")
 
 
 class Group(Base):
