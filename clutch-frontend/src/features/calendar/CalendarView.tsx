@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useGames } from '../../api/queries/useGames';
 import { useMatches } from '../../api/queries/useMatches';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -6,6 +6,7 @@ import type { Match } from '../../types/esports';
 import { FilterBar } from '../filters/FilterBar';
 import { useMatchFilters } from '../filters/useMatchFilters';
 import { MatchCard } from '../matches/MatchCard';
+import { PredictSheet } from '../prono/PredictSheet';
 import { usePredictions } from '../prono/predictionsContext';
 import { ALL_DAYS, DayTabs, type DayInfo } from './DayTabs';
 import { MatchSection } from './MatchSection';
@@ -20,6 +21,7 @@ export const CalendarView = () => {
   const { data: games } = useGames();
   const { game, team, day, setFilter } = useMatchFilters();
   const { predictedWinnerId } = usePredictions();
+  const [predicting, setPredicting] = useState<Match | null>(null);
 
   // Jours du tournoi dérivés des données, limités aux dates qui ont encore
   // au moins un match non passé (live / upcoming).
@@ -79,6 +81,8 @@ export const CalendarView = () => {
         gameTag={tagOf(m)}
         showDay={allDays}
         predictedWinnerId={predictedWinnerId(m)}
+        showPredictionFooter
+        onPredict={setPredicting}
       />
     ));
 
@@ -115,6 +119,8 @@ export const CalendarView = () => {
           </MatchSection>
         )}
       </div>
+
+      <PredictSheet match={predicting} onClose={() => setPredicting(null)} />
     </div>
   );
 };
