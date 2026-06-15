@@ -29,9 +29,11 @@ class Settings(BaseSettings):
     # Fuseau de SORTIE des champs date/time (stockage interne : UTC).
     display_tz: str = "Europe/Paris"
     cors_origins: list[str] = ["http://localhost:5173"]
-    session_secret: str = "changeme"
-    # true en prod (HTTPS) → cookie SameSite=None; Secure. false en dev → Lax.
-    cookie_secure: bool = False
+    # Secret JWT Supabase (dashboard Supabase → Settings → API → JWT Secret).
+    supabase_jwt_secret: str = "changeme"
+    # URL + clé anon Supabase (utilisées uniquement par POST /auth/token pour Swagger).
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
     scoring_interval_seconds: int = 60
 
 

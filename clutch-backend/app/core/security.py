@@ -1,74 +1,39 @@
-"""Session anonyme par cookie httpOnly signé (stratégie validée).
+"""Vérification des JWT Supabase — supporte HS256 et ES256 (Google OAuth)."""
 
-Pas d'écran de login côté front : le premier appel authentifié crée un
-utilisateur et pose le cookie. Le front devra envoyer `credentials: 'include'`
-au branchement (front et back sur des origines différentes).
-"""
-
-import secrets
-
-from fastapi import Request, Response
-from itsdangerous import BadSignature, URLSafeSerializer
+import jwt
+from jwt import PyJWKClient
+from fastapi import HTTPException
 
 from app.core.config import get_settings
 
-COOKIE_NAME = "clutch_session"
-# Durée de vie large : couvre tout le tournoi (180 jours).
-COOKIE_MAX_AGE = 180 * 24 * 3600
-
-_serializer = URLSafeSerializer(get_settings().session_secret, salt="clutch.session")
+_jwks_client: PyJWKClient | None = None
 
 
-def read_session_user_id(request: Request) -> str | None:
-    """Extrait l'id utilisateur du cookie signé, ou None si absent/invalide."""
-    raw = request.cookies.get(COOKIE_NAME)
-    if not raw:
-        return None
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        url = get_settings().supabase_url.rstrip("/")
+        _jwks_client = PyJWKClient(f"{url}/auth/v1/.well-known/jwks.json", cache_jwk_set=True)
+    return _jwks_client
+
+
+def verify_supabase_token(token: str) -> str:
+    """Vérifie le JWT Supabase et retourne l'id utilisateur (UUID sans tirets, 32 chars)."""
     try:
-        value = _serializer.loads(raw)
-    except BadSignature:
-        return None
-    return value if isinstance(value, str) else None
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["ES256", "HS256"],
+            audience="authenticated",
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expiré")
+    except jwt.PyJWTError as e:
+        raise HTTPException(status_code=401, detail="Token invalide")
 
+    supabase_id: str | None = payload.get("sub")
+    if not supabase_id:
+        raise HTTPException(status_code=401, detail="Token sans sujet")
 
-def write_session_cookie(response: Response, user_id: str) -> None:
-    """Pose le cookie de session signé.
-
-    SameSite=None + Secure quand COOKIE_SECURE=true (origines front/back
-    différentes en prod, HTTPS requis) ; Lax en dev local HTTP.
-    """
-    secure = get_settings().cookie_secure
-    response.set_cookie(
-        key=COOKIE_NAME,
-        value=_serializer.dumps(user_id),
-        max_age=COOKIE_MAX_AGE,
-        httponly=True,
-        secure=secure,
-        samesite="none" if secure else "lax",
-        path="/",
-    )
-
-
-def generate_pseudo() -> tuple[str, str]:
-    """Génère un pseudo lisible (`clutcher_8421`) et son tag d'avatar.
-
-    Le tag suit la convention du front (initiales en majuscules, 2 lettres).
-    """
-    number = secrets.randbelow(10_000)
-    name = f"clutcher_{number:04d}"
-    return name, "CL"
-
-
-def country_from_accept_language(header: str | None) -> str:
-    """Déduit un code pays ISO alpha-2 depuis Accept-Language, fallback FR.
-
-    Exemples : "fr-FR,fr;q=0.9" → FR ; "en-US,en" → US ; "fr" → FR (fallback).
-    """
-    if not header:
-        return "FR"
-    for part in header.split(","):
-        locale = part.split(";")[0].strip()
-        pieces = locale.replace("_", "-").split("-")
-        if len(pieces) >= 2 and len(pieces[1]) == 2 and pieces[1].isalpha():
-            return pieces[1].upper()
-    return "FR"
+    return supabase_id.replace("-", "")
