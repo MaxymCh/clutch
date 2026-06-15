@@ -33,6 +33,52 @@ export interface Team {
   logoUrl?: string;
 }
 
+/** Joueur d'un roster d'équipe (ingéré depuis Liquipedia) */
+export interface Player {
+  id: string;
+  /** Pseudo in-game affiché */
+  name: string;
+  /** Code pays ISO 3166-1 alpha-2 ("FR", "KR"…) */
+  countryCode: string;
+  /** Poste/rôle ("Duelist", "Mid", "IGL"…) — absent si inconnu */
+  role?: string;
+}
+
+/** Lien de diffusion d'un match (Twitch, YouTube…) */
+export interface Stream {
+  /** Plateforme lisible ("Twitch", "YouTube"…) */
+  platform: string;
+  url: string;
+}
+
+/** Stats d'un joueur sur une carte (scoreboard) */
+export interface MapPlayer {
+  /** Côté du joueur : 'a' = teamA, 'b' = teamB */
+  side: 'a' | 'b';
+  name: string;
+  countryCode: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  /** Average Combat Score (Valorant) */
+  acs?: number;
+  /** Average Damage per Round (Valorant / CS2) */
+  adr?: number;
+  /** % de headshots (Valorant) */
+  hs?: number;
+  /** Agent joué (Valorant) */
+  agent?: string;
+}
+
+/** Une étape du veto des cartes (ban / pick / decider) */
+export interface VetoStep {
+  order: number;
+  type: 'ban' | 'pick' | 'decider';
+  /** Équipe qui agit ('a'/'b') ; absent pour la decider */
+  team?: 'a' | 'b';
+  map: string;
+}
+
 /** Score d'une carte (map) jouée ou en cours dans un match */
 export interface MapScore {
   name: string;
@@ -40,6 +86,8 @@ export interface MapScore {
   scoreB: number;
   winner?: 'a' | 'b';
   live?: boolean;
+  /** Scoreboard par joueur (si disponible, ex. Valorant) */
+  players?: MapPlayer[];
 }
 
 export interface Match {
@@ -63,6 +111,10 @@ export interface Match {
   currentMapLabel?: string;
   /** Audience approximative, ex. "52K" (live uniquement) */
   viewers?: string;
+  /** Liens de diffusion (Twitch, YouTube…) — absent si non fourni */
+  streams?: Stream[];
+  /** Veto des cartes (ban/pick/decider) — absent si non fourni */
+  veto?: VetoStep[];
   /** % de la communauté qui pronostique l'équipe A gagnante */
   oddsA?: number;
 }

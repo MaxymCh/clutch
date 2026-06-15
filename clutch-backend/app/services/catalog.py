@@ -12,8 +12,16 @@ from sqlalchemy import asc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models.catalog import Game, Match, Team
-from app.schemas.esports import GameOut, MapScoreOut, MatchOut, TeamOut
+from app.models.catalog import Game, Match, Player, Team
+from app.schemas.esports import (
+    GameOut,
+    MapScoreOut,
+    MatchOut,
+    PlayerOut,
+    StreamOut,
+    TeamOut,
+    VetoStepOut,
+)
 
 
 def _display_tz() -> ZoneInfo:
@@ -43,6 +51,8 @@ def match_to_schema(match: Match) -> MatchOut:
         maps=[MapScoreOut.model_validate(m) for m in match.maps] if match.maps else None,
         current_map_label=match.current_map_label,
         viewers=match.viewers,
+        streams=[StreamOut.model_validate(s) for s in match.streams] if match.streams else None,
+        veto=[VetoStepOut.model_validate(v) for v in match.veto] if match.veto else None,
     )
 
 
@@ -61,6 +71,14 @@ async def list_teams(session: AsyncSession) -> list[TeamOut]:
 async def get_team(session: AsyncSession, team_id: str) -> TeamOut | None:
     team = await session.get(Team, team_id)
     return TeamOut.model_validate(team) if team else None
+
+
+async def list_players(session: AsyncSession, team_id: str) -> list[PlayerOut]:
+    """GET /teams/{id}/players — roster ingéré, dans l'ordre source."""
+    rows = await session.scalars(
+        select(Player).where(Player.team_id == team_id).order_by(asc(Player.sort_order))
+    )
+    return [PlayerOut.model_validate(p) for p in rows]
 
 
 async def list_matches(

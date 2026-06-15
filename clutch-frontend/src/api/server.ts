@@ -12,7 +12,7 @@ import type {
   PredictionMap,
   User,
 } from '../types/community';
-import type { Game, Match, Team } from '../types/esports';
+import type { Game, Match, Player, Team } from '../types/esports';
 import { apiGet, apiPatch, apiPost } from './client';
 
 /** GET /games */
@@ -23,6 +23,10 @@ export const fetchTeams = (): Promise<Team[]> => apiGet<Team[]>('/teams');
 
 /** GET /teams/:id */
 export const fetchTeam = (id: string): Promise<Team> => apiGet<Team>(`/teams/${encodeURIComponent(id)}`);
+
+/** GET /teams/:id/players — roster d'une équipe */
+export const fetchTeamPlayers = (id: string): Promise<Player[]> =>
+  apiGet<Player[]>(`/teams/${encodeURIComponent(id)}/players`);
 
 /** GET /matches */
 export const fetchMatches = (): Promise<Match[]> => apiGet<Match[]>('/matches');

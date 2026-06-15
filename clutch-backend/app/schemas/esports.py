@@ -33,6 +33,46 @@ class TeamOut(ApiModel):
     logo_url: str | None = None  # JSON : logoUrl
 
 
+class PlayerOut(ApiModel):
+    """Miroir de `Player` (front) — joueur d'un roster d'équipe."""
+
+    id: str
+    name: str
+    country_code: str  # JSON : countryCode
+    role: str | None = None
+
+
+class StreamOut(ApiModel):
+    """Miroir de `Stream` (front) — lien de diffusion d'un match."""
+
+    platform: str
+    url: str
+
+
+class VetoStepOut(ApiModel):
+    """Miroir de `VetoStep` (front) — une étape du veto des cartes."""
+
+    order: int
+    type: Literal["ban", "pick", "decider"]
+    team: Literal["a", "b"] | None = None  # None pour la decider
+    map: str
+
+
+class MapPlayerOut(ApiModel):
+    """Miroir de `MapPlayer` (front) — stats d'un joueur sur une carte."""
+
+    side: Literal["a", "b"]
+    name: str
+    country_code: str  # JSON : countryCode
+    kills: int
+    deaths: int
+    assists: int
+    acs: float | None = None  # Valorant
+    adr: float | None = None  # Valorant / CS2
+    hs: float | None = None  # % headshots (Valorant)
+    agent: str | None = None  # Valorant
+
+
 class MapScoreOut(ApiModel):
     """Miroir de `MapScore` (front)."""
 
@@ -41,6 +81,7 @@ class MapScoreOut(ApiModel):
     score_b: int  # JSON : scoreB
     winner: Literal["a", "b"] | None = None
     live: bool | None = None
+    players: list[MapPlayerOut] | None = None  # scoreboard par joueur
 
 
 class MatchOut(ApiModel):
@@ -65,3 +106,5 @@ class MatchOut(ApiModel):
     maps: list[MapScoreOut] | None = None
     current_map_label: str | None = None  # JSON : currentMapLabel
     viewers: str | None = None
+    streams: list[StreamOut] | None = None  # liens de diffusion (streamurls LPDB)
+    veto: list[VetoStepOut] | None = None  # veto des cartes (extradata.mapveto)

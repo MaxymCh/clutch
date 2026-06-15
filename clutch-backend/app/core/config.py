@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Tournois EWC 2026 cibles : {gameId front: pagename Liquipedia}.
     ewc_tournaments: dict[str, str] = {}
     ingest_interval_minutes: int = 15
+    # Retries sur 429 : 0 = échec immédiat (recommandé, le worker reprend au
+    # prochain run au lieu de dormir jusqu'à 60 s × N et d'épuiser le quota).
+    liquipedia_max_retries: int = 0
 
     # --- API ---
     # Fuseau de SORTIE des champs date/time (stockage interne : UTC).

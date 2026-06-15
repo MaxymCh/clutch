@@ -4,6 +4,28 @@
  */
 
 export interface paths {
+    "/auth/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Obtenir un JWT Supabase (Swagger uniquement)
+         * @description Échange un email/mot de passe Supabase contre un JWT Bearer.
+         *
+         *     Colle ensuite ce token dans le bouton **Authorize** en haut de cette page.
+         */
+        post: operations["get_token_auth_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games": {
         parameters: {
             query?: never;
@@ -56,6 +78,26 @@ export interface paths {
          * @description Sert `useTeam`.
          */
         get: operations["get_team_teams__team_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{team_id}/players": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Team Players
+         * @description Sert `useTeamPlayers` — roster d'une équipe (joueurs ingérés).
+         */
+        get: operations["get_team_players_teams__team_id__players_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -121,7 +163,35 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Patch Me
+         * @description Met à jour le pseudo de l'utilisateur.
+         */
+        patch: operations["patch_me_me_patch"];
+        trace?: never;
+    };
+    "/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Preferences
+         * @description Sert `usePreferences` — crée les préférences avec les défauts au premier appel.
+         */
+        get: operations["get_preferences_me_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Preferences
+         * @description Met à jour partiellement les préférences (seuls les champs fournis sont modifiés).
+         */
+        patch: operations["patch_preferences_me_preferences_patch"];
         trace?: never;
     };
     "/leaderboard": {
@@ -188,6 +258,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/groups/{group_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Group History
+         * @description Historique des matchs terminés pour les membres du groupe.
+         */
+        get: operations["get_group_history_groups__group_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/groups/join": {
         parameters: {
             query?: never;
@@ -232,6 +322,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/predictions/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Prediction History
+         * @description Historique des pronostics du user sur les matchs terminés.
+         */
+        get: operations["get_prediction_history_predictions_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -252,6 +362,8 @@ export interface components {
             short: string;
             /** Tag */
             tag: string;
+            /** Bgurl */
+            bgUrl: string;
         };
         /**
          * GroupCreateIn
@@ -268,6 +380,30 @@ export interface components {
              * @default 🎮
              */
             emoji: string;
+        };
+        /**
+         * GroupHistoryMatchOut
+         * @description Historique d'un match terminé pour les membres du groupe.
+         */
+        GroupHistoryMatchOut: {
+            match: components["schemas"]["MatchOut"];
+            /** Members */
+            members: components["schemas"]["GroupHistoryMemberOut"][];
+        };
+        /**
+         * GroupHistoryMemberOut
+         * @description Pronostic d'un membre du groupe sur un match terminé.
+         */
+        GroupHistoryMemberOut: {
+            /** Name */
+            name: string;
+            /** Tag */
+            tag: string;
+            /** Isme */
+            isMe?: boolean | null;
+            prediction?: components["schemas"]["PredictionOut"] | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * GroupJoinIn
@@ -329,6 +465,35 @@ export interface components {
             countryCode?: string | null;
         };
         /**
+         * MapPlayerOut
+         * @description Miroir de `MapPlayer` (front) — stats d'un joueur sur une carte.
+         */
+        MapPlayerOut: {
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "a" | "b";
+            /** Name */
+            name: string;
+            /** Countrycode */
+            countryCode: string;
+            /** Kills */
+            kills: number;
+            /** Deaths */
+            deaths: number;
+            /** Assists */
+            assists: number;
+            /** Acs */
+            acs?: number | null;
+            /** Adr */
+            adr?: number | null;
+            /** Hs */
+            hs?: number | null;
+            /** Agent */
+            agent?: string | null;
+        };
+        /**
          * MapScoreOut
          * @description Miroir de `MapScore` (front).
          */
@@ -343,6 +508,8 @@ export interface components {
             winner?: ("a" | "b") | null;
             /** Live */
             live?: boolean | null;
+            /** Players */
+            players?: components["schemas"]["MapPlayerOut"][] | null;
         };
         /**
          * MatchOut
@@ -388,6 +555,34 @@ export interface components {
             currentMapLabel?: string | null;
             /** Viewers */
             viewers?: string | null;
+            /** Streams */
+            streams?: components["schemas"]["StreamOut"][] | null;
+            /** Veto */
+            veto?: components["schemas"]["VetoStepOut"][] | null;
+        };
+        /**
+         * PlayerOut
+         * @description Miroir de `Player` (front) — joueur d'un roster d'équipe.
+         */
+        PlayerOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Countrycode */
+            countryCode: string;
+            /** Role */
+            role?: string | null;
+        };
+        /**
+         * PredictionHistoryItemOut
+         * @description Historique d'un prono utilisateur sur un match terminé.
+         */
+        PredictionHistoryItemOut: {
+            match: components["schemas"]["MatchOut"];
+            prediction: components["schemas"]["PredictionOut"];
+            /** Points */
+            points?: number | null;
         };
         /**
          * PredictionIn
@@ -422,6 +617,48 @@ export interface components {
             scoreB: number;
         };
         /**
+         * PreferencesOut
+         * @description Miroir de `Preferences` (front).
+         */
+        PreferencesOut: {
+            /** Theme */
+            theme: string;
+            /** Notifications */
+            notifications: boolean;
+            /** Onboarded */
+            onboarded: boolean;
+            /** Favteams */
+            favTeams: string[];
+            /** Favgames */
+            favGames: string[];
+        };
+        /**
+         * PreferencesPatchIn
+         * @description Body de PATCH /me/preferences — tous les champs sont optionnels.
+         */
+        PreferencesPatchIn: {
+            /** Theme */
+            theme?: string | null;
+            /** Notifications */
+            notifications?: boolean | null;
+            /** Onboarded */
+            onboarded?: boolean | null;
+            /** Favteams */
+            favTeams?: string[] | null;
+            /** Favgames */
+            favGames?: string[] | null;
+        };
+        /**
+         * StreamOut
+         * @description Miroir de `Stream` (front) — lien de diffusion d'un match.
+         */
+        StreamOut: {
+            /** Platform */
+            platform: string;
+            /** Url */
+            url: string;
+        };
+        /**
          * TeamOut
          * @description Miroir de `Team` (front).
          */
@@ -434,6 +671,25 @@ export interface components {
             tag: string;
             /** Countrycode */
             countryCode: string;
+            /** Logourl */
+            logoUrl?: string | null;
+        };
+        /** TokenIn */
+        TokenIn: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** TokenOut */
+        TokenOut: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
         };
         /**
          * UserOut
@@ -455,6 +711,14 @@ export interface components {
             /** Streak */
             streak: number;
         };
+        /**
+         * UserPatchIn
+         * @description Body de PATCH /me — seul le pseudo est modifiable.
+         */
+        UserPatchIn: {
+            /** Name */
+            name?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -468,6 +732,23 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VetoStepOut
+         * @description Miroir de `VetoStep` (front) — une étape du veto des cartes.
+         */
+        VetoStepOut: {
+            /** Order */
+            order: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ban" | "pick" | "decider";
+            /** Team */
+            team?: ("a" | "b") | null;
+            /** Map */
+            map: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -477,6 +758,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_token_auth_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_games_games_get: {
         parameters: {
             query?: never;
@@ -535,6 +849,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_team_players_teams__team_id__players_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerOut"][];
                 };
             };
             /** @description Validation Error */
@@ -634,6 +979,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    patch_me_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_me_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+        };
+    };
+    patch_preferences_me_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesPatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -753,6 +1184,37 @@ export interface operations {
             };
         };
     };
+    get_group_history_groups__group_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHistoryMatchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_join_group_groups_join_post: {
         parameters: {
             query?: never;
@@ -837,6 +1299,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prediction_history_predictions_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionHistoryItemOut"][];
                 };
             };
         };

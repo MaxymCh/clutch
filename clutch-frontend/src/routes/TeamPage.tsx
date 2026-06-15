@@ -8,6 +8,7 @@ import { PageSpinner } from '../components/ui/Spinner';
 import { MatchCard } from '../features/matches/MatchCard';
 import { usePredictions } from '../features/prono/predictionsContext';
 import { TeamHeader } from '../features/teams/TeamHeader';
+import { TeamRoster } from '../features/teams/TeamRoster';
 import type { Match } from '../types/esports';
 
 const byDateTime = (a: Match, b: Match) =>
@@ -60,6 +61,7 @@ export const TeamPage = () => {
             team={team}
             stats={{ wins, played: done.length, upcoming: next.length }}
           />
+          <TeamRoster team={team} />
           <div className="px-5">
             {section('Prochains matchs', next)}
             {section('Résultats récents', done)}

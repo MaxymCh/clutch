@@ -52,7 +52,36 @@ class Team(Base):
     logo_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # True quand tag/pays ont été enrichis via Liquipedia (gestion du quota).
     enriched: Mapped[bool] = mapped_column(Boolean, default=False)
+    # True quand le roster (joueurs) a été récupéré via /squadplayer.
+    roster_loaded: Mapped[bool] = mapped_column(Boolean, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    # Roster ingéré depuis Liquipedia (chargé explicitement, jamais en lazy async).
+    players: Mapped[list["Player"]] = relationship(
+        back_populates="team",
+        cascade="all, delete-orphan",
+        order_by="Player.sort_order",
+    )
+
+
+class Player(Base):
+    """Joueur d'une équipe (roster ingéré depuis Liquipedia /squadplayer)."""
+
+    __tablename__ = "players"
+
+    # Id stable dérivé de team_id + page/nick Liquipedia.
+    id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    team_id: Mapped[str] = mapped_column(ForeignKey("teams.id"), index=True)
+    # Pseudo in-game (affiché) ; nom réel non exposé par l'API.
+    name: Mapped[str] = mapped_column(String(128))
+    country_code: Mapped[str] = mapped_column(String(2), default="XX")
+    # Poste/rôle ("Duelist", "Mid", "IGL"…) si fourni par la source.
+    role: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    # Ordre d'affichage (ordre du roster source).
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    team: Mapped[Team] = relationship(back_populates="players")
 
 
 class Match(Base):
@@ -78,6 +107,10 @@ class Match(Base):
     maps: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     current_map_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
     viewers: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Liens de diffusion au format du front : [{platform, url}] (streamurls LPDB).
+    streams: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    # Veto des cartes : [{order, type, team, map}] (extradata.mapveto LPDB).
+    veto: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     # Spécificités par jeu sans casser le schéma commun
     extradata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -15,7 +15,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
-from app.models.catalog import Game, Match, Team, utcnow
+from app.models.catalog import Game, Match, Player, Team, utcnow
 from ingestion.liquipedia import LiquipediaGateway
 from ingestion.normalize import (
     GAME_CATALOG,
@@ -27,8 +27,11 @@ from ingestion.normalize import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger("clutch.worker")
 
-# Plafond d'appels d'enrichissement équipe par run (rate limit 60 req/h).
-MAX_ENRICH_CALLS_PER_RUN = 20
+# Plafond d'appels /teamtemplate par run (seul appel NON batchable : 1/équipe).
+# Le reste de l'ingestion tient en 3 requêtes batchées (1 /match multi-wiki,
+# 1 /team multi-wiki, 1 /squadplayer multi-wiki). Une fois les équipes enrichies
+# (flags persistés en base), un run ne coûte plus que le /match : ~4 req/h.
+MAX_ENRICH_CALLS_PER_RUN = 8
 
 _engine = create_engine(get_settings().database_url, pool_pre_ping=True)
 _SessionLocal = sessionmaker(_engine)
@@ -71,11 +74,32 @@ def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
     return data["id"]
 
 
+def upsert_players(session: Session, players: list[dict[str, Any]]) -> None:
+    """Ajoute/actualise les joueurs d'un roster (union au fil des matchs).
+
+    On n'efface jamais : le roster d'une équipe est l'ensemble des joueurs vus
+    en match. Upsert idempotent par id stable.
+    """
+    for data in players:
+        player = session.get(Player, data["id"])
+        if player is None:
+            session.add(Player(**data))
+        else:
+            player.name = data["name"]
+            if data["country_code"] != "XX":
+                player.country_code = data["country_code"]
+            player.updated_at = utcnow()
+
+
 def upsert_match(session: Session, normalized: dict[str, Any], wiki: str) -> None:
     """Écrit le match au format du contrat (équipes embarquées via FK)."""
     team_a_id = upsert_team(session, normalized.pop("team_a"), wiki)
     team_b_id = upsert_team(session, normalized.pop("team_b"), wiki)
     session.flush()  # garantit l'existence des équipes avant la FK
+
+    # Roster dérivé des joueurs alignés (déjà dans la réponse /match).
+    upsert_players(session, normalized.pop("team_a_players", []))
+    upsert_players(session, normalized.pop("team_b_players", []))
 
     match = session.get(Match, normalized["id"])
     values = {**normalized, "team_a_id": team_a_id, "team_b_id": team_b_id, "updated_at": utcnow()}
@@ -87,8 +111,17 @@ def upsert_match(session: Session, normalized: dict[str, Any], wiki: str) -> Non
 
 
 def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
-    """Complète tag (shortname /teamtemplate) et pays (/team locations) des
-    équipes nouvelles, sous plafond d'appels pour respecter le quota."""
+    """Complète pays/logo (/team) et tag (shortname /teamtemplate) des équipes
+    nouvelles, sous plafond d'appels pour respecter le quota.
+
+    Économies de quota :
+    - 1 SEULE requête /team multi-wiki pour toutes les équipes (pays + logo) ;
+    - /teamtemplate appelé UNIQUEMENT si /team n'a pas fourni de logo (le tag a
+      un fallback dérivé) — la plupart des équipes n'en ont donc pas besoin ;
+    - arrêt immédiat dès qu'un 429 est rencontré (préserve la fenêtre de quota).
+    """
+    if gateway.rate_limited:
+        return
     pending = list(session.scalars(
         select(Team).where(Team.enriched.is_(False) | Team.logo_url.is_(None))
     ))
@@ -96,51 +129,53 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
         return
 
     budget = MAX_ENRICH_CALLS_PER_RUN
-    by_wiki: dict[str, list[Team]] = {}
+    wikis = sorted({t.wiki for t in pending if t.wiki})
+    pagenames = sorted({t.name.replace(" ", "_") for t in pending if t.wiki})
+
+    # 1 SEULE requête multi-wiki pour TOUTES les équipes (pays + logo).
+    budget -= 1
+    by_key: dict[tuple[str, str], dict] = {}
+    try:
+        records = gateway.fetch_teams("|".join(wikis), pagenames)
+        # Clé (wiki, pagename) : un même pagename peut exister sur plusieurs wikis.
+        by_key = {
+            (str(r.get("wiki") or ""), str(r.get("pagename") or "")): r for r in records
+        }
+    except Exception as exc:
+        logger.info("Enrichissement /team non disponible : %s", exc)
+        if gateway.rate_limited:
+            return
+
     for team in pending:
-        if team.wiki:
-            by_wiki.setdefault(team.wiki, []).append(team)
+        record = by_key.get((team.wiki or "", team.name.replace(" ", "_")))
+        if record:
+            locations = record.get("locations") or {}
+            values = [v for v in locations.values() if isinstance(v, str)] if isinstance(locations, dict) else []
+            for value in values:
+                iso = country_to_iso(value, record.get("region"))
+                if iso != "XX":
+                    team.country_code = iso
+                    break
+            else:
+                team.country_code = country_to_iso(None, record.get("region"))
+            team.template = team.template or (record.get("template") or None)
+            if not team.logo_url:
+                team.logo_url = record.get("logourl") or None
 
-    for wiki, teams in by_wiki.items():
-        if budget <= 0:
-            break
-        # 1 requête batchée par wiki : fiches /team (nom complet + pays).
-        pagenames = [t.name.replace(" ", "_") for t in teams]
-        budget -= 1
-        by_pagename: dict[str, dict] = {}
-        try:
-            records = gateway.fetch_teams(wiki, pagenames)
-            by_pagename = {str(r.get("pagename") or ""): r for r in records}
-        except Exception as exc:
-            logger.info("Enrichissement /team %s non disponible : %s — fallback teamtemplate", wiki, exc)
-
-        for team in teams:
-            record = by_pagename.get(team.name.replace(" ", "_"))
-            if record:
-                locations = record.get("locations") or {}
-                values = [v for v in locations.values() if isinstance(v, str)] if isinstance(locations, dict) else []
-                for value in values:
-                    iso = country_to_iso(value, record.get("region"))
-                    if iso != "XX":
-                        team.country_code = iso
-                        break
-                else:
-                    team.country_code = country_to_iso(None, record.get("region"))
-                team.template = team.template or (record.get("template") or None)
+        # /teamtemplate (1 requête/équipe, NON batchable) UNIQUEMENT en dernier
+        # recours : quand le logo manque encore. On en profite pour le tag.
+        if not team.logo_url and team.template and budget > 0 and not gateway.rate_limited:
+            budget -= 1
+            template_data = gateway.fetch_team_template(team.wiki, team.template)
+            if template_data:
+                shortname = (template_data.get("shortname") or "").strip()
+                if shortname:
+                    team.tag = shortname.upper()[:16]
                 if not team.logo_url:
-                    team.logo_url = record.get("logourl") or None
+                    team.logo_url = template_data.get("imageurl") or None
 
-            # 1 requête /teamtemplate par équipe : shortname + image fallback.
-            if team.template and budget > 0:
-                budget -= 1
-                template_data = gateway.fetch_team_template(wiki, team.template)
-                logger.info("teamtemplate %s/%s → %s", wiki, team.template, template_data)
-                if template_data:
-                    shortname = (template_data.get("shortname") or "").strip()
-                    if shortname:
-                        team.tag = shortname.upper()[:16]
-                    if not team.logo_url:
-                        team.logo_url = template_data.get("imageurl") or None
+        # Marqué enrichi seulement si /team a répondu (sinon on retentera).
+        if record:
             team.enriched = True
             team.updated_at = utcnow()
 
@@ -174,6 +209,8 @@ def run_ingestion() -> None:
             except Exception as exc:
                 logger.error("Fetch matchs %s en échec : %s", pagename, exc)
                 errors += 1
+                if gateway.rate_limited:
+                    break  # quota atteint : inutile d'enchaîner les autres groupes
                 continue
 
             for record in records:
@@ -193,8 +230,14 @@ def run_ingestion() -> None:
                     logger.error("Upsert match %s en échec : %s", normalized.get("id"), exc)
                     errors += 1
 
+        # Les rosters sont dérivés des match2players pendant l'upsert des matchs
+        # (aucune requête dédiée). enrich_teams s'arrête net si un 429 survient.
         enrich_teams(session, gateway)
         session.commit()
+        if gateway.rate_limited:
+            logger.warning(
+                "Quota Liquipedia atteint (429) : run écourté, reprise au prochain cycle."
+            )
         logger.info(
             "Ingestion terminée : %d match(s) upsertés, %d ignoré(s), %d erreur(s), %d appel(s) API Liquipedia.",
             ingested, skipped, errors, gateway.calls,
