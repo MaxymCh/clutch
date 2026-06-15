@@ -22,12 +22,15 @@ export const useGroupHistory = (id: string) =>
     queryFn: () => fetchGroupHistory(id),
   });
 
-/** Création d'un groupe — invalide la liste après succès. */
+/** Création d'un groupe — met à jour le cache après succès. */
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createGroup,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['groups'] }),
+    onSuccess: (group) => {
+      queryClient.setQueryData(['groups', group.id], group);
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
   });
 };
 
@@ -36,6 +39,9 @@ export const useJoinGroup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: joinGroup,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['groups'] }),
+    onSuccess: (group) => {
+      queryClient.setQueryData(['groups', group.id], group);
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
   });
 };

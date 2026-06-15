@@ -263,6 +263,11 @@ async def create_group(
     team_id: str | None = None,
 ) -> Group:
     """Réplique du comportement mock front : nom vide → « Mon groupe »."""
+    game_id = game_id.strip() if game_id else None
+    team_id = team_id.strip() if team_id else None
+    if game_id and team_id:
+        team_id = None  # jeu prioritaire si les deux sont fournis
+
     code = _generate_group_code()
     # Collision de code improbable mais possible : on retire jusqu'à unicité.
     while await session.scalar(select(Group.id).where(Group.code == code)):

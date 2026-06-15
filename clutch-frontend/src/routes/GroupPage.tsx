@@ -1,20 +1,37 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useGames } from '../api/queries/useGames';
 import { useGroup, useGroupHistory } from '../api/queries/useGroups';
+import { useMatches } from '../api/queries/useMatches';
 import { Page } from '../components/layout/Page';
 import { TopBar } from '../components/layout/TopBar';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { PageSpinner } from '../components/ui/Spinner';
+import { filterMatchesByGroupScope } from '../features/filters/filterMatches';
 import { GroupScopeBadge } from '../features/prono/GroupScope';
+import { PredictCard } from '../features/prono/PredictCard';
+import { PredictSheet } from '../features/prono/PredictSheet';
 import { RankRow } from '../features/prono/RankRow';
+import type { Match } from '../types/esports';
 
 /** Détail d'un groupe de pronostics : /prono/group/:id */
 export const GroupPage = () => {
   const { id = '' } = useParams();
   const { data: group, isPending, isError } = useGroup(id);
   const { data: history = [], isPending: isHistoryPending } = useGroupHistory(id);
+  const { data: matches, isPending: isMatchesPending } = useMatches();
+  const { data: games } = useGames();
   const [copied, setCopied] = useState(false);
+  const [predicting, setPredicting] = useState<Match | null>(null);
+
+  const upcoming = useMemo(() => {
+    if (!group) return [];
+    return filterMatchesByGroupScope(
+      (matches ?? []).filter((m) => m.status === 'upcoming'),
+      group,
+    );
+  }, [matches, group]);
 
   const copy = () => {
     if (!group) return;
@@ -24,6 +41,7 @@ export const GroupPage = () => {
   };
 
   const ranked = group ? [...group.members].sort((a, b) => b.points - a.points) : [];
+  const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
 
   return (
     <Page>
@@ -81,12 +99,27 @@ export const GroupPage = () => {
           </div>
 
           <h2 className="mt-7 mb-1 text-[11px] font-bold tracking-[.1em] text-dim uppercase">
+            À pronostiquer <span className="text-faint">{upcoming.length}</span>
+          </h2>
+          {isMatchesPending && <p className="py-4 text-sm font-medium text-dim">Chargement…</p>}
+          {!isMatchesPending && upcoming.length === 0 && (
+            <p className="py-4 text-sm font-medium text-dim">
+              Aucun match à venir dans le périmètre de ce groupe.
+            </p>
+          )}
+          <div className="flex flex-col gap-3">
+            {upcoming.map((m) => (
+              <PredictCard key={m.id} match={m} gameTag={tagOf(m)} onPredict={setPredicting} />
+            ))}
+          </div>
+
+          <h2 className="mt-7 mb-1 text-[11px] font-bold tracking-[.1em] text-dim uppercase">
             Historique des matchs terminés
           </h2>
           {isHistoryPending && <p className="py-4 text-sm font-medium text-dim">Chargement…</p>}
-          {!isHistoryPending && history.length === 0 && (
+            {!isHistoryPending && history.length === 0 && (
             <p className="py-4 text-sm font-medium text-dim">
-              Aucun match terminé pour l'instant.
+              {"Aucun match terminé pour l'instant."}
             </p>
           )}
           <div className="space-y-3 pb-6">
@@ -142,6 +175,8 @@ export const GroupPage = () => {
           </div>
         </div>
       )}
+
+      <PredictSheet match={predicting} onClose={() => setPredicting(null)} />
     </Page>
   );
 };
