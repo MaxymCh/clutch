@@ -21,7 +21,8 @@ export const CalendarView = () => {
   const { game, team, day, setFilter } = useMatchFilters();
   const { predictedWinnerId } = usePredictions();
 
-  // Jours du tournoi dérivés des données (avec compteur de matchs live)
+  // Jours du tournoi dérivés des données, limités aux dates qui ont encore
+  // au moins un match non passé (live / upcoming).
   const days = useMemo<DayInfo[]>(() => {
     const dates = [...new Set((matches ?? []).map((m) => m.date))].sort();
     return dates.map((date) => ({
@@ -29,6 +30,11 @@ export const CalendarView = () => {
       liveCount: (matches ?? []).filter((m) => m.date === date && m.status === 'live').length,
     }));
   }, [matches]);
+  const activeDays = useMemo(() => {
+    return days.filter((dayInfo) =>
+      (matches ?? []).some((match) => match.date === dayInfo.date && match.status !== 'done'),
+    );
+  }, [days, matches]);
 
   if (isPending) return <PageSpinner />;
   if (isError || days.length === 0)
@@ -37,13 +43,22 @@ export const CalendarView = () => {
         Impossible de charger le calendrier. Réessaie plus tard.
       </p>
     );
+  if (activeDays.length === 0)
+    return (
+      <p className="px-5 py-16 text-center text-sm font-medium text-dim">
+        Aucun jour de match à venir pour le moment.
+      </p>
+    );
 
-  // Jour sélectionné : « Tous » (URL ?day=all) → URL → jour avec du live → premier
-  const fallbackDay = days.find((d) => d.liveCount > 0)?.date ?? days[0].date;
+  const hasUnplayedMatches = (date: string) =>
+    (matches ?? []).some((m) => m.date === date && m.status !== 'done');
+  // Jour sélectionné : « Tous » (URL ?day=all) → URL valide non totalement jouée →
+  // premier jour avec au moins un match non terminé → premier jour du tournoi.
+  const fallbackDay = activeDays[0]?.date ?? days.find((d) => hasUnplayedMatches(d.date))?.date ?? days[0].date;
   const allDays = day === ALL_DAYS;
   const selectedDay = allDays
     ? ALL_DAYS
-    : days.some((d) => d.date === day)
+    : activeDays.some((d) => d.date === day) && hasUnplayedMatches(day ?? '')
       ? (day as string)
       : fallbackDay;
 
@@ -69,7 +84,7 @@ export const CalendarView = () => {
 
   return (
     <div>
-      <DayTabs withAll days={days} value={selectedDay} onChange={(d) => setFilter('day', d)} />
+      <DayTabs withAll days={activeDays} value={selectedDay} onChange={(d) => setFilter('day', d)} />
       <div className="h-3.5" />
       <FilterBar />
       <div className="mt-3.5 h-0.5 bg-line" />
