@@ -48,7 +48,7 @@ const TeamLine = ({
   const won = done && score !== undefined && score === Math.max(match.scoreA ?? 0, match.scoreB ?? 0);
   return (
     <div className="flex items-center gap-2.5 py-1">
-      <TeamLogo tag={team.tag} size={22} />
+      <TeamLogo tag={team.tag} size={22} logoUrl={team.logoUrl} />
       <span
         className={`min-w-0 flex-1 truncate text-[16px] leading-tight tracking-tight ${
           done && !won ? 'font-medium text-dim' : won ? 'font-bold text-ink' : 'font-medium text-ink'

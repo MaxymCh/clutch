@@ -20,7 +20,7 @@ const TeamPick = ({ team, odds, on, onSelect }: TeamPickProps) => (
       on ? 'border-accent bg-accent/5' : 'border-line-2 bg-surface'
     }`}
   >
-    <TeamLogo tag={team.tag} size={48} solid={on} />
+    <TeamLogo tag={team.tag} size={48} solid={on} logoUrl={team.logoUrl} />
     <span className={`text-center text-sm leading-tight font-bold ${on ? 'text-accent' : 'text-ink'}`}>
       {team.name}
     </span>

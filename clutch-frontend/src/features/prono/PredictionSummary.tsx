@@ -16,7 +16,7 @@ export const PredictionSummary = ({ match }: { match: Match }) => {
         <span className="text-xs font-semibold text-dim">+25 pts si score exact</span>
       </div>
       <div className="mt-2.5 flex items-center gap-2.5">
-        <TeamLogo tag={team.tag} size={26} solid />
+        <TeamLogo tag={team.tag} size={26} solid logoUrl={team.logoUrl} />
         <span className="text-base font-bold text-ink">{team.name}</span>
         <span className="ml-auto text-base font-semibold tabular-nums text-dim">
           {pred.scoreA}–{pred.scoreB}

@@ -96,7 +96,7 @@ export const TeamsPage = () => {
             return (
               <div key={team.id} className="flex items-center gap-3 rounded-3xl border border-line-2 bg-surface p-3.5">
                 <Link to={`/team/${team.id}`} className="flex flex-1 items-center gap-3">
-                  <TeamLogo tag={team.tag} size={40} />
+                  <TeamLogo tag={team.tag} size={40} logoUrl={team.logoUrl} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[15px] font-bold text-ink">{team.name}</div>
                     <div className="mt-0.5 text-[12px] font-semibold text-dim">

@@ -89,7 +89,9 @@ def upsert_match(session: Session, normalized: dict[str, Any], wiki: str) -> Non
 def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
     """Complète tag (shortname /teamtemplate) et pays (/team locations) des
     équipes nouvelles, sous plafond d'appels pour respecter le quota."""
-    pending = list(session.scalars(select(Team).where(Team.enriched.is_(False))))
+    pending = list(session.scalars(
+        select(Team).where(Team.enriched.is_(False) | Team.logo_url.is_(None))
+    ))
     if not pending:
         return
 
@@ -125,15 +127,20 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
                 else:
                     team.country_code = country_to_iso(None, record.get("region"))
                 team.template = team.template or (record.get("template") or None)
+                if not team.logo_url:
+                    team.logo_url = record.get("logourl") or None
 
-            # 1 requête /teamtemplate par équipe : shortname = tag du front.
+            # 1 requête /teamtemplate par équipe : shortname + image fallback.
             if team.template and budget > 0:
                 budget -= 1
                 template_data = gateway.fetch_team_template(wiki, team.template)
+                logger.info("teamtemplate %s/%s → %s", wiki, team.template, template_data)
                 if template_data:
                     shortname = (template_data.get("shortname") or "").strip()
                     if shortname:
                         team.tag = shortname.upper()[:16]
+                    if not team.logo_url:
+                        team.logo_url = template_data.get("imageurl") or None
             team.enriched = True
             team.updated_at = utcnow()
 

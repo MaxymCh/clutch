@@ -37,7 +37,7 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
               to={`/team/${t.id}`}
               className="inline-flex items-center gap-2 rounded-full border border-line-2 bg-surface py-1 pr-3.5 pl-1 transition-transform active:scale-95"
             >
-              <TeamLogo tag={t.tag} size={22} />
+              <TeamLogo tag={t.tag} size={22} logoUrl={t.logoUrl} />
               <span className="text-[13px] font-semibold text-ink">{t.name}</span>
             </Link>
           ))}
@@ -76,7 +76,7 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
               to={`/team/${t.id}`}
               className="flex w-full items-center gap-3 border-b border-line px-1 py-2.5 transition-colors active:bg-surface-2"
             >
-              <TeamLogo tag={t.tag} size={34} />
+              <TeamLogo tag={t.tag} size={34} logoUrl={t.logoUrl} />
               <span className="flex-1 text-[15px] font-semibold text-ink">{t.name}</span>
               <span className="text-[13px]">{countryFlag(t.countryCode)}</span>
               <Icon name="chevron" size={15} className="text-faint" />

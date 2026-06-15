@@ -29,6 +29,8 @@ export interface Team {
   tag: string;
   /** Code pays ISO 3166-1 alpha-2 ("FR", "KR"…) */
   countryCode: string;
+  /** URL du logo Liquipedia (Special:FilePath) — absent si pas encore enrichi */
+  logoUrl?: string;
 }
 
 /** Score d'une carte (map) jouée ou en cours dans un match */

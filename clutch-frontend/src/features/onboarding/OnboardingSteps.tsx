@@ -157,7 +157,7 @@ export const TeamsStep = () => {
                 on ? 'border-accent bg-accent/8' : 'border-line-2 bg-surface'
               }`}
             >
-              <TeamLogo tag={team.tag} size={36} solid={on} />
+              <TeamLogo tag={team.tag} size={36} solid={on} logoUrl={team.logoUrl} />
               <div className="min-w-0 flex-1">
                 <p className={`truncate text-[12px] font-bold leading-tight ${on ? 'text-accent' : 'text-ink'}`}>
                   {team.name}

@@ -30,6 +30,7 @@ class TeamOut(ApiModel):
     name: str
     tag: str
     country_code: str  # JSON : countryCode
+    logo_url: str | None = None  # JSON : logoUrl
 
 
 class MapScoreOut(ApiModel):

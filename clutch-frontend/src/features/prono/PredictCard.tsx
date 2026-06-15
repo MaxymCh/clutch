@@ -29,7 +29,7 @@ export const PredictCard = ({ match, gameTag, onPredict }: PredictCardProps) => 
         </span>
       </div>
       <div className="flex items-center gap-2.5">
-        <TeamLogo tag={match.teamA.tag} size={26} />
+        <TeamLogo tag={match.teamA.tag} size={26} logoUrl={match.teamA.logoUrl} />
         <span className="min-w-0 flex-1 truncate text-sm leading-tight font-bold text-ink">
           {match.teamA.name}
         </span>
@@ -37,7 +37,7 @@ export const PredictCard = ({ match, gameTag, onPredict }: PredictCardProps) => 
         <span className="min-w-0 flex-1 truncate text-right text-sm leading-tight font-bold text-ink">
           {match.teamB.name}
         </span>
-        <TeamLogo tag={match.teamB.tag} size={26} />
+        <TeamLogo tag={match.teamB.tag} size={26} logoUrl={match.teamB.logoUrl} />
       </div>
       <div className="mt-3">
         {pred && pickedTeam ? (

@@ -43,7 +43,7 @@ export const TeamFilter = ({ value, onChange }: TeamFilterProps) => {
               active ? 'border-ink bg-ink' : 'border-line-2'
             }`}
           >
-            <TeamLogo tag={team.tag} size={20} solid={active} />
+            <TeamLogo tag={team.tag} size={20} solid={active} logoUrl={team.logoUrl} />
             <span className={`text-xs font-semibold ${active ? 'text-surface' : 'text-dim'}`}>
               {team.tag}
             </span>

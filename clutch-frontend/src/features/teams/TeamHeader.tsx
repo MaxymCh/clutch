@@ -16,7 +16,7 @@ export const TeamHeader = ({ team, stats }: TeamHeaderProps) => {
   const following = favTeams.includes(team.id);
   return (
   <div className="flex flex-col items-center gap-3 border-b border-line px-5 pt-4 pb-6">
-    <TeamLogo tag={team.tag} size={76} />
+    <TeamLogo tag={team.tag} size={76} logoUrl={team.logoUrl} />
     <div className="text-center">
       <h1 className="text-[23px] leading-tight font-bold tracking-tight text-ink">{team.name}</h1>
       <p className="mt-1.5 text-[13px] font-semibold text-dim">

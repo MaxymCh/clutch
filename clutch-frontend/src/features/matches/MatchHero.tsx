@@ -21,7 +21,7 @@ const Side = ({ team, score, won, done }: { team: Team; score?: number; won: boo
     to={`/team/${team.id}`}
     className="flex flex-1 flex-col items-center gap-2.5 transition-transform active:scale-[.97]"
   >
-    <TeamLogo tag={team.tag} size={62} />
+    <TeamLogo tag={team.tag} size={62} logoUrl={team.logoUrl} />
     <span className="text-center text-[15px] leading-tight font-bold tracking-tight text-ink">
       {team.name}
     </span>

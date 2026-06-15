@@ -38,7 +38,7 @@ MATCH_QUERY_FIELDS = ",".join(
     ]
 )
 
-TEAM_QUERY_FIELDS = "pagename,name,template,locations,region"
+TEAM_QUERY_FIELDS = "pagename,name,template,locations,region,logourl"
 
 
 class LiquipediaGateway:

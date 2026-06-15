@@ -49,6 +49,7 @@ class Team(Base):
     # Template Liquipedia (source du tag via /teamtemplate) et wiki d'origine.
     template: Mapped[str | None] = mapped_column(String(64), nullable=True)
     wiki: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # True quand tag/pays ont été enrichis via Liquipedia (gestion du quota).
     enriched: Mapped[bool] = mapped_column(Boolean, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
