@@ -1,0 +1,364 @@
+{
+  "info": {
+    "_postman_id": "clutch-liquipedia-lpdb-v3",
+    "name": "Liquipedia LPDB v3 — Clutch",
+    "description": "Collection des appels Liquipedia utilisés par le worker d'ingestion Clutch.\n\n**Prérequis**\n- Clé API : https://liquipedia.net/api-terms-of-use\n- User-Agent **descriptif avec contact** (UA génériques bloqués)\n- Rate limit : **60 requêtes/heure**\n\n**Variables à renseigner** (collection ou environnement Postman) :\n- `LIQUIPEDIA_API_KEY`\n- `LIQUIPEDIA_USER_AGENT` (ex. `Clutch/0.1 (projet etudiant ETNA; contact: vous@email.com)`)\n\n**Wikis Clutch** : `valorant`, `leagueoflegends`, `counterstrike`, `dota2`, `rocketleague`, `overwatch`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.liquipedia.net/api/v3"
+    },
+    {
+      "key": "LIQUIPEDIA_API_KEY",
+      "value": ""
+    },
+    {
+      "key": "LIQUIPEDIA_USER_AGENT",
+      "value": "Clutch/0.1 (projet etudiant ETNA; contact: maxym0308@gmail.com)"
+    },
+    {
+      "key": "tournamentPagename",
+      "value": "Esports_World_Cup/2025"
+    },
+    {
+      "key": "wiki",
+      "value": "valorant"
+    },
+    {
+      "key": "teamTemplate",
+      "value": "team falcons"
+    },
+    {
+      "key": "teamPagename",
+      "value": "Team_Falcons"
+    }
+  ],
+  "item": [
+    {
+      "name": "Ingestion Clutch",
+      "description": "Requêtes identiques à `ingestion/liquipedia.py` et `scripts/find_pagenames.py`.",
+      "item": [
+        {
+          "name": "Matchs tournoi (multi-wikis)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/match?wiki=counterstrike|leagueoflegends|valorant&conditions=[[parent::{{tournamentPagename}}]] OR [[pagename::{{tournamentPagename}}]]&query=match2id,pagename,parent,date,dateexact,finished,status,winner,bestof,section,tournament,tickername,match2opponents,match2games,extradata&limit=1000&offset=0&order=date ASC",
+              "host": ["{{baseUrl}}"],
+              "path": ["match"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "counterstrike|leagueoflegends|valorant",
+                  "description": "Pipe = multi-wikis en 1 requête (économie quota)"
+                },
+                {
+                  "key": "conditions",
+                  "value": "[[parent::{{tournamentPagename}}]] OR [[pagename::{{tournamentPagename}}]]",
+                  "description": "Matchs sur la page tournoi + sous-pages (brackets)"
+                },
+                {
+                  "key": "query",
+                  "value": "match2id,pagename,parent,date,dateexact,finished,status,winner,bestof,section,tournament,tickername,match2opponents,match2games,extradata",
+                  "description": "Ne pas inclure wiki (404) — renvoyé automatiquement"
+                },
+                {
+                  "key": "limit",
+                  "value": "1000"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "order",
+                  "value": "date ASC"
+                }
+              ]
+            },
+            "description": "Équivalent `LiquipediaGateway.fetch_tournament_matches()`.\n\nExemples `tournamentPagename` :\n- `Esports_World_Cup/2025` (données réelles)\n- `Esports_World_Cup/2026` (squelette bracket, dates `0000-01-01`)"
+          },
+          "response": []
+        },
+        {
+          "name": "Tournois tier 1 (find_pagenames)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tournament?wiki=valorant|leagueoflegends|counterstrike&conditions=[[liquipediatier::1]]&query=pagename,name,startdate,enddate,liquipediatier&limit=1000&offset=0&order=startdate DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournament"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "valorant|leagueoflegends|counterstrike"
+                },
+                {
+                  "key": "conditions",
+                  "value": "[[liquipediatier::1]]"
+                },
+                {
+                  "key": "query",
+                  "value": "pagename,name,startdate,enddate,liquipediatier"
+                },
+                {
+                  "key": "limit",
+                  "value": "1000"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "order",
+                  "value": "startdate DESC"
+                }
+              ]
+            },
+            "description": "Équivalent `scripts/find_pagenames.py` — chercher le bon `pagename` pour `EWC_TOURNAMENTS` dans le `.env`."
+          },
+          "response": []
+        },
+        {
+          "name": "Équipes (enrichissement batch)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/team?wiki={{wiki}}&conditions=[[pagename::{{teamPagename}}]]&query=pagename,name,template,locations,region&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["team"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "{{wiki}}"
+                },
+                {
+                  "key": "conditions",
+                  "value": "[[pagename::{{teamPagename}}]]",
+                  "description": "Plusieurs équipes : [[pagename::Team_A]] OR [[pagename::Team_B]]"
+                },
+                {
+                  "key": "query",
+                  "value": "pagename,name,template,locations,region"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Équivalent `LiquipediaGateway.fetch_teams()` — pays + template."
+          },
+          "response": []
+        },
+        {
+          "name": "Team template (shortname / tag)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/teamtemplate?wiki={{wiki}}&template={{teamTemplate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["teamtemplate"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "{{wiki}}"
+                },
+                {
+                  "key": "template",
+                  "value": "{{teamTemplate}}",
+                  "description": "Nom du template Liquipedia (ex. team falcons)"
+                }
+              ]
+            },
+            "description": "Équivalent `LiquipediaGateway.fetch_team_template()` — récupère `shortname` pour le tag affiché."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exemples rapides",
+      "item": [
+        {
+          "name": "EWC 2025 — matchs Valorant seul",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/match?wiki=valorant&conditions=[[parent::Esports_World_Cup/2025]] OR [[pagename::Esports_World_Cup/2025]]&query=match2id,date,finished,match2opponents,section&limit=20&order=date DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["match"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "valorant"
+                },
+                {
+                  "key": "conditions",
+                  "value": "[[parent::Esports_World_Cup/2025]] OR [[pagename::Esports_World_Cup/2025]]"
+                },
+                {
+                  "key": "query",
+                  "value": "match2id,date,finished,match2opponents,section"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "order",
+                  "value": "date DESC"
+                }
+              ]
+            },
+            "description": "Tournoi avec de vraies dates — utile pour tester l'ingestion."
+          },
+          "response": []
+        },
+        {
+          "name": "EWC 2026 — squelette (placeholders)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Apikey {{LIQUIPEDIA_API_KEY}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{LIQUIPEDIA_USER_AGENT}} (via Postman)",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/match?wiki=valorant&conditions=[[parent::Esports_World_Cup/2026]] OR [[pagename::Esports_World_Cup/2026]]&query=match2id,date,match2opponents&limit=5&order=date ASC",
+              "host": ["{{baseUrl}}"],
+              "path": ["match"],
+              "query": [
+                {
+                  "key": "wiki",
+                  "value": "valorant"
+                },
+                {
+                  "key": "conditions",
+                  "value": "[[parent::Esports_World_Cup/2026]] OR [[pagename::Esports_World_Cup/2026]]"
+                },
+                {
+                  "key": "query",
+                  "value": "match2id,date,match2opponents"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "order",
+                  "value": "date ASC"
+                }
+              ]
+            },
+            "description": "Montre pourquoi le worker ignore les matchs : `date=0000-01-01`, équipes vides."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
