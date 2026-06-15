@@ -107,12 +107,12 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
         # 1 requête batchée par wiki : fiches /team (nom complet + pays).
         pagenames = [t.name.replace(" ", "_") for t in teams]
         budget -= 1
+        by_pagename: dict[str, dict] = {}
         try:
             records = gateway.fetch_teams(wiki, pagenames)
+            by_pagename = {str(r.get("pagename") or ""): r for r in records}
         except Exception as exc:
-            logger.error("Enrichissement /team %s en échec : %s", wiki, exc)
-            continue
-        by_pagename = {str(r.get("pagename") or ""): r for r in records}
+            logger.info("Enrichissement /team %s non disponible : %s — fallback teamtemplate", wiki, exc)
 
         for team in teams:
             record = by_pagename.get(team.name.replace(" ", "_"))
