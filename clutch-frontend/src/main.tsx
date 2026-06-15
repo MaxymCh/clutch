@@ -14,6 +14,7 @@ import { MatchPage } from './routes/MatchPage';
 import { ProfilePage } from './routes/ProfilePage';
 import { PronoPage } from './routes/PronoPage';
 import { SearchPage } from './routes/SearchPage';
+import { TeamsPage } from './routes/TeamsPage';
 import { TeamPage } from './routes/TeamPage';
 
 // Client TanStack Query — toutes les données serveur passent par lui
@@ -39,6 +40,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/prono/group/new" element={<GroupNewPage />} />
             <Route path="/prono/group/:id" element={<GroupPage />} />
             <Route path="/prono/classement" element={<LeaderboardPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

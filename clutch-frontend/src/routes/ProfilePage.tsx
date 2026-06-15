@@ -85,7 +85,7 @@ export const ProfilePage = () => {
           sub="Avant les matchs de mes équipes"
           right={<Toggle on={notifications} onChange={setNotifications} label="Notifications" />}
         />
-        <Row icon="shield" label="Équipes suivies" sub={followedTags} right={chevron} to="/search" />
+        <Row icon="shield" label="Équipes suivies" sub={followedTags} right={chevron} to="/teams" />
 
         <SectionTitle>Application</SectionTitle>
         <Row icon="trophy" label="Mes pronostics" sub="Historique & points" right={chevron} to="/prono" />
