@@ -380,6 +380,16 @@ export interface components {
              * @default 🎮
              */
             emoji: string;
+            /**
+             * Scopemode
+             * @default all
+             * @enum {string}
+             */
+            scopeMode: "all" | "game" | "team";
+            /** Gameid */
+            gameId?: string | null;
+            /** Teamid */
+            teamId?: string | null;
         };
         /**
          * GroupHistoryMatchOut
@@ -440,6 +450,10 @@ export interface components {
             emoji: string;
             /** Code */
             code: string;
+            /** Gameid */
+            gameId?: string | null;
+            /** Teamid */
+            teamId?: string | null;
             /** Members */
             members: components["schemas"]["GroupMemberOut"][];
         };
