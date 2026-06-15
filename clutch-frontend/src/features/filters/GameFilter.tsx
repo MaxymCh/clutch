@@ -1,3 +1,4 @@
+import { GameLogo } from '../../components/ui/GameLogo';
 import { useGames } from '../../api/queries/useGames';
 
 type GameFilterProps = {
@@ -10,25 +11,32 @@ export const GameFilter = ({ value, onChange }: GameFilterProps) => {
   const { data: games } = useGames();
   if (!games) return <div className="h-7" />; // réserve la hauteur pendant le chargement
 
-  const items = [{ id: null as string | null, label: 'Tous' }].concat(
-    games.map((g) => ({ id: g.id as string | null, label: g.short })),
-  );
-
   return (
     <div className="scrollbar-none flex gap-4.5 overflow-x-auto px-5" role="tablist">
-      {items.map(({ id, label }) => {
-        const active = id === value;
+      <button
+        role="tab"
+        aria-selected={value === null}
+        onClick={() => onChange(null)}
+        className={`shrink-0 cursor-pointer border-b-2 pb-2 text-sm leading-none tracking-tight ${
+          value === null ? 'border-accent font-bold text-ink' : 'border-transparent font-medium text-dim'
+        }`}
+      >
+        Tous
+      </button>
+      {games.map((g) => {
+        const active = g.id === value;
         return (
           <button
-            key={label}
+            key={g.id}
             role="tab"
             aria-selected={active}
-            onClick={() => onChange(id)}
-            className={`shrink-0 cursor-pointer border-b-2 pb-2 text-sm leading-none tracking-tight ${
+            onClick={() => onChange(g.id)}
+            className={`flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 pb-2 text-sm leading-none tracking-tight ${
               active ? 'border-accent font-bold text-ink' : 'border-transparent font-medium text-dim'
             }`}
           >
-            {label}
+            <GameLogo tag={g.tag} size={16} logoUrl={g.logoUrl} />
+            {g.short}
           </button>
         );
       })}

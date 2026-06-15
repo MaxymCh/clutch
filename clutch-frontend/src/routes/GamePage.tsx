@@ -3,6 +3,7 @@ import { useGames } from '../api/queries/useGames';
 import { useMatches } from '../api/queries/useMatches';
 import { Page } from '../components/layout/Page';
 import { TopBar } from '../components/layout/TopBar';
+import { GameLogo } from '../components/ui/GameLogo';
 import { PageSpinner } from '../components/ui/Spinner';
 import { MatchesByDay } from '../features/matches/MatchesByDay';
 
@@ -25,9 +26,7 @@ export const GamePage = () => {
       {game && (
         <>
           <div className="flex items-center gap-3 border-b border-line px-5 pt-3 pb-4.5">
-            <span className="grid size-13 place-items-center rounded-[15px] bg-ink text-[15px] font-extrabold text-surface">
-              {game.tag.slice(0, 3)}
-            </span>
+            <GameLogo tag={game.tag} size={52} logoUrl={game.logoUrl} />
             <div>
               <div className="text-[21px] leading-none font-bold tracking-tight text-ink">
                 {game.name}

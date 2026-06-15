@@ -34,6 +34,8 @@ class Game(Base):
     sort_order: Mapped[int] = mapped_column(Integer)
     # URL de l'image de fond des cartes jeu (chemin local ou CDN)
     bg_url: Mapped[str] = mapped_column(String(256), default="")
+    # Icône/logo du jeu (chemin local, ex. /games/val-icon.png)
+    logo_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
 
 class Team(Base):

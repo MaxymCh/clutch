@@ -21,6 +21,7 @@ class GameOut(ApiModel):
     short: str
     tag: str
     bg_url: str  # JSON : bgUrl
+    logo_url: str | None = None  # JSON : logoUrl
 
 
 class TeamOut(ApiModel):

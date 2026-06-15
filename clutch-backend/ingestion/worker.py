@@ -41,13 +41,14 @@ def ensure_games(session: Session) -> None:
         if game is None:
             session.add(Game(**row))
         else:
-            game.name, game.short, game.tag, game.sort_order, game.bg_url = (
-                row["name"], row["short"], row["tag"], row["sort_order"], row["bg_url"],
+            game.name, game.short, game.tag, game.sort_order, game.bg_url, game.logo_url = (
+                row["name"], row["short"], row["tag"], row["sort_order"], row["bg_url"], row.get("logo_url"),
             )
 
 
-def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
+def upsert_team(session: Session, data: dict[str, Any], wiki: str) -> str:
     """Crée/actualise une équipe SANS écraser un enrichissement existant."""
+    logo_url = data.get("logo_url") or None
     team = session.get(Team, data["id"])
     if team is None:
         session.add(
@@ -58,6 +59,7 @@ def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
                 country_code="XX",  # enrichi plus tard via /team (locations)
                 template=data.get("template") or None,
                 wiki=wiki,
+                logo_url=logo_url,
                 enriched=False,
             )
         )
@@ -65,6 +67,8 @@ def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
         team.name = data["name"]
         team.wiki = team.wiki or wiki
         team.template = team.template or (data.get("template") or None)
+        if logo_url and not team.logo_url:
+            team.logo_url = logo_url
         if not team.enriched:
             team.tag = data["tag"]
         team.updated_at = utcnow()
@@ -101,18 +105,30 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
         if team.wiki:
             by_wiki.setdefault(team.wiki, []).append(team)
 
+    # Phase 1 — batch /team par wiki (logos + pays) AVANT les /teamtemplate.
+    # Évite qu'un wiki entier soit sauté quand le quota est mangé par un autre.
+    wiki_batches: dict[str, dict[str, dict]] = {}
     for wiki, teams in by_wiki.items():
         if budget <= 0:
-            break
-        # 1 requête batchée par wiki : fiches /team (nom complet + pays).
+            logger.warning(
+                "Quota enrichissement : batch /team ignoré pour %s (%d équipe(s))",
+                wiki, len(teams),
+            )
+            continue
         pagenames = [t.name.replace(" ", "_") for t in teams]
         budget -= 1
-        by_pagename: dict[str, dict] = {}
         try:
             records = gateway.fetch_teams(wiki, pagenames)
-            by_pagename = {str(r.get("pagename") or ""): r for r in records}
+            wiki_batches[wiki] = {str(r.get("pagename") or ""): r for r in records}
         except Exception as exc:
             logger.info("Enrichissement /team %s non disponible : %s — fallback teamtemplate", wiki, exc)
+            wiki_batches[wiki] = {}
+
+    # Phase 2 — appliquer les fiches + shortname via /teamtemplate.
+    for wiki, teams in by_wiki.items():
+        if wiki not in wiki_batches:
+            continue
+        by_pagename = wiki_batches[wiki]
 
         for team in teams:
             record = by_pagename.get(team.name.replace(" ", "_"))
@@ -130,11 +146,9 @@ def enrich_teams(session: Session, gateway: LiquipediaGateway) -> None:
                 if not team.logo_url:
                     team.logo_url = record.get("logourl") or None
 
-            # 1 requête /teamtemplate par équipe : shortname + image fallback.
             if team.template and budget > 0:
                 budget -= 1
                 template_data = gateway.fetch_team_template(wiki, team.template)
-                logger.info("teamtemplate %s/%s → %s", wiki, team.template, template_data)
                 if template_data:
                     shortname = (template_data.get("shortname") or "").strip()
                     if shortname:

@@ -17,12 +17,12 @@ from typing import Any
 # Copie de GAMES/GAME_ORDER du front (src/api/mocks/catalog.ts).
 
 GAME_CATALOG: list[dict[str, Any]] = [
-    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0, "bg_url": "/games/val.jpg"},
-    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1, "bg_url": "/games/lol.jpg"},
-    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2, "bg_url": "/games/cs2.jpg"},
-    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3, "bg_url": "/games/dota.jpg"},
-    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4, "bg_url": "/games/rl.jpg"},
-    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5, "bg_url": "/games/ow.jpg"},
+    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0, "bg_url": "/games/bg/val.jpg", "logo_url": "/games/icons/val.png"},
+    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1, "bg_url": "/games/bg/lol.jpg", "logo_url": "/games/icons/lol.png"},
+    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2, "bg_url": "/games/bg/cs2.jpg", "logo_url": "/games/icons/cs2.png"},
+    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3, "bg_url": "/games/bg/dota.jpg", "logo_url": "/games/icons/dota.png"},
+    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4, "bg_url": "/games/bg/rl.jpg", "logo_url": "/games/icons/rl.png"},
+    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5, "bg_url": "/games/bg/ow.jpg", "logo_url": "/games/icons/ow.png"},
 ]
 
 # GameId front → wiki Liquipedia
@@ -170,7 +170,7 @@ def compute_status(finished: Any, start_utc: datetime | None, now: datetime) -> 
     return "upcoming"
 
 
-def normalize_opponent(opponent: dict[str, Any]) -> dict[str, str] | None:
+def normalize_opponent(opponent: dict[str, Any]) -> dict[str, Any] | None:
     """match2opponents[i] → équipe du contrat (id, name, tag provisoire).
 
     None si l'opposant n'est pas encore connu (placeholder Liquipedia) :
@@ -183,11 +183,14 @@ def normalize_opponent(opponent: dict[str, Any]) -> dict[str, str] | None:
     if not name and not template:
         return None
     display = name or template
+    teamtemplate = opponent.get("teamtemplate")
+    logo_url = teamtemplate.get("imageurl") if isinstance(teamtemplate, dict) else None
     return {
         "id": slugify(template or name),
         "name": display,
         "tag": derive_tag(display),
         "template": template,
+        "logo_url": logo_url,
     }
 
 

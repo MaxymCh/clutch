@@ -21,6 +21,8 @@ export interface Game {
   tag: string;
   /** URL de l'image de fond de la carte jeu */
   bgUrl: string;
+  /** Icône/logo du jeu (chemin local, ex. /games/val-icon.png) */
+  logoUrl?: string;
 }
 
 export interface Team {

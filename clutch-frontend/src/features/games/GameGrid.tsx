@@ -3,6 +3,7 @@ import { useGames } from '../../api/queries/useGames';
 import { useMatches } from '../../api/queries/useMatches';
 import { LiveDot } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
+import { GameLogo } from '../../components/ui/GameLogo';
 import { PageSpinner } from '../../components/ui/Spinner';
 
 /** Grille des jeux de la compétition, avec compteur de matchs / live. */
@@ -20,9 +21,7 @@ export const GameGrid = () => {
           <Link key={game.id} to={`/game/${game.id}`}>
             <Card className="flex flex-col gap-3.5 p-4 transition-transform active:scale-[.97]">
               <div className="flex items-start justify-between">
-                <span className="grid size-10.5 place-items-center rounded-xl bg-ink text-[13px] font-extrabold tracking-wide text-surface">
-                  {game.tag.slice(0, 3)}
-                </span>
+                <GameLogo tag={game.tag} size={42} logoUrl={game.logoUrl} />
                 {liveCount > 0 && <LiveDot size={8} />}
               </div>
               <div>
