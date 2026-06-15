@@ -11,16 +11,23 @@ stages:
   - test
   - deploy
 
+# Les tests tournent dans des conteneurs root (runner shell) → des fichiers
+# root sont créés dans le dossier de build. On désactive le `git clean`
+# automatique de GitLab (sinon "permission denied" au pipeline suivant).
+variables:
+  GIT_CLEAN_FLAGS: none
+
 # --- Qualité backend -------------------------------------------------------
+# Runner "shell" sur le VPS : les jobs tournent sur l'hôte (pas de pip/node).
+# On exécute donc les tests DANS un conteneur Docker lancé par le runner.
 test:backend:
   stage: test
-  image: python:3.12-slim
-  before_script:
-    - cd clutch-backend
-    - pip install --no-cache-dir -e ".[dev]"
+  tags:
+    - vps
   script:
-    - ruff check .
-    - pytest            # SQLite/aiosqlite : aucun Postgres requis en CI
+    - >
+      docker run --rm -v "$CI_PROJECT_DIR:/src" -w /src/clutch-backend python:3.12-slim
+      sh -c "pip install --no-cache-dir -e '.[dev]' && ruff check . && pytest"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH
@@ -28,13 +35,12 @@ test:backend:
 # --- Qualité frontend ------------------------------------------------------
 test:frontend:
   stage: test
-  image: node:22-alpine
-  before_script:
-    - cd clutch-frontend
-    - npm ci
+  tags:
+    - vps
   script:
-    - npm run lint
-    - npm run build     # vérifie que le build de prod passe (tsc + vite)
+    - >
+      docker run --rm -v "$CI_PROJECT_DIR:/src" -w /src/clutch-frontend node:22-alpine
+      sh -c "npm ci && npm run lint && npm run build"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH
