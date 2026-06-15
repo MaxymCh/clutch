@@ -8,7 +8,6 @@ from app.schemas.base import ApiModel
 from app.schemas.esports import MatchOut
 
 Pick = Literal["a", "b"]
-GroupScopeMode = Literal["all", "game", "team"]
 
 
 class PreferencesOut(ApiModel):
@@ -65,8 +64,8 @@ class GroupOut(ApiModel):
     name: str
     emoji: str
     code: str
-    game_id: str | None = None  # JSON : gameId
-    team_id: str | None = None  # JSON : teamId
+    game_ids: list[str] | None = None  # JSON : gameIds
+    is_admin: bool | None = None  # JSON : isAdmin — true si l'utilisateur est le créateur
     members: list[GroupMemberOut]
 
 
@@ -117,13 +116,11 @@ class GroupHistoryMatchOut(ApiModel):
 
 
 class GroupCreateIn(ApiModel):
-    """Body de POST /groups (cf. mock front : { name, emoji })."""
+    """Body de POST /groups (cf. mock front : { name, emoji, gameIds? })."""
 
     name: str = ""
     emoji: str = "🎮"
-    scope_mode: GroupScopeMode = "all"  # JSON : scopeMode
-    game_id: str | None = None  # JSON : gameId
-    team_id: str | None = None  # JSON : teamId
+    game_ids: list[str] | None = None  # JSON : gameIds — liste de jeux du groupe
 
 
 class GroupJoinIn(ApiModel):

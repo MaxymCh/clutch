@@ -1,55 +1,53 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCreateGroup, useJoinGroup } from '../../api/queries/useGroups';
-import { Button } from '../../components/ui/Button';
-import { Icon } from '../../components/ui/Icon';
-import { Seg } from '../../components/ui/Seg';
-import { GameFilter } from '../filters/GameFilter';
-import { TeamFilter } from '../filters/TeamFilter';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGames } from "../../api/queries/useGames";
+import { useCreateGroup, useJoinGroup } from "../../api/queries/useGroups";
+import { Button } from "../../components/ui/Button";
+import { Icon } from "../../components/ui/Icon";
 
-const EMOJIS = ['🔥', '🏆', '⚡', '🎮', '💥', '🦅', '👑', '🚀'];
-
-type ScopeMode = 'all' | 'game' | 'team';
+const EMOJIS = ["🔥", "🏆", "⚡", "🎮", "💥", "🦅", "👑", "🚀"];
 
 const Label = ({ children }: { children: string }) => (
-  <label className="text-xs font-bold tracking-wide text-dim uppercase">{children}</label>
+  <label className="text-xs font-bold tracking-wide text-dim uppercase">
+    {children}
+  </label>
 );
 
 const inputClass =
-  'mt-2 w-full rounded-[13px] border-[1.5px] border-line-2 bg-surface px-4 py-3 text-[15px] font-semibold text-ink outline-none placeholder:text-faint focus:border-accent';
+  "mt-2 w-full rounded-[13px] border-[1.5px] border-line-2 bg-surface px-4 py-3 text-[15px] font-semibold text-ink outline-none placeholder:text-faint focus:border-accent";
 
-/** Formulaire de création de groupe (nom + emblème + périmètre + aperçu). */
+/** Formulaire de création de groupe (nom + emblème + jeux). */
 export const CreateGroupForm = () => {
   const navigate = useNavigate();
   const { mutate: create, isPending } = useCreateGroup();
-  const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('🔥');
-  const [scopeMode, setScopeMode] = useState<ScopeMode>('all');
-  const [gameId, setGameId] = useState<string | null>(null);
-  const [teamId, setTeamId] = useState<string | null>(null);
+  const { data: games } = useGames();
+  const [name, setName] = useState("");
+  const [emoji, setEmoji] = useState("🔥");
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
 
-  const scopeLabel =
-    scopeMode === 'game'
-      ? 'Matchs du jeu sélectionné'
-      : scopeMode === 'team'
-        ? "Matchs de l'équipe sélectionnée"
-        : 'Tous les matchs';
+  const allGames = selectedGameIds.length === 0;
 
-  const canSubmit =
-    scopeMode === 'all' ||
-    (scopeMode === 'game' && gameId !== null) ||
-    (scopeMode === 'team' && teamId !== null);
+  const toggleGame = (id: string) => {
+    setSelectedGameIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const scopeLabel = allGames
+    ? "Tous les jeux"
+    : (games ?? [])
+        .filter((g) => selectedGameIds.includes(g.id))
+        .map((g) => g.short)
+        .join(", ");
 
   const submit = () =>
     create(
       {
         name,
         emoji,
-        scopeMode,
-        gameId: scopeMode === 'game' ? (gameId ?? undefined) : undefined,
-        teamId: scopeMode === 'team' ? (teamId ?? undefined) : undefined,
+        gameIds: allGames ? undefined : selectedGameIds,
       },
-      { onSuccess: (g) => navigate(`/prono/group/${g.id}`, { replace: true }) },
+      { onSuccess: (g) => navigate(`/ligues/${g.id}`, { replace: true }) },
     );
 
   return (
@@ -71,7 +69,9 @@ export const CreateGroupForm = () => {
               key={e}
               onClick={() => setEmoji(e)}
               className={`size-12 cursor-pointer rounded-[13px] border-[1.5px] text-2xl transition-transform active:scale-95 ${
-                emoji === e ? 'border-accent bg-accent/8' : 'border-line-2 bg-surface'
+                emoji === e
+                  ? "border-accent bg-accent/8"
+                  : "border-line-2 bg-surface"
               }`}
             >
               {e}
@@ -80,42 +80,69 @@ export const CreateGroupForm = () => {
         </div>
       </div>
       <div>
-        <Label>Périmètre des matchs</Label>
-        <div className="mt-2">
-          <Seg
-            full
-            value={scopeMode}
-            onChange={setScopeMode}
-            options={[
-              { value: 'all', label: 'Tous' },
-              { value: 'game', label: 'Jeu' },
-              { value: 'team', label: 'Équipe' },
-            ]}
-          />
+        <Label>Jeux du groupe</Label>
+        <p className="mt-1 text-[12px] font-medium text-dim">
+          Sélectionne les jeux pour ce groupe, ou laisse vide pour tous.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {(games ?? []).map((g) => {
+            const active = selectedGameIds.includes(g.id);
+            return (
+              <button
+                key={g.id}
+                onClick={() => toggleGame(g.id)}
+                className={`relative cursor-pointer overflow-hidden rounded-2xl border-2 transition-all active:scale-95 ${
+                  active ? "border-accent" : "border-line"
+                }`}
+              >
+                {g.bgUrl ? (
+                  <img
+                    src={g.bgUrl}
+                    alt={g.name}
+                    className={`h-16 w-full object-cover ${active ? "brightness-75" : "brightness-50"}`}
+                  />
+                ) : (
+                  <div className="flex h-16 w-full items-center justify-center bg-ink/10">
+                    <span className="text-xs font-bold text-ink">{g.tag}</span>
+                  </div>
+                )}
+                <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold text-white drop-shadow-sm">
+                  {g.short}
+                </span>
+                {active && (
+                  <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-accent">
+                    <Icon
+                      name="check"
+                      size={12}
+                      strokeWidth={2.5}
+                      className="text-white"
+                    />
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        {scopeMode === 'game' && (
-          <div className="-mx-5 mt-3">
-            <GameFilter value={gameId} onChange={setGameId} />
-          </div>
-        )}
-        {scopeMode === 'team' && (
-          <div className="-mx-5 mt-3">
-            <TeamFilter value={teamId} onChange={setTeamId} />
-          </div>
-        )}
       </div>
       <div className="flex items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3.5">
         <span className="text-3xl leading-none">{emoji}</span>
         <div>
-          <div className="text-base font-bold text-ink">{name.trim() || 'Mon groupe'}</div>
+          <div className="text-base font-bold text-ink">
+            {name.trim() || "Mon groupe"}
+          </div>
           <div className="mt-1 text-xs font-semibold text-dim">
             {scopeLabel} · tu seras le 1ᵉʳ membre
           </div>
         </div>
       </div>
-      <Button full size="lg" onClick={submit} disabled={isPending || !canSubmit}>
+      <Button
+        full
+        size="lg"
+        onClick={submit}
+        disabled={isPending || !name.trim()}
+      >
         <Icon name="plus" size={17} strokeWidth={2.2} />
-        {isPending ? 'Création…' : 'Créer le groupe'}
+        {isPending ? "Création…" : "Créer le groupe"}
       </Button>
     </div>
   );
@@ -125,10 +152,12 @@ export const CreateGroupForm = () => {
 export const JoinGroupForm = () => {
   const navigate = useNavigate();
   const { mutate: join, isPending } = useJoinGroup();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
 
   const submit = () =>
-    join(code, { onSuccess: (g) => navigate(`/prono/group/${g.id}`, { replace: true }) });
+    join(code, {
+      onSuccess: (g) => navigate(`/ligues/${g.id}`, { replace: true }),
+    });
 
   return (
     <div className="mt-5 flex flex-col gap-5">
@@ -145,9 +174,14 @@ export const JoinGroupForm = () => {
         <Icon name="info" size={16} className="mt-0.5 shrink-0 text-accent" />
         Demande son code à un ami déjà dans le groupe pour le rejoindre.
       </div>
-      <Button full size="lg" onClick={submit} disabled={isPending || code.trim() === ''}>
+      <Button
+        full
+        size="lg"
+        onClick={submit}
+        disabled={isPending || code.trim() === ""}
+      >
         <Icon name="users" size={17} strokeWidth={2.1} />
-        {isPending ? 'Connexion…' : 'Rejoindre le groupe'}
+        {isPending ? "Connexion…" : "Rejoindre le groupe"}
       </Button>
     </div>
   );

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.catalog import Game, Match, Team
+from app.models.catalog import Match
 from app.services.catalog import match_to_schema
 from app.models.community import Group, GroupMembership, Prediction, User, UserPreferences
 from app.schemas.community import (
@@ -120,16 +120,16 @@ class GroupError(Exception):
 
 def match_matches_group_scope(match: Match, group: Group) -> bool:
     """True si le match entre dans le périmètre du groupe (tous si aucun filtre)."""
-    if group.game_id and match.game_id != group.game_id:
-        return False
-    if group.team_id and match.team_a_id != group.team_id and match.team_b_id != group.team_id:
-        return False
+    if group.game_ids_csv:
+        allowed_games = group.game_ids_csv.split(",")
+        if match.game_id not in allowed_games:
+            return False
     return True
 
 
 async def _member_group_points(session: AsyncSession, user_id: str, group: Group) -> int:
     """Points d'un membre dans le périmètre du groupe (global si pas de filtre)."""
-    if not group.game_id and not group.team_id:
+    if not group.game_ids_csv:
         user = await session.get(User, user_id)
         return user.points if user else 0
 
@@ -163,13 +163,15 @@ async def group_to_schema(session: AsyncSession, group: Group, current_user_id: 
         m.user_id: await _member_group_points(session, m.user_id, group) for m in members
     }
     members = sorted(members, key=lambda m: member_points[m.user_id], reverse=True)
+    # L'admin est le premier membre (le créateur — joined_at le plus ancien)
+    admin_id = min(group.memberships, key=lambda m: m.joined_at).user_id if group.memberships else None
     return GroupOut(
         id=group.id,
         name=group.name,
         emoji=group.emoji,
         code=group.code,
-        game_id=group.game_id,
-        team_id=group.team_id,
+        game_ids=group.game_ids_csv.split(",") if group.game_ids_csv else None,
+        is_admin=True if admin_id == current_user_id else None,
         members=[
             GroupMemberOut(
                 name=m.user.name,
@@ -268,46 +270,20 @@ async def create_group(
     user: User,
     name: str,
     emoji: str,
-    scope_mode: str = "all",
-    game_id: str | None = None,
-    team_id: str | None = None,
+    game_ids: list[str] | None = None,
 ) -> Group:
-    """Réplique du comportement mock front : nom vide → « Mon groupe »."""
-    scope_mode = (scope_mode or "all").strip().lower()
-    game_id = game_id.strip() if game_id else None
-    team_id = team_id.strip() if team_id else None
+    """Crée un groupe. game_ids = liste de jeux du périmètre (vide/None = tous)."""
+    # Nettoyer et valider les game_ids
+    cleaned_ids: list[str] = []
+    if game_ids:
+        for gid in game_ids:
+            gid = gid.strip()
+            if gid:
+                cleaned_ids.append(gid)
 
-    if scope_mode == "all":
-        if game_id and not team_id:
-            scope_mode = "game"
-        elif team_id and not game_id:
-            scope_mode = "team"
-        elif game_id and team_id:
-            raise GroupError(422, "Choisis soit un jeu, soit une équipe")
-
-    if scope_mode not in {"all", "game", "team"}:
-        raise GroupError(422, "Périmètre de groupe invalide")
-
-    if scope_mode == "all":
-        game_id = None
-        team_id = None
-    elif scope_mode == "game":
-        if not game_id:
-            raise GroupError(422, "Choisis un jeu pour ce périmètre")
-        game_exists = await session.scalar(select(Game.id).where(Game.id == game_id))
-        if not game_exists:
-            raise GroupError(422, f"Jeu introuvable : {game_id}")
-        team_id = None
-    else:
-        if not team_id:
-            raise GroupError(422, "Choisis une équipe pour ce périmètre")
-        team_exists = await session.scalar(select(Team.id).where(Team.id == team_id))
-        if not team_exists:
-            raise GroupError(422, f"Équipe introuvable : {team_id}")
-        game_id = None
+    game_ids_csv = ",".join(cleaned_ids) if cleaned_ids else None
 
     code = _generate_group_code()
-    # Collision de code improbable mais possible : on retire jusqu'à unicité.
     while await session.scalar(select(Group.id).where(Group.code == code)):
         code = _generate_group_code()
 
@@ -316,8 +292,7 @@ async def create_group(
         name=name.strip() or "Mon groupe",
         emoji=emoji or "🎮",
         code=code,
-        game_id=game_id,
-        team_id=team_id,
+        game_ids_csv=game_ids_csv,
     )
     session.add(group)
     session.add(GroupMembership(group=group, user_id=user.id))
@@ -336,6 +311,56 @@ async def join_group(session: AsyncSession, user: User, code: str) -> Group | No
         session.add(GroupMembership(group_id=group.id, user_id=user.id))
         await session.commit()
         await session.refresh(group)
+    return group
+
+
+def _get_admin_id(group: Group) -> str | None:
+    """Le créateur (joined_at le plus ancien) est l'admin."""
+    if not group.memberships:
+        return None
+    return min(group.memberships, key=lambda m: m.joined_at).user_id
+
+
+async def delete_group(session: AsyncSession, user: User, group_id: str) -> None:
+    """Supprime un groupe (admin uniquement)."""
+    group = await session.get(Group, group_id)
+    if not group:
+        raise GroupError(404, "Ligue introuvable")
+    if _get_admin_id(group) != user.id:
+        raise GroupError(403, "Seul l'administrateur peut supprimer la ligue")
+    await session.delete(group)
+    await session.commit()
+
+
+async def leave_group(session: AsyncSession, user: User, group_id: str) -> None:
+    """Quitter un groupe. L'admin ne peut pas quitter (il doit supprimer)."""
+    group = await session.get(Group, group_id)
+    if not group:
+        raise GroupError(404, "Ligue introuvable")
+    if _get_admin_id(group) == user.id:
+        raise GroupError(400, "L'administrateur ne peut pas quitter la ligue. Supprimez-la à la place.")
+    membership = next((m for m in group.memberships if m.user_id == user.id), None)
+    if not membership:
+        raise GroupError(400, "Vous n'êtes pas membre de cette ligue")
+    await session.delete(membership)
+    await session.commit()
+
+
+async def remove_member(session: AsyncSession, user: User, group_id: str, member_tag: str) -> Group:
+    """Expulser un membre (admin uniquement, ne peut pas s'expulser soi-même)."""
+    group = await session.get(Group, group_id)
+    if not group:
+        raise GroupError(404, "Ligue introuvable")
+    if _get_admin_id(group) != user.id:
+        raise GroupError(403, "Seul l'administrateur peut expulser un membre")
+    membership = next((m for m in group.memberships if m.user.tag == member_tag), None)
+    if not membership:
+        raise GroupError(404, "Membre introuvable")
+    if membership.user_id == user.id:
+        raise GroupError(400, "Vous ne pouvez pas vous expulser vous-même")
+    await session.delete(membership)
+    await session.commit()
+    await session.refresh(group)
     return group
 
 

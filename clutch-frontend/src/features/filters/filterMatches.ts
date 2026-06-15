@@ -1,5 +1,5 @@
-import type { Match } from '../../types/esports';
-import type { Group } from '../../types/community';
+import type { Match } from "../../types/esports";
+import type { Group } from "../../types/community";
 
 /** Filtre client par jeu et/ou équipe (même logique que le calendrier). */
 export const filterMatches = (
@@ -13,8 +13,13 @@ export const filterMatches = (
     return true;
   });
 
-/** Filtre selon le périmètre d'un groupe (gameId / teamId optionnels). */
+/** Filtre selon le périmètre d'un groupe (gameIds optionnels). */
 export const filterMatchesByGroupScope = (
   matches: Match[],
-  group: Pick<Group, 'gameId' | 'teamId'>,
-): Match[] => filterMatches(matches, group.gameId ?? null, group.teamId ?? null);
+  group: Pick<Group, "gameIds">,
+): Match[] => {
+  if (group.gameIds && group.gameIds.length > 0) {
+    return matches.filter((m) => group.gameIds!.includes(m.gameId));
+  }
+  return matches;
+};

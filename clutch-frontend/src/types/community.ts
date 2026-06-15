@@ -29,10 +29,10 @@ export interface Group {
   emoji: string;
   /** Code d'invitation partageable */
   code: string;
-  /** Périmètre optionnel : seuls les matchs de ce jeu comptent */
-  gameId?: string;
-  /** Périmètre optionnel : seuls les matchs impliquant cette équipe comptent */
-  teamId?: string;
+  /** Périmètre optionnel : seuls les matchs de ces jeux comptent (vide = tous) */
+  gameIds?: string[];
+  /** true si l'utilisateur courant est l'admin (créateur) */
+  isAdmin?: boolean;
   members: GroupMember[];
 }
 
@@ -45,7 +45,7 @@ export interface LeaderboardEntry {
 }
 
 export interface Preferences {
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   notifications: boolean;
   onboarded: boolean;
   favTeams: string[];
@@ -54,7 +54,7 @@ export interface Preferences {
 
 /** Pronostic local sur un match (stocké côté client en attendant l'API) */
 export interface Prediction {
-  pick: 'a' | 'b';
+  pick: "a" | "b";
   scoreA: number;
   scoreB: number;
 }
@@ -62,7 +62,7 @@ export interface Prediction {
 export type PredictionMap = Record<string, Prediction>;
 
 export interface PredictionHistoryItem {
-  match: import('./esports').Match;
+  match: import("./esports").Match;
   prediction: Prediction;
   points?: number;
 }
@@ -77,6 +77,6 @@ export interface GroupHistoryMember {
 }
 
 export interface GroupHistoryMatch {
-  match: import('./esports').Match;
+  match: import("./esports").Match;
   members: GroupHistoryMember[];
 }

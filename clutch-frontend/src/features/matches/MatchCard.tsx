@@ -66,18 +66,19 @@ export const MatchCard = ({
       className={`rounded-2xl border border-line bg-surface-2 p-4 ${live ? "relative overflow-hidden" : ""}`}
     >
       {/* barre latérale orange = signal live */}
-      {live && (
-        <span className="absolute top-0 bottom-0 left-0 w-1 bg-live" />
-      )}
+      {live && <span className="absolute top-0 bottom-0 left-0 w-1 bg-live" />}
 
-      <Link
-        to={`/match/${match.id}`}
-        className="block"
-      >
+      <Link to={`/match/${match.id}`} className="block">
         {/* Méta : jeu · phase · statut */}
         <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
           <span className="flex items-center gap-1.5">
-            {gameTag}
+            <Link
+              to={`/game/${match.gameId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-accent transition-colors hover:text-accent/80"
+            >
+              {gameTag}
+            </Link>
             <span className="size-0.75 rounded-full bg-dim" />
             {match.phase}
             {match.bestOf && (
@@ -172,9 +173,14 @@ export const MatchCard = ({
           {pred && pickedTeam ? (
             <div className="flex flex-wrap items-center justify-center gap-2.5">
               <div className="inline-flex items-center gap-2 rounded-xl bg-accent/8 px-3 py-1.5">
-                <Icon name="check" size={14} strokeWidth={2.4} className="text-accent" />
+                <Icon
+                  name="check"
+                  size={14}
+                  strokeWidth={2.4}
+                  className="text-accent"
+                />
                 <span className="text-[13px] font-bold text-accent">
-                  {pickedTeam.tag} {pred.scoreA}–{pred.scoreB}
+                  {pickedTeam.name} {pred.scoreA}–{pred.scoreB}
                 </span>
                 {match.status === "done" && points !== null && (
                   <span className="rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent">
@@ -183,7 +189,10 @@ export const MatchCard = ({
                 )}
               </div>
               {match.status === "upcoming" && onPredict && (
-                <button onClick={predictClick} className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-ink transition-transform active:scale-95">
+                <button
+                  onClick={predictClick}
+                  className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-ink transition-transform active:scale-95"
+                >
                   Modifier
                 </button>
               )}
@@ -194,7 +203,10 @@ export const MatchCard = ({
             </p>
           ) : (
             <div className="flex justify-center">
-              <button onClick={predictClick} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[12px] font-bold text-on-accent transition-transform active:scale-95">
+              <button
+                onClick={predictClick}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[12px] font-bold text-on-accent transition-transform active:scale-95"
+              >
                 <Icon name="trophy" size={14} strokeWidth={2.2} />
                 Pronostiquer
               </button>

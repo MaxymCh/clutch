@@ -1,8 +1,8 @@
-import type { Group, LeaderboardEntry, User } from '../../types/community';
-import type { Game, Match, Team } from '../../types/esports';
-import { GAMES, GAME_ORDER, TEAMS } from './catalog';
-import { GLOBAL_LEADERBOARD, GROUPS_SEED, USER } from './community';
-import { MATCHES } from './matches';
+import type { Group, LeaderboardEntry, User } from "../../types/community";
+import type { Game, Match, Team } from "../../types/esports";
+import { GAMES, GAME_ORDER, TEAMS } from "./catalog";
+import { GLOBAL_LEADERBOARD, GROUPS_SEED, USER } from "./community";
+import { MATCHES } from "./matches";
 
 /**
  * Simulateur de l'API interne (le backend n'existe pas encore).
@@ -77,14 +77,22 @@ export const fetchGroup = async (id: string): Promise<Group> => {
 };
 
 /** POST /groups */
-export const createGroup = async (input: { name: string; emoji: string }): Promise<Group> => {
+export const createGroup = async (input: {
+  name: string;
+  emoji: string;
+  gameIds?: string[];
+}): Promise<Group> => {
   await delay(300);
   const group: Group = {
     id: `g${Date.now() % 100000}`,
-    name: input.name.trim() || 'Mon groupe',
+    name: input.name.trim() || "Mon groupe",
     emoji: input.emoji,
     code: `CLTCH-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-    members: [{ name: USER.name, tag: USER.tag, points: USER.points, isMe: true }],
+    gameIds:
+      input.gameIds && input.gameIds.length > 0 ? input.gameIds : undefined,
+    members: [
+      { name: USER.name, tag: USER.tag, points: USER.points, isMe: true },
+    ],
   };
   groups = [...groups, group];
   return group;
@@ -95,13 +103,13 @@ export const joinGroup = async (code: string): Promise<Group> => {
   await delay(300);
   const group: Group = {
     id: `g${Date.now() % 100000}`,
-    name: 'Groupe rejoint',
-    emoji: '🎮',
-    code: code.trim().toUpperCase() || 'CLTCH-JOIN',
+    name: "Groupe rejoint",
+    emoji: "🎮",
+    code: code.trim().toUpperCase() || "CLTCH-JOIN",
     members: [
-      { name: 'Hôte', tag: 'HT', points: 1310 },
+      { name: "Hôte", tag: "HT", points: 1310 },
       { name: USER.name, tag: USER.tag, points: USER.points, isMe: true },
-      { name: 'Amel', tag: 'AM', points: 920 },
+      { name: "Amel", tag: "AM", points: 920 },
     ],
   };
   groups = [...groups, group];

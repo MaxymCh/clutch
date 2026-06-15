@@ -134,16 +134,14 @@ async def post_group(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> GroupOut:
-    """Sert `useCreateGroup` — body { name, emoji } (cf. mock front)."""
+    """Sert `useCreateGroup` — body { name, emoji, gameIds? }."""
     try:
         group = await community.create_group(
             session,
             user,
             payload.name,
             payload.emoji,
-            payload.scope_mode,
-            payload.game_id,
-            payload.team_id,
+            payload.game_ids,
         )
     except community.GroupError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
@@ -160,6 +158,47 @@ async def post_join_group(
     group = await community.join_group(session, user, payload.code)
     if not group:
         raise HTTPException(status_code=404, detail=f"Code d'invitation inconnu : {payload.code}")
+    return await community.group_to_schema(session, group, user.id)
+
+
+@router.delete("/groups/{group_id}", status_code=204)
+async def delete_group(
+    group_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> None:
+    """Supprimer une ligue (admin uniquement)."""
+    try:
+        await community.delete_group(session, user, group_id)
+    except community.GroupError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.post("/groups/{group_id}/leave", status_code=204)
+async def post_leave_group(
+    group_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> None:
+    """Quitter une ligue."""
+    try:
+        await community.leave_group(session, user, group_id)
+    except community.GroupError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.delete("/groups/{group_id}/members/{member_tag}", response_model=GroupOut, response_model_exclude_none=True)
+async def delete_member(
+    group_id: str,
+    member_tag: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> GroupOut:
+    """Expulser un membre (admin uniquement)."""
+    try:
+        group = await community.remove_member(session, user, group_id, member_tag)
+    except community.GroupError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
     return await community.group_to_schema(session, group, user.id)
 
 

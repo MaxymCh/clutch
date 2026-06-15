@@ -14,14 +14,10 @@ const CompSwitcher = () => {
   // TODO: gérer l'état actif EWC/ENC via contexte quand l'API ENC sera prête
   return (
     <div className="flex items-center rounded-full bg-surface p-0.5">
-      <button
-        className="cursor-pointer rounded-full bg-ink px-3 py-1.5 text-[11px] font-bold text-surface"
-      >
+      <button className="cursor-pointer rounded-full bg-ink px-3 py-1.5 text-[11px] font-bold text-surface">
         EWC
       </button>
-      <button
-        className="cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-semibold text-dim hover:text-ink"
-      >
+      <button className="cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-semibold text-dim hover:text-ink">
         ENC
       </button>
     </div>
@@ -51,13 +47,13 @@ export const FloatingNav = ({
         "lg:flex",
       ].join(" ")}
     >
-      {/* Logo */}
-      <Link to="/" className="mr-3 shrink-0">
-        <div className="h-[44px] w-[154px] overflow-hidden rounded-xl">
+      {/* Logo — crop 15% du bas pour éliminer l'espace vide */}
+      <Link to="/" className="mr-1 shrink-0 pb-0.5">
+        <div className="h-[40px] overflow-hidden">
           <img
             src="/SDC-168H.png"
             alt="Clutch"
-            className="h-full w-full object-cover object-center"
+            className="h-[47px] w-auto object-contain object-top"
           />
         </div>
       </Link>

@@ -6,9 +6,9 @@
  * - Auth : Bearer token Supabase dans l'en-tête Authorization (JWT vérifié
  *   côté backend via SUPABASE_JWT_SECRET).
  */
-import { supabase } from '../lib/supabase';
+import { supabase } from "../lib/supabase";
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 /** Erreur API : status HTTP + message `detail` renvoyé par FastAPI. */
 export class ApiError extends Error {
@@ -16,7 +16,7 @@ export class ApiError extends Error {
 
   constructor(status: number, message: string) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
   }
 }
@@ -30,7 +30,9 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     ...init,
     headers: {
       ...(init?.headers ?? {}),
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...(session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {}),
     },
   });
 
@@ -51,14 +53,17 @@ export const apiGet = <T>(path: string): Promise<T> => request<T>(path);
 
 export const apiPost = <T>(path: string, body: unknown): Promise<T> =>
   request<T>(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
 export const apiPatch = <T>(path: string, body: unknown): Promise<T> =>
   request<T>(path, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+export const apiDelete = <T = void>(path: string): Promise<T> =>
+  request<T>(path, { method: "DELETE" });
