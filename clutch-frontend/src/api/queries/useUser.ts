@@ -1,9 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchUser } from '../server';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchUser, patchUser } from '../server';
 
-/** Profil de l'utilisateur courant (points, rang, série). */
 export const useUser = () =>
   useQuery({
     queryKey: ['user'],
     queryFn: fetchUser,
   });
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: patchUser,
+    onSuccess: (data) => queryClient.setQueryData(['user'], data),
+  });
+};

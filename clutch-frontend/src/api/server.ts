@@ -30,8 +30,12 @@ export const fetchMatches = (): Promise<Match[]> => apiGet<Match[]>('/matches');
 /** GET /matches/:id */
 export const fetchMatch = (id: string): Promise<Match> => apiGet<Match>(`/matches/${encodeURIComponent(id)}`);
 
-/** GET /me — crée la session anonyme (cookie) au premier appel */
+/** GET /me — crée le profil au premier appel */
 export const fetchUser = (): Promise<User> => apiGet<User>('/me');
+
+/** PATCH /me — met à jour le pseudo */
+export const patchUser = (patch: { name: string }): Promise<User> =>
+  apiPatch<User>('/me', patch);
 
 /** GET /leaderboard */
 export const fetchGlobalLeaderboard = (): Promise<LeaderboardEntry[]> =>

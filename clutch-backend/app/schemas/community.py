@@ -30,6 +30,12 @@ class PreferencesPatchIn(ApiModel):
     fav_games: list[str] | None = None  # JSON : favGames
 
 
+class UserPatchIn(ApiModel):
+    """Body de PATCH /me — seul le pseudo est modifiable."""
+
+    name: str | None = None
+
+
 class UserOut(ApiModel):
     """Miroir de `User` (front)."""
 

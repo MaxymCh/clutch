@@ -13,6 +13,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.community import router as community_router
 from app.core.config import get_settings
@@ -55,13 +56,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Origines EXPLICITES (jamais "*") + credentials pour le cookie de session.
+# Origines EXPLICITES (jamais "*") + Authorization pour le Bearer token Supabase.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -74,5 +75,6 @@ async def attribution_header(request: Request, call_next) -> Response:
     return response
 
 
+app.include_router(auth_router)
 app.include_router(catalog_router)
 app.include_router(community_router)

@@ -6,6 +6,7 @@ d'ingestion n'y touche jamais.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -23,6 +24,7 @@ from app.schemas.community import (
     PreferencesOut,
     PreferencesPatchIn,
     UserOut,
+    UserPatchIn,
 )
 from app.services import community
 
@@ -35,6 +37,28 @@ async def get_me(
     user: User = Depends(get_current_user),
 ) -> UserOut:
     """Sert `useUser` — crée l'utilisateur anonyme au premier appel."""
+    return await community.user_to_schema(session, user)
+
+
+@router.patch("/me", response_model=UserOut)
+async def patch_me(
+    payload: UserPatchIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> UserOut:
+    """Met à jour le pseudo de l'utilisateur."""
+    if payload.name is not None:
+        name = payload.name.strip()[:20]
+        if len(name) >= 2:
+            clash = await session.scalar(
+                select(User.id).where(User.name == name, User.id != user.id)
+            )
+            if clash:
+                raise HTTPException(status_code=409, detail="Ce pseudo est déjà pris")
+            user.name = name
+            words = [w for w in name.split() if w]
+            user.tag = "".join(w[0] for w in words).upper()[:3] or name[:3].upper()
+            await session.commit()
     return await community.user_to_schema(session, user)
 
 
