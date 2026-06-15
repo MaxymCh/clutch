@@ -1,0 +1,21 @@
+# Override TUNNEL — expose l'API (VPS privé / VPN only) en HTTPS public SANS
+# IP publique. Le tunnel termine le HTTPS et route vers le conteneur "api".
+#
+# Cloudflare Tunnel (domaine clutch-esports.eu géré par Cloudflare) :
+#   1. Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel
+#   2. Public hostname  api.clutch-esports.eu  →  service  http://api:8000
+#   3. Copier le token dans .env : CLOUDFLARE_TUNNEL_TOKEN=...
+#   4. docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --build
+#
+# Alternative 100% gratuite SANS domaine = Tailscale Funnel (sur l'hôte) :
+#   sudo tailscale funnel 8000   # expose 127.0.0.1:8000 -> https://<vps>.<tailnet>.ts.net
+#   (dans ce cas, pas besoin du service cloudflared ci-dessous.)
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - api

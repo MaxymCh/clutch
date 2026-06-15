@@ -1,0 +1,67 @@
+# CI/CD Clutch — GitLab. Deux temps :
+#   1) test   : lint + tests back/front à chaque push/MR (qualité).
+#   2) deploy : sur "main", SSH vers le VPS → git pull + docker compose up -d.
+#
+# Variables CI/CD à définir dans GitLab (Settings → CI/CD → Variables),
+# masquées/protégées : SSH_PRIVATE_KEY, SSH_HOST, SSH_USER, DEPLOY_PATH.
+
+stages:
+  - test
+  - deploy
+
+# --- Qualité backend -------------------------------------------------------
+test:backend:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - cd clutch-backend
+    - pip install --no-cache-dir -e ".[dev]"
+  script:
+    - ruff check .
+    - pytest            # SQLite/aiosqlite : aucun Postgres requis en CI
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+# --- Qualité frontend ------------------------------------------------------
+test:frontend:
+  stage: test
+  image: node:22-alpine
+  before_script:
+    - cd clutch-frontend
+    - npm ci
+  script:
+    - npm run lint
+    - npm run build     # vérifie que le build de prod passe (tsc + vite)
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+# --- Déploiement du BACKEND sur le VPS (uniquement sur main) ----------------
+# Le FRONTEND est déployé par Cloudflare Pages (build auto sur push, voir
+# roadmap) — pas géré ici. Ce job ne déploie que api + worker + db.
+# Le runner GitLab doit pouvoir joindre le VPS (runner sur le VPN école, ou
+# self-hosted runner sur le VPS lui-même).
+deploy:backend:
+  stage: deploy
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+  script:
+    # Le VPS héberge un clone du repo + un .env rempli (jamais versionné).
+    - |
+      ssh "$SSH_USER@$SSH_HOST" "
+        cd $DEPLOY_PATH &&
+        git pull --ff-only &&
+        docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --build &&
+        docker image prune -f
+      "
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  environment:
+    name: production
+    url: https://api.clutch-esports.eu
