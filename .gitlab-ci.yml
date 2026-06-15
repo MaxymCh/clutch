@@ -1,9 +1,11 @@
 # CI/CD Clutch — GitLab. Deux temps :
 #   1) test   : lint + tests back/front à chaque push/MR (qualité).
-#   2) deploy : sur "main", SSH vers le VPS → git pull + docker compose up -d.
+#   2) deploy : sur "main", déploiement local sur le runner installé sur le VPS.
 #
-# Variables CI/CD à définir dans GitLab (Settings → CI/CD → Variables),
-# masquées/protégées : SSH_PRIVATE_KEY, SSH_HOST, SSH_USER, DEPLOY_PATH.
+# Variable CI/CD à définir (Settings → CI/CD → Variables) :
+#   DEPLOY_PATH = chemin du clone sur le VPS (ex: /home/chape_m/group-1076817)
+# Le runner "vps" (executor shell) tourne SUR le VPS : il déploie en local,
+# donc plus aucun SSH ni accès réseau externe nécessaire.
 
 stages:
   - test
@@ -38,28 +40,23 @@ test:frontend:
     - if: $CI_COMMIT_BRANCH
 
 # --- Déploiement du BACKEND sur le VPS (uniquement sur main) ----------------
-# Le FRONTEND est déployé par Cloudflare Pages (build auto sur push, voir
-# roadmap) — pas géré ici. Ce job ne déploie que api + worker + db.
-# Le runner GitLab doit pouvoir joindre le VPS (runner sur le VPN école, ou
-# self-hosted runner sur le VPS lui-même).
+# Le FRONTEND est déployé par Cloudflare Pages (build auto sur push) — pas ici.
+# Ce job tourne sur le runner "vps" (executor shell installé sur le VPS) : il
+# se contente de mettre à jour le clone local et de relancer la stack Docker.
+# Le dossier $DEPLOY_PATH contient le .env de prod (jamais versionné).
 deploy:backend:
   stage: deploy
-  image: alpine:3.20
-  before_script:
-    - apk add --no-cache openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+  tags:
+    - vps                       # cible le runner installé sur le VPS
   script:
-    # Le VPS héberge un clone du repo + un .env rempli (jamais versionné).
-    - |
-      ssh "$SSH_USER@$SSH_HOST" "
-        cd $DEPLOY_PATH &&
-        git pull --ff-only &&
-        docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --build &&
-        docker image prune -f
-      "
+    - cd "$DEPLOY_PATH"
+    # Auth via le token de job CI (pas de secret à stocker) + reset propre
+    # sur main pour éviter tout conflit de merge sur le clone du VPS.
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git fetch origin
+    - git reset --hard origin/main
+    - docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d --build
+    - docker image prune -f
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   environment:
