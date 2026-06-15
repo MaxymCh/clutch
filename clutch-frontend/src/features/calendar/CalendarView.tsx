@@ -72,19 +72,23 @@ export const CalendarView = () => {
   const upcoming = list.filter((m) => m.status === 'upcoming').sort(byDateTime);
   const done = list.filter((m) => m.status === 'done').sort(byDateTime);
 
-  const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
+  const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
   const renderCards = (items: Match[]) =>
-    items.map((m) => (
-      <MatchCard
-        key={m.id}
-        match={m}
-        gameTag={tagOf(m)}
-        showDay={allDays}
-        predictedWinnerId={predictedWinnerId(m)}
-        showPredictionFooter
-        onPredict={setPredicting}
-      />
-    ));
+    items.map((m) => {
+      const g = gameOf(m);
+      return (
+        <MatchCard
+          key={m.id}
+          match={m}
+          gameTag={g?.tag ?? m.gameId.toUpperCase()}
+          gameLogoUrl={g?.logoUrl}
+          showDay={allDays}
+          predictedWinnerId={predictedWinnerId(m)}
+          showPredictionFooter
+          onPredict={setPredicting}
+        />
+      );
+    });
 
   return (
     <div>

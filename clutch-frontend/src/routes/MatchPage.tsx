@@ -21,9 +21,8 @@ export const MatchPage = () => {
   const [predicting, setPredicting] = useState(false);
 
   const title = match ? `${match.teamA.tag} – ${match.teamB.tag}` : 'Match';
-  const gameName = match
-    ? (games?.find((g) => g.id === match.gameId)?.name ?? match.gameId.toUpperCase())
-    : '';
+  const game = match ? games?.find((g) => g.id === match.gameId) : undefined;
+  const gameName = game?.name ?? match?.gameId.toUpperCase() ?? '';
 
   return (
     <Page>
@@ -39,6 +38,7 @@ export const MatchPage = () => {
           <MatchHero
             match={match}
             gameName={gameName}
+            gameLogoUrl={game?.logoUrl}
             hasPrediction={Boolean(predictions[match.id])}
             onPredict={() => setPredicting(true)}
           />

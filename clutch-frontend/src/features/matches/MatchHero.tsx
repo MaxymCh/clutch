@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Badge, LiveBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
+import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
 import { formatDayFull } from '../../lib/date';
 import type { Match, Team } from '../../types/esports';
@@ -9,6 +10,7 @@ import type { Match, Team } from '../../types/esports';
 type MatchHeroProps = {
   match: Match;
   gameName: string;
+  gameLogoUrl?: string;
   /** true si l'utilisateur a déjà posé un prono sur ce match */
   hasPrediction?: boolean;
   /** Ouvre la feuille de pronostic (matchs à venir) */
@@ -38,7 +40,7 @@ const Side = ({ team, score, won, done }: { team: Team; score?: number; won: boo
 );
 
 /** Hero du détail de match : méta, statut, face-à-face, action principale. */
-export const MatchHero = ({ match, gameName, hasPrediction = false, onPredict }: MatchHeroProps) => {
+export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false, onPredict }: MatchHeroProps) => {
   const live = match.status === 'live';
   const done = match.status === 'done';
   const aWon = done && (match.scoreA ?? 0) > (match.scoreB ?? 0);
@@ -47,6 +49,7 @@ export const MatchHero = ({ match, gameName, hasPrediction = false, onPredict }:
   return (
     <div className="flex flex-col items-center gap-3.5 border-b border-line px-5 pt-3 pb-6">
       <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-dim uppercase">
+        <GameLogo tag={match.gameId.toUpperCase()} size={16} logoUrl={gameLogoUrl} />
         {gameName}
         <span className="size-[3px] rounded-full bg-faint" />
         {match.phase}

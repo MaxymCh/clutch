@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import type { Match, Team } from '../../types/esports';
 import { Icon } from '../../components/ui/Icon';
+import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
 import { formatDayMonth, formatWeekdayShort } from '../../lib/date';
 import { StatusPill } from './StatusPill';
@@ -13,6 +14,8 @@ type MatchCardProps = {
   match: Match;
   /** Tag du jeu à afficher ("VAL", "CS2"…) */
   gameTag: string;
+  /** URL de l'icône locale du jeu */
+  gameLogoUrl?: string;
   /** Affiche le jour du match (listes multi-jours : page équipe) */
   showDay?: boolean;
   /** Id de l'équipe pronostiquée gagnante (badge PRONO), si prono posé */
@@ -86,6 +89,7 @@ const TeamLine = ({
 export const MatchCard = ({
   match,
   gameTag,
+  gameLogoUrl,
   showDay = false,
   predictedWinnerId = null,
   showPredictionFooter = false,
@@ -126,6 +130,7 @@ export const MatchCard = ({
           {/* contenu : méta + équipes */}
           <div className="min-w-0 py-0.5">
             <div className="mb-2 flex items-center gap-2">
+              <GameLogo tag={gameTag} size={14} logoUrl={gameLogoUrl} />
               <span className="text-[11px] font-bold tracking-[.06em] uppercase">{gameTag}</span>
               <span className="size-[3px] rounded-full bg-faint" />
               <span className="truncate text-[11px] font-semibold tracking-wide text-dim uppercase">
