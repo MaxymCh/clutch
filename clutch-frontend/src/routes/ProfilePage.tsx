@@ -47,7 +47,7 @@ export const ProfilePage = () => {
   const { signOut } = useAuth();
   const { data: user } = useUser();
   const { data: teams } = useTeams();
-  const { theme, setTheme, notifications, setNotifications, setOnboarded } = useSettings();
+  const { theme, setTheme, notifications, setNotifications } = useSettings();
   const { teams: favTeams, games: favGames, toggleGame } = useFavorites();
   const { data: games } = useGames();
   const dark = theme === 'dark';
@@ -108,8 +108,6 @@ export const ProfilePage = () => {
         </div>
 
         <SectionTitle>Application</SectionTitle>
-        <Row icon="trophy" label="Mes pronostics" sub="Historique & points" right={chevron} to="/prono" />
-        <Row icon="info" label="Revoir l'introduction" right={chevron} onClick={() => setOnboarded(false)} />
         <Row icon="info" label="À propos de Clutch" sub="Projet indépendant · non affilié à l'EWC" />
 
         <SectionTitle>Compte</SectionTitle>
