@@ -63,6 +63,26 @@ test:frontend:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH
 
+# --- Miroir vers GitHub (déclenche le build Cloudflare Pages) ---------------
+# Cloudflare Pages ne se connecte qu'à GitHub.com, pas au GitLab école. Ce job
+# pousse automatiquement "main" vers GitHub à chaque commit → les coéquipiers
+# n'ont RIEN à faire en local et n'ont PAS besoin d'accès au repo GitHub.
+# Variable CI à créer (Settings → CI/CD → Variables, masquée + protégée) :
+#   GITHUB_TOKEN = Personal Access Token GitHub (scope "repo" / Contents: write)
+# GIT_DEPTH: 0 → historique complet (un push depuis un clone shallow est refusé).
+mirror:github:
+  stage: deploy
+  tags:
+    - vps
+  variables:
+    GIT_DEPTH: 0
+  script:
+    # Push direct via URL tokenisée (pas de remote persistant → pas de token
+    # stocké dans .git/config). --force : miroir à sens unique, main fait foi.
+    - git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/MaxymCh/clutch.git" "HEAD:main"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
 # --- Déploiement du BACKEND sur le VPS (uniquement sur main) ----------------
 # Le FRONTEND est déployé par Cloudflare Pages (build auto sur push) — pas ici.
 # Ce job tourne sur le runner "vps" (executor shell installé sur le VPS) : il
