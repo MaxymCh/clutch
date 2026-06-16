@@ -1,4 +1,5 @@
 import { useGames } from "../../api/queries/useGames";
+import { GameLogo } from "../../components/ui/GameLogo";
 import { Icon } from "../../components/ui/Icon";
 import { useFavorites } from "../favorites/favoritesContext";
 
@@ -50,11 +51,7 @@ export const GameFilter = ({ value, onToggle, onClear }: GameFilterProps) => {
               active ? "border-accent bg-accent/8" : "border-line-2"
             }`}
           >
-            <img
-              src={`/games/${game.id}.jpg`}
-              alt={game.short}
-              className="size-5 rounded-full object-cover"
-            />
+            <GameLogo tag={game.tag} size={20} logoUrl={game.logoUrl} />
             <span
               className={`text-xs font-semibold ${active ? "text-accent" : "text-ink"}`}
             >

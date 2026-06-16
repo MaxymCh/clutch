@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { usePreferences } from "../api/queries/usePreferences";
 import { useMatches } from "../api/queries/useMatches";
 import { BottomNav } from "../components/layout/BottomNav";
 import { FloatingNav } from "../components/layout/FloatingNav";
@@ -12,6 +13,7 @@ import { ThemeToggle } from "../features/settings/ThemeToggle";
 /** Coquille de l'app : floating nav desktop + bottom nav mobile + onboarding. */
 const Shell = () => {
   const { onboarded, setOnboarded } = useSettings();
+  const { isPlaceholderData: prefsLoading } = usePreferences();
   const { data: matches } = useMatches();
   const agendaLive = (matches ?? []).some((m) => m.status === "live");
 
@@ -27,7 +29,7 @@ const Shell = () => {
         <Outlet />
       </div>
       <BottomNav />
-      {!onboarded && <Onboarding onDone={() => setOnboarded(true)} />}
+      {!prefsLoading && !onboarded && <Onboarding onDone={() => setOnboarded(true)} />}
     </>
   );
 };
