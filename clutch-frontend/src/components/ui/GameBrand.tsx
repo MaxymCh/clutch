@@ -5,13 +5,13 @@ type GameBrandProps = {
   tag: string;
   logoUrl?: string;
   fullLogoUrl?: string;
-  /** sm = favoris profil, md = grille, lg = hero page jeu */
-  size?: 'sm' | 'md' | 'lg';
+  /** sm = favoris profil, xs = feed, md = grille, lg = hero page jeu */
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 };
 
-const LOGO_HEIGHT = { sm: 14, md: 20, lg: 30 } as const;
-const ICON_SIZE = { sm: 28, md: 36, lg: 48 } as const;
-const PILL_PAD = { sm: 'px-2 py-1', md: 'px-3 py-1.5', lg: 'px-4 py-2' } as const;
+const LOGO_HEIGHT = { xs: 10, sm: 14, md: 20, lg: 30 } as const;
+const ICON_SIZE = { xs: 20, sm: 28, md: 36, lg: 48 } as const;
+const PILL_PAD = { xs: 'px-1.5 py-0.5', sm: 'px-2 py-1', md: 'px-3 py-1.5', lg: 'px-4 py-2' } as const;
 
 /** Logo horizontal EWC sur pastille blanche (lisible sur fond sombre). */
 export const GameBrand = ({ tag, logoUrl, fullLogoUrl, size = 'md' }: GameBrandProps) => {
