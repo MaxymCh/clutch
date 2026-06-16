@@ -9,6 +9,7 @@ import { Card } from '../components/ui/Card';
 import { GameTile } from '../components/ui/GameTile';
 import { Icon, type IconName } from '../components/ui/Icon';
 import { Toggle } from '../components/ui/Toggle';
+import { useAuth } from '../features/auth/authContext';
 import { useFavorites } from '../features/favorites/favoritesContext';
 import { useSettings } from '../features/settings/settingsContext';
 import { formatPoints } from '../lib/format';
@@ -43,6 +44,7 @@ const SectionTitle = ({ children }: { children: string }) => (
 /** Onglet Moi : profil, préférences (thème, notifs), application. */
 export const ProfilePage = () => {
   const chevron = <Icon name="chevron" size={16} className="text-faint" />;
+  const { signOut } = useAuth();
   const { data: user } = useUser();
   const { data: teams } = useTeams();
   const { theme, setTheme, notifications, setNotifications, setOnboarded } = useSettings();
@@ -109,6 +111,17 @@ export const ProfilePage = () => {
         <Row icon="trophy" label="Mes pronostics" sub="Historique & points" right={chevron} to="/prono" />
         <Row icon="info" label="Revoir l'introduction" right={chevron} onClick={() => setOnboarded(false)} />
         <Row icon="info" label="À propos de Clutch" sub="Projet indépendant · non affilié à l'EWC" />
+
+        <SectionTitle>Compte</SectionTitle>
+        <button
+          onClick={signOut}
+          className="flex w-full cursor-pointer items-center gap-3 border-b border-line px-1 py-3.5 text-left transition-colors active:bg-surface-2"
+        >
+          <span className="grid size-9.5 shrink-0 place-items-center rounded-[11px] bg-red-50 text-red-500">
+            <Icon name="close" size={19} />
+          </span>
+          <span className="text-[15px] font-semibold text-red-500">Se déconnecter</span>
+        </button>
       </div>
     </Page>
   );
