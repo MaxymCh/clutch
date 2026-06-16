@@ -464,19 +464,24 @@ def build_groups(
     teams_by_game: dict[str, list[str]],
     rng: random.Random,
 ) -> list[tuple[Group, list[str]]]:
-    """Quelques groupes (global, par jeu, par équipe) + leurs membres."""
-    specs: list[tuple[str, str | None, str | None]] = [
-        ("La Ligue des Clutchers", None, None),
-        ("Valorant Only", "val", None),
-        ("Bureau eSport", None, None),
+    """Quelques groupes (global ou périmètre multi-jeux) + leurs membres.
+
+    Le périmètre d'un groupe est une liste de gameIds (`game_ids_csv`, colonne
+    DB `game_id`) ; vide/None = tous les jeux. Plus de périmètre par équipe.
+    """
+    available = set(teams_by_game)
+    # (nom, périmètre = liste de gameIds ; None/[] = tous les jeux)
+    specs: list[tuple[str, list[str] | None]] = [
+        ("La Ligue des Clutchers", None),
+        ("Valorant Only", ["val"]),
+        ("FPS Masters", ["val", "cs2"]),
+        ("Bureau eSport", None),
     ]
-    # Un groupe centré sur une équipe disponible (Valorant de préférence).
-    fav_team = teams_by_game.get("val", [None])[0] if teams_by_game.get("val") else None
-    if fav_team:
-        specs.append(("Fan Club", None, fav_team))
 
     groups: list[tuple[Group, list[str]]] = []
-    for i, (name, game_id, team_id) in enumerate(specs):
+    for i, (name, scope) in enumerate(specs):
+        games = [g for g in (scope or []) if g in available]
+        csv = ",".join(games) if games else None
         size = rng.randint(6, min(16, len(users)))
         members = rng.sample([u.id for u in users], size)
         group = Group(
@@ -484,8 +489,7 @@ def build_groups(
             name=name,
             emoji=rng.choice(GROUP_EMOJIS),
             code=f"CLTCH-SEED{i}",
-            game_id=game_id,
-            team_id=team_id,
+            game_ids_csv=csv,
         )
         groups.append((group, members))
     return groups
