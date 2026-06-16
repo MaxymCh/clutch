@@ -1,11 +1,11 @@
-import { Link } from "react-router-dom";
-import type { Match } from "../../types/esports";
-import { GameLogo } from "../../components/ui/GameLogo";
-import { TeamLogo } from "../../components/ui/TeamLogo";
-import { formatDDMM, formatWeekdayShort } from "../../lib/date";
-import { StatusPill } from "./StatusPill";
-import { usePredictions } from "../prono/predictionsContext";
-import { PronoBadge } from "../prono/PronoBadge";
+import { Link } from 'react-router-dom';
+import type { Match } from '../../types/esports';
+import { GameLogo } from '../../components/ui/GameLogo';
+import { TeamLogo } from '../../components/ui/TeamLogo';
+import { formatDDMM, formatWeekdayShort } from '../../lib/date';
+import { StatusPill } from './StatusPill';
+import { usePredictions } from '../prono/predictionsContext';
+import { PronoBadge } from '../prono/PronoBadge';
 
 type MatchCardProps = {
   match: Match;
@@ -33,30 +33,39 @@ export const MatchCard = ({
   onPredict,
 }: MatchCardProps) => {
   const { predictions } = usePredictions();
-  const live = match.status === "live";
+  const live = match.status === 'live';
   const pred = predictions[match.id];
   const showFooter =
     showPredictionFooter &&
-    (pred || (match.status === "upcoming" && onPredict));
+    (pred || (match.status === 'upcoming' && onPredict));
 
   return (
     <div
-      className={`rounded-2xl border border-line bg-surface-2 p-4 ${live ? "relative overflow-hidden" : ""}`}
+      className={`relative rounded-2xl border border-line bg-surface-2 p-4 ${live ? 'overflow-hidden' : ''}`}
     >
       {/* barre latérale orange = signal live */}
       {live && <span className="absolute top-0 bottom-0 left-0 w-1 bg-live" />}
 
-      <Link to={`/match/${match.id}`} className="block">
+      <div className="relative">
+        {/* Lien plein-carte (overlay) : évite l'imbrication d'<a> dans un <a> */}
+        <Link
+          to={`/match/${match.id}`}
+          aria-label={`${match.teamA.name} vs ${match.teamB.name}`}
+          className="absolute inset-0 z-0"
+        />
+
         {/* Méta : jeu · phase · statut */}
         <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
           <span className="flex items-center gap-1.5">
             <Link
               to={`/game/${match.gameId}`}
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1.5 rounded-md text-accent transition-transform hover:scale-[1.03]"
+              className="relative z-10 text-accent transition-colors hover:text-accent/80"
             >
               <GameLogo tag={gameTag} size={18} logoUrl={gameLogoUrl} />
-              <span className="text-[10px] font-bold tracking-[.08em]">{gameTag}</span>
+              <span className="text-[10px] font-bold tracking-[.08em]">
+                {gameTag}
+              </span>
             </Link>
             <span className="size-0.75 rounded-full bg-dim" />
             {match.phase}
@@ -81,10 +90,10 @@ export const MatchCard = ({
             />
             <span
               className={`max-w-full truncate text-center text-[13px] font-bold ${
-                match.status === "done" &&
+                match.status === 'done' &&
                 (match.scoreA ?? 0) < (match.scoreB ?? 0)
-                  ? "text-dim"
-                  : "text-ink"
+                  ? 'text-dim'
+                  : 'text-ink'
               }`}
             >
               {match.teamA.name}
@@ -93,9 +102,9 @@ export const MatchCard = ({
 
           {/* Score / heure au centre */}
           <div className="shrink-0 px-3 text-center">
-            {match.status === "live" || match.status === "done" ? (
+            {match.status === 'live' || match.status === 'done' ? (
               <span
-                className={`text-xl font-bold tabular-nums ${live ? "text-live" : "text-ink"}`}
+                className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
               >
                 {match.scoreA} – {match.scoreB}
               </span>
@@ -118,10 +127,10 @@ export const MatchCard = ({
             />
             <span
               className={`max-w-full truncate text-center text-[13px] font-bold ${
-                match.status === "done" &&
+                match.status === 'done' &&
                 (match.scoreB ?? 0) < (match.scoreA ?? 0)
-                  ? "text-dim"
-                  : "text-ink"
+                  ? 'text-dim'
+                  : 'text-ink'
               }`}
             >
               {match.teamB.name}
@@ -135,13 +144,13 @@ export const MatchCard = ({
             {match.currentMapLabel}
             {match.viewers && (
               <span className="font-medium text-dim">
-                {" "}
+                {' '}
                 · {match.viewers} spect.
               </span>
             )}
           </div>
         )}
-      </Link>
+      </div>
 
       {showFooter && (
         <div className="mt-3 border-t border-line pt-3">

@@ -49,7 +49,7 @@ export const MatchPage = () => {
             <MatchVeto veto={match.veto} teamA={match.teamA} teamB={match.teamB} />
           )}
           {match.maps && match.maps.length > 0 && (
-            <MatchMaps maps={match.maps} teamA={match.teamA} teamB={match.teamB} />
+            <MatchMaps maps={match.maps} teamA={match.teamA} teamB={match.teamB} gameId={match.gameId} />
           )}
           <PredictSheet match={predicting ? match : null} onClose={() => setPredicting(false)} />
         </>

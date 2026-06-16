@@ -102,12 +102,6 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
           {hasPrediction ? 'Modifier mon prono' : 'Pronostiquer'}
         </Button>
       )}
-      {done && (
-        <Button full variant="ghost" className="mt-1">
-          <Icon name="trend" size={17} strokeWidth={2.1} />
-          Voir les statistiques
-        </Button>
-      )}
     </div>
   );
 };
