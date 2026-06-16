@@ -63,7 +63,7 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
         (games?.find((g) => g.id === m.gameId)?.name.toLowerCase().includes(s) ?? false),
     );
   }
-  const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
+  const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
 
   return (
     <div>
@@ -88,15 +88,19 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
       {list.length === 0 ? (
         <EmptyState title="Aucun résultat" sub="Modifie ta recherche ou tes filtres." />
       ) : (
-        list.map((m) => (
-          <MatchCard
-            key={m.id}
-            match={m}
-            gameTag={tagOf(m)}
-            showDay
-            predictedWinnerId={predictedWinnerId(m)}
-          />
-        ))
+        list.map((m) => {
+          const g = gameOf(m);
+          return (
+            <MatchCard
+              key={m.id}
+              match={m}
+              gameTag={g?.tag ?? m.gameId.toUpperCase()}
+              gameLogoUrl={g?.logoUrl}
+              showDay
+              predictedWinnerId={predictedWinnerId(m)}
+            />
+          );
+        })
       )}
     </div>
   );

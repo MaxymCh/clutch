@@ -44,13 +44,17 @@ def ensure_games(session: Session) -> None:
         if game is None:
             session.add(Game(**row))
         else:
-            game.name, game.short, game.tag, game.sort_order, game.bg_url = (
-                row["name"], row["short"], row["tag"], row["sort_order"], row["bg_url"],
+            game.name, game.short, game.tag, game.sort_order = (
+                row["name"], row["short"], row["tag"], row["sort_order"],
             )
+            game.bg_url = row["bg_url"]
+            game.logo_url = row.get("logo_url")
+            game.full_logo_url = row.get("full_logo_url")
 
 
-def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
+def upsert_team(session: Session, data: dict[str, Any], wiki: str) -> str:
     """Crée/actualise une équipe SANS écraser un enrichissement existant."""
+    logo_url = data.get("logo_url") or None
     team = session.get(Team, data["id"])
     if team is None:
         session.add(
@@ -61,6 +65,7 @@ def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
                 country_code="XX",  # enrichi plus tard via /team (locations)
                 template=data.get("template") or None,
                 wiki=wiki,
+                logo_url=logo_url,
                 enriched=False,
             )
         )
@@ -68,6 +73,8 @@ def upsert_team(session: Session, data: dict[str, str], wiki: str) -> str:
         team.name = data["name"]
         team.wiki = team.wiki or wiki
         team.template = team.template or (data.get("template") or None)
+        if logo_url and not team.logo_url:
+            team.logo_url = logo_url
         if not team.enriched:
             team.tag = data["tag"]
         team.updated_at = utcnow()

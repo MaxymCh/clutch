@@ -29,22 +29,26 @@ export const TeamPage = () => {
     m.teamA.id === id ? (m.scoreA ?? 0) > (m.scoreB ?? 0) : (m.scoreB ?? 0) > (m.scoreA ?? 0),
   ).length;
 
-  const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
+  const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
   const section = (label: string, items: Match[]) =>
     items.length > 0 && (
       <section>
         <h2 className="pt-5 pb-2 text-[17px] leading-none font-semibold tracking-tight text-ink">
           {label}
         </h2>
-        {items.map((m) => (
-          <MatchCard
-            key={m.id}
-            match={m}
-            gameTag={tagOf(m)}
-            showDay
-            predictedWinnerId={predictedWinnerId(m)}
-          />
-        ))}
+        {items.map((m) => {
+          const g = gameOf(m);
+          return (
+            <MatchCard
+              key={m.id}
+              match={m}
+              gameTag={g?.tag ?? m.gameId.toUpperCase()}
+              gameLogoUrl={g?.logoUrl}
+              showDay
+              predictedWinnerId={predictedWinnerId(m)}
+            />
+          );
+        })}
       </section>
     );
 

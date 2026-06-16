@@ -6,7 +6,9 @@
  * vérité = le backend) et ce fichier sera supprimé.
  */
 
-export type GameId = 'val' | 'lol' | 'cs2' | 'dota' | 'rl' | 'ow';
+export type GameId =
+  | 'val' | 'lol' | 'cs2' | 'dota' | 'rl' | 'ow'
+  | 'apex' | 'r6' | 'pubg' | 'fn' | 'ff' | 'mlbb' | 'hok' | 'sf6' | 'tk8' | 'bo7' | 'tft';
 
 export type MatchStatus = 'upcoming' | 'live' | 'done';
 
@@ -21,6 +23,10 @@ export interface Game {
   tag: string;
   /** URL de l'image de fond de la carte jeu */
   bgUrl: string;
+  /** Icône/logo du jeu (chemin local, ex. /games/icons/val.svg) */
+  logoUrl?: string;
+  /** Logo horizontal complet (chemin local, ex. /games/full-logo/val.svg) */
+  fullLogoUrl?: string;
 }
 
 export interface Team {

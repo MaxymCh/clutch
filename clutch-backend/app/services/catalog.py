@@ -70,7 +70,9 @@ async def list_teams(session: AsyncSession) -> list[TeamOut]:
 
 async def get_team(session: AsyncSession, team_id: str) -> TeamOut | None:
     team = await session.get(Team, team_id)
-    return TeamOut.model_validate(team) if team else None
+    if not team:
+        return None
+    return TeamOut.model_validate(team)
 
 
 async def list_players(session: AsyncSession, team_id: str) -> list[PlayerOut]:

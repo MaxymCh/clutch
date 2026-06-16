@@ -355,7 +355,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "val" | "lol" | "cs2" | "dota" | "rl" | "ow";
+            id: "val" | "lol" | "cs2" | "dota" | "rl" | "ow" | "apex" | "r6" | "pubg" | "fn" | "ff" | "mlbb" | "hok" | "sf6" | "tk8" | "bo7" | "tft";
             /** Name */
             name: string;
             /** Short */
@@ -540,7 +540,7 @@ export interface components {
              * Gameid
              * @enum {string}
              */
-            gameId: "val" | "lol" | "cs2" | "dota" | "rl" | "ow";
+            gameId: "val" | "lol" | "cs2" | "dota" | "rl" | "ow" | "apex" | "r6" | "pubg" | "fn" | "ff" | "mlbb" | "hok" | "sf6" | "tk8" | "bo7" | "tft";
             teamA: components["schemas"]["TeamOut"];
             teamB: components["schemas"]["TeamOut"];
             /**

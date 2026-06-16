@@ -10,7 +10,7 @@ export const MatchesByDay = ({ matches }: { matches: Match[] }) => {
   const { predictedWinnerId } = usePredictions();
 
   const dates = [...new Set(matches.map((m) => m.date))].sort();
-  const tagOf = (m: Match) => games?.find((g) => g.id === m.gameId)?.tag ?? m.gameId.toUpperCase();
+  const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
 
   return (
     <>
@@ -22,14 +22,18 @@ export const MatchesByDay = ({ matches }: { matches: Match[] }) => {
           {matches
             .filter((m) => m.date === date)
             .sort((a, b) => a.time.localeCompare(b.time))
-            .map((m) => (
-              <MatchCard
-                key={m.id}
-                match={m}
-                gameTag={tagOf(m)}
-                predictedWinnerId={predictedWinnerId(m)}
-              />
-            ))}
+            .map((m) => {
+              const g = gameOf(m);
+              return (
+                <MatchCard
+                  key={m.id}
+                  match={m}
+                  gameTag={g?.tag ?? m.gameId.toUpperCase()}
+                  gameLogoUrl={g?.logoUrl}
+                  predictedWinnerId={predictedWinnerId(m)}
+                />
+              );
+            })}
         </section>
       ))}
     </>

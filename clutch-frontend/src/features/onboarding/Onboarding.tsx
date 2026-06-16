@@ -4,7 +4,9 @@ import { useUpdateUser } from '../../api/queries/useUser';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { useAuth } from '../auth/authContext';
-import { GamesStep, PseudoStep, TeamsStep } from './OnboardingSteps';
+import { GamesStep } from './steps/GamesStep';
+import { PseudoStep } from './steps/PseudoStep';
+import { TeamsStep } from './steps/TeamsStep';
 
 const STEP_COUNT = 3;
 

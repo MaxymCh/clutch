@@ -16,13 +16,25 @@ from typing import Any
 # --- Catalogue des jeux : données de CONTRAT (front), pas Liquipedia --------
 # Copie de GAMES/GAME_ORDER du front (src/api/mocks/catalog.ts).
 
+# Chemins relatifs au dossier public du front (clutch-frontend/public/games).
 GAME_CATALOG: list[dict[str, Any]] = [
-    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0, "bg_url": "/games/val.jpg"},
-    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1, "bg_url": "/games/lol.jpg"},
-    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2, "bg_url": "/games/cs2.jpg"},
-    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3, "bg_url": "/games/dota.jpg"},
-    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4, "bg_url": "/games/rl.jpg"},
-    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5, "bg_url": "/games/ow.jpg"},
+    {"id": "val", "name": "Valorant", "short": "Valorant", "tag": "VAL", "sort_order": 0, "bg_url": "/games/bg/val.jpg", "logo_url": "/games/icons/val.svg", "full_logo_url": "/games/full-logo/val.svg"},
+    {"id": "lol", "name": "League of Legends", "short": "LoL", "tag": "LOL", "sort_order": 1, "bg_url": "/games/bg/lol.jpg", "logo_url": "/games/icons/lol.svg", "full_logo_url": "/games/full-logo/lol.png"},
+    {"id": "cs2", "name": "Counter-Strike 2", "short": "CS2", "tag": "CS2", "sort_order": 2, "bg_url": "/games/bg/cs2.jpg", "logo_url": "/games/icons/cs2.svg", "full_logo_url": "/games/full-logo/cs2.svg"},
+    {"id": "dota", "name": "Dota 2", "short": "Dota 2", "tag": "DOTA", "sort_order": 3, "bg_url": "/games/bg/dota.jpg", "logo_url": "/games/icons/dota.svg", "full_logo_url": "/games/full-logo/dota.svg"},
+    {"id": "rl", "name": "Rocket League", "short": "Rocket L.", "tag": "RL", "sort_order": 4, "bg_url": "/games/bg/rl.jpg", "logo_url": "/games/icons/rl.svg", "full_logo_url": "/games/full-logo/rl.png"},
+    {"id": "ow", "name": "Overwatch 2", "short": "Overwatch", "tag": "OW", "sort_order": 5, "bg_url": "/games/bg/ow.jpg", "logo_url": "/games/icons/ow.svg", "full_logo_url": "/games/full-logo/ow.svg"},
+    {"id": "apex", "name": "Apex Legends", "short": "Apex", "tag": "APEX", "sort_order": 6, "bg_url": "/games/bg/apex.jpg", "logo_url": "/games/icons/apex.svg", "full_logo_url": "/games/full-logo/apex.png"},
+    {"id": "r6", "name": "Rainbow Six Siege", "short": "R6", "tag": "R6", "sort_order": 7, "bg_url": "/games/bg/r6.jpg", "logo_url": "/games/icons/r6.svg", "full_logo_url": "/games/full-logo/r6.png"},
+    {"id": "pubg", "name": "PUBG Mobile", "short": "PUBG", "tag": "PUBG", "sort_order": 8, "bg_url": "/games/bg/pubg.png", "logo_url": "/games/icons/pubg-mobile.svg", "full_logo_url": "/games/full-logo/pubg-mobile.png"},
+    {"id": "fn", "name": "Fortnite", "short": "Fortnite", "tag": "FN", "sort_order": 9, "bg_url": "/games/bg/fortnite.png", "logo_url": "/games/icons/fortnite.svg", "full_logo_url": "/games/full-logo/fortnite.png"},
+    {"id": "ff", "name": "Free Fire", "short": "Free Fire", "tag": "FF", "sort_order": 10, "bg_url": "/games/bg/free-fire.png", "logo_url": "/games/icons/free-fire.svg", "full_logo_url": "/games/full-logo/free-fire.svg"},
+    {"id": "mlbb", "name": "Mobile Legends", "short": "MLBB", "tag": "MLBB", "sort_order": 11, "bg_url": "/games/bg/mobile-legends.png", "logo_url": "/games/icons/mobile-legends.svg", "full_logo_url": "/games/full-logo/mobile-legends.png"},
+    {"id": "hok", "name": "Honor of Kings", "short": "HoK", "tag": "HOK", "sort_order": 12, "bg_url": "/games/bg/honor-of-king.png", "logo_url": "/games/icons/honor-of-king.svg", "full_logo_url": "/games/full-logo/honor-of-king.png"},
+    {"id": "sf6", "name": "Street Fighter 6", "short": "SF6", "tag": "SF6", "sort_order": 13, "bg_url": "/games/bg/street-fighter.jpg", "logo_url": "/games/icons/street-fighter.svg", "full_logo_url": "/games/full-logo/street-fighter.svg"},
+    {"id": "tk8", "name": "Tekken 8", "short": "Tekken 8", "tag": "TK8", "sort_order": 14, "bg_url": "/games/bg/tekken-8.jpg", "logo_url": "/games/icons/tekken-8.svg", "full_logo_url": "/games/full-logo/tekken-8.svg"},
+    {"id": "bo7", "name": "Call of Duty: BO7", "short": "CoD BO7", "tag": "COD", "sort_order": 15, "bg_url": "/games/bg/bo7.png", "logo_url": "/games/icons/bo7.svg", "full_logo_url": "/games/full-logo/bo7.svg"},
+    {"id": "tft", "name": "Teamfight Tactics", "short": "TFT", "tag": "TFT", "sort_order": 16, "bg_url": "/games/bg/tt.png", "logo_url": "/games/icons/tft.svg", "full_logo_url": "/games/full-logo/tft.svg"},
 ]
 
 # GameId front → wiki Liquipedia
@@ -33,8 +45,24 @@ WIKI_BY_GAME: dict[str, str] = {
     "dota": "dota2",
     "rl": "rocketleague",
     "ow": "overwatch",
+    "apex": "apexlegends",
+    "r6": "rainbowsix",
+    "pubg": "pubgmobile",
+    "fn": "fortnite",
+    "ff": "freefire",
+    "mlbb": "mobilelegends",
+    "hok": "honorofkings",
+    "sf6": "fighters",
+    # Tekken 8 n'a pas de wiki LPDB dédié : tournois EWC sur le wiki fighters.
+    "tk8": "fighters",
+    "bo7": "callofduty",
+    # Slug LPDB = « tft », pas « teamfighttactics » (404 sur /tournament).
+    "tft": "tft",
 }
 GAME_BY_WIKI: dict[str, str] = {wiki: game for game, wiki in WIKI_BY_GAME.items()}
+GAMES_BY_WIKI: dict[str, list[str]] = {}
+for _game_id, _wiki in WIKI_BY_GAME.items():
+    GAMES_BY_WIKI.setdefault(_wiki, []).append(_game_id)
 
 # --- Phases : libellés FR comme dans les fixtures du front -------------------
 
@@ -170,7 +198,7 @@ def compute_status(finished: Any, start_utc: datetime | None, now: datetime) -> 
     return "upcoming"
 
 
-def normalize_opponent(opponent: dict[str, Any]) -> dict[str, str] | None:
+def normalize_opponent(opponent: dict[str, Any]) -> dict[str, Any] | None:
     """match2opponents[i] → équipe du contrat (id, name, tag provisoire).
 
     None si l'opposant n'est pas encore connu (placeholder Liquipedia) :
@@ -183,11 +211,14 @@ def normalize_opponent(opponent: dict[str, Any]) -> dict[str, str] | None:
     if not name and not template:
         return None
     display = name or template
+    teamtemplate = opponent.get("teamtemplate")
+    logo_url = teamtemplate.get("imageurl") if isinstance(teamtemplate, dict) else None
     return {
         "id": slugify(template or name),
         "name": display,
         "tag": derive_tag(display),
         "template": template,
+        "logo_url": logo_url,
     }
 
 

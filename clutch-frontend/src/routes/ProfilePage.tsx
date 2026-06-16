@@ -6,6 +6,7 @@ import { useUser } from '../api/queries/useUser';
 import { Page } from '../components/layout/Page';
 import { Avatar } from '../components/ui/Avatar';
 import { Card } from '../components/ui/Card';
+import { GameTile } from '../components/ui/GameTile';
 import { Icon, type IconName } from '../components/ui/Icon';
 import { Toggle } from '../components/ui/Toggle';
 import { useFavorites } from '../features/favorites/favoritesContext';
@@ -89,30 +90,17 @@ export const ProfilePage = () => {
         <Row icon="shield" label="Équipes suivies" sub={followedTags} right={chevron} to="/teams" />
 
         <SectionTitle>Jeux suivis</SectionTitle>
-        <div className="grid grid-cols-3 gap-2 py-2 px-1">
+        <div className="grid grid-cols-3 gap-2 py-2 px-1 sm:grid-cols-4">
           {(games ?? []).map((game) => {
             const on = favGames.includes(game.id);
             return (
-              <button
+              <GameTile
                 key={game.id}
+                game={game}
+                variant="compact"
+                selected={on}
                 onClick={() => toggleGame(game.id)}
-                className={`relative overflow-hidden cursor-pointer rounded-2xl border-[1.5px] h-16 transition-all active:scale-[.97] ${
-                  on ? 'border-accent' : 'border-line-2'
-                }`}
-              >
-                {game.bgUrl && (
-                  <img src={game.bgUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                )}
-                <div className={`absolute inset-0 ${on ? 'bg-black/50' : 'bg-black/70'}`} />
-                <div className="relative flex h-full flex-col items-center justify-center gap-0.5 px-1">
-                  <span className={`text-[10px] font-extrabold ${on ? 'text-accent' : 'text-white/60'}`}>
-                    {game.tag.slice(0, 3)}
-                  </span>
-                  <span className="truncate text-[11px] font-bold leading-tight text-white">
-                    {game.short}
-                  </span>
-                </div>
-              </button>
+              />
             );
           })}
         </div>

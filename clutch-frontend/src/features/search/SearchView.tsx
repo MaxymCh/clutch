@@ -1,7 +1,9 @@
 import { useSearchParams } from 'react-router-dom';
 import { useGames } from '../../api/queries/useGames';
+import { GameLogo } from '../../components/ui/GameLogo';
 import { Icon } from '../../components/ui/Icon';
 import { Seg } from '../../components/ui/Seg';
+import type { Game } from '../../types/esports';
 import { SearchResults } from './SearchResults';
 
 const STATUS_OPTIONS = [
@@ -53,17 +55,18 @@ export const SearchView = () => {
       <div className="flex flex-col gap-3">
         <Seg full options={STATUS_OPTIONS} value={status} onChange={(v) => set('status', v)} />
         <div className="scrollbar-none flex gap-2 overflow-x-auto">
-          {[{ id: 'all', label: 'Tous les jeux' }, ...(games ?? []).map((g) => ({ id: g.id as string, label: g.short }))].map(
-            ({ id, label }) => {
+          {[{ id: 'all', label: 'Tous les jeux', game: null as Game | null }, ...(games ?? []).map((g) => ({ id: g.id as string, label: g.short, game: g }))].map(
+            ({ id, label, game: g }) => {
               const on = id === game;
               return (
                 <button
                   key={id}
                   onClick={() => set('game', id)}
-                  className={`shrink-0 cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-transform active:scale-95 ${
+                  className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-transform active:scale-95 ${
                     on ? 'border-ink bg-ink text-surface' : 'border-line-2 text-dim'
                   }`}
                 >
+                  {g && <GameLogo tag={g.tag} size={16} logoUrl={g.logoUrl} />}
                   {label}
                 </button>
               );

@@ -12,6 +12,8 @@ type MatchCardProps = {
   match: Match;
   /** Tag du jeu à afficher ("VAL", "CS2"…) */
   gameTag: string;
+  /** URL de l'icône locale du jeu */
+  gameLogoUrl?: string;
   /** Affiche le jour du match (listes multi-jours : page équipe) */
   showDay?: boolean;
   /** Id de l'équipe pronostiquée gagnante (badge PRONO), si prono posé */
@@ -37,7 +39,6 @@ export const MatchCard = ({
   match,
   gameTag,
   showDay = false,
-  predictedWinnerId = null,
   showPredictionFooter = false,
   onPredict,
 }: MatchCardProps) => {
