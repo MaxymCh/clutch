@@ -20,7 +20,7 @@ export const GameBrand = ({ tag, logoUrl, fullLogoUrl, size = 'md' }: GameBrandP
 
   if (src) {
     return (
-      <div className={`inline-flex max-w-full items-center justify-center rounded-xl bg-white shadow-card ${PILL_PAD[size]}`}>
+      <div className={`inline-flex max-w-full items-center justify-center rounded-xl bg-white/90 shadow-card ${PILL_PAD[size]}`}>
         <img
           src={src}
           alt={tag}

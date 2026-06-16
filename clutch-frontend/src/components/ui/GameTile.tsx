@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Game } from '../../types/esports';
 import { GameBrand } from './GameBrand';
+import { Icon } from './Icon';
 
 type GameTileProps = {
   game: Game;
@@ -33,10 +34,10 @@ const VARIANT = {
   compact: {
     aspect: 'h-16',
     brand: 'sm' as const,
-    overlay: 'bg-black/70',
-    overlayOn: 'bg-black/50',
-    ring: 'border-[1.5px] border-line-2',
-    ringOn: 'border-[1.5px] border-accent',
+    overlay: 'bg-black/65',
+    overlayOn: 'bg-black/35',
+    ring: 'border-2 border-line-2',
+    ringOn: 'border-2 border-accent',
   },
 };
 
@@ -53,11 +54,19 @@ export const GameTile = ({
   const v = VARIANT[variant];
   const interactive = onClick ? 'cursor-pointer transition-all duration-200 active:scale-[.96]' : '';
   const Comp = onClick ? 'button' : 'div';
+  const selectionBadge =
+    badge ??
+    (selected && variant === 'compact' ? (
+      <div className="grid size-5 place-items-center rounded-full bg-accent shadow-sm">
+        <Icon name="check" size={11} strokeWidth={2.8} className="text-white" />
+      </div>
+    ) : null);
 
   return (
     <Comp
       type={onClick ? 'button' : undefined}
       onClick={onClick}
+      aria-pressed={onClick ? selected : undefined}
       className={[
         'group relative w-full overflow-hidden rounded-2xl text-left',
         v.aspect,
@@ -88,7 +97,11 @@ export const GameTile = ({
         }`}
       />
 
-      {badge && <div className="absolute top-2 right-2 z-10">{badge}</div>}
+      {selectionBadge && (
+        <div className={`absolute z-10 ${variant === 'compact' ? 'top-1.5 right-1.5' : 'top-2 right-2'}`}>
+          {selectionBadge}
+        </div>
+      )}
 
       <div
         className={`relative z-[1] flex h-full flex-col items-center justify-center gap-2 p-3 ${
