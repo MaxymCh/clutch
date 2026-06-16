@@ -36,18 +36,20 @@ export const TeamPage = () => {
         <h2 className="pt-5 pb-2 text-[17px] leading-none font-semibold tracking-tight text-ink">
           {label}
         </h2>
-        {items.map((m) => {
-          const g = gameOf(m);
-          return (
-            <MatchCard
-              key={m.id}
-              match={m}
-              gameTag={g?.tag ?? m.gameId.toUpperCase()}
-              gameLogoUrl={g?.logoUrl}
-              predictedWinnerId={predictedWinnerId(m)}
-            />
-          );
-        })}
+        <div className="flex flex-col gap-3">
+          {items.map((m) => {
+            const g = gameOf(m);
+            return (
+              <MatchCard
+                key={m.id}
+                match={m}
+                gameTag={g?.tag ?? m.gameId.toUpperCase()}
+                gameLogoUrl={g?.logoUrl}
+                predictedWinnerId={predictedWinnerId(m)}
+              />
+            );
+          })}
+        </div>
       </section>
     );
 
