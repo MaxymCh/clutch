@@ -1,9 +1,9 @@
 import { Card } from "../../components/ui/Card";
 import { GameLogo } from "../../components/ui/GameLogo";
-import { Icon } from "../../components/ui/Icon";
 import { TeamLogo } from "../../components/ui/TeamLogo";
 import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
 import type { Match } from "../../types/esports";
+import { PronoBadge } from "./PronoBadge";
 import { usePredictions } from "./predictionsContext";
 
 type PredictCardProps = {
@@ -108,18 +108,8 @@ export const PredictCard = ({
       )}
 
       {/* CTA en bas */}
-      <div className={`flex justify-center ${compact ? 'mt-4' : 'mt-4'}`}>
-        {hasPredicted ? (
-          <span className={`inline-flex items-center gap-1.5 rounded-xl border border-accent/20 bg-accent/5 font-bold text-accent ${compact ? 'px-4 py-2 text-[13px]' : 'gap-1.5 px-3.5 py-1.5 text-[11px]'}`}>
-            <Icon name="pencil" size={13} strokeWidth={2.2} />
-            Modifier
-          </span>
-        ) : (
-          <span className={`inline-flex items-center gap-1.5 rounded-xl bg-accent font-bold text-on-accent ${compact ? 'px-4 py-2.5 text-[13px]' : 'gap-1.5 px-5 py-2 text-[13px]'}`}>
-            <Icon name="trophy" size={14} strokeWidth={2} />
-            Prono
-          </span>
-        )}
+      <div className="mt-4">
+        <PronoBadge match={match} onPredict={onPredict} />
       </div>
     </Card>
   );

@@ -195,7 +195,7 @@ export const ForYouPage = () => {
   const inFavGames = (m: Match) => favGames.includes(m.gameId);
 
   const live = useMemo(
-    () => matches.filter((m) => m.date === todayIso && m.status === 'live' && (inFavTeams(m) || inFavGames(m))),
+    () => matches.filter((m) => m.status === 'live' && (inFavTeams(m) || inFavGames(m))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [matches, favTeams, favGames],
   );
