@@ -6,6 +6,7 @@ import "./index.css";
 import { AuthProvider } from "./features/auth/AuthProvider";
 import { AppLayout } from "./routes/AppLayout";
 import { CalendarPage } from "./routes/CalendarPage";
+import { ForYouPage } from "./routes/ForYouPage";
 import { GamePage } from "./routes/GamePage";
 import { GamesPage } from "./routes/GamesPage";
 import { GroupCreatePage } from "./routes/GroupCreatePage";
@@ -38,7 +39,8 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                <Route path="/" element={<CalendarPage />} />
+                <Route path="/" element={<ForYouPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/team/:id" element={<TeamPage />} />
                 <Route path="/match/:id" element={<MatchPage />} />
                 <Route path="/games" element={<GamesPage />} />

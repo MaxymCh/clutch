@@ -77,7 +77,7 @@ export const FloatingNav = ({
             >
               <Icon name={tab.icon} size={18} strokeWidth={on ? 2.2 : 1.8} />
               {tab.label}
-              {tab.id === "agenda" && agendaLive && (
+              {(tab.id === "home" || tab.id === "agenda") && agendaLive && (
                 <span className="ml-0.5">
                   <LiveDot />
                 </span>

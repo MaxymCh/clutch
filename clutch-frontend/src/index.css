@@ -80,6 +80,7 @@
 /* Rangées scrollables au doigt, sans barre de défilement visible */
 @utility scrollbar-none {
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
   &::-webkit-scrollbar {
     display: none;
   }

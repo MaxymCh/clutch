@@ -5,8 +5,8 @@ import { Icon } from './Icon';
 
 type GameTileProps = {
   game: Game;
-  /** grid = carte portrait, picker = onboarding, compact = favoris profil */
-  variant: 'grid' | 'picker' | 'compact';
+  /** grid = carte portrait, picker = onboarding, compact = favoris profil, mini = feed Pour toi */
+  variant: 'grid' | 'picker' | 'compact' | 'mini';
   selected?: boolean;
   onClick?: () => void;
   badge?: ReactNode;
@@ -39,6 +39,14 @@ const VARIANT = {
     ring: 'border-2 border-line-2',
     ringOn: 'border-2 border-accent',
   },
+  mini: {
+    aspect: 'h-12',
+    brand: 'xs' as const,
+    overlay: 'bg-black/65',
+    overlayOn: 'bg-black/35',
+    ring: 'border border-line-2',
+    ringOn: 'border border-accent',
+  },
 };
 
 /** Carte jeu brandée : fond (bgUrl) + logo EWC + contenu optionnel. */
@@ -56,9 +64,9 @@ export const GameTile = ({
   const Comp = onClick ? 'button' : 'div';
   const selectionBadge =
     badge ??
-    (selected && variant === 'compact' ? (
-      <div className="grid size-5 place-items-center rounded-full bg-accent shadow-sm">
-        <Icon name="check" size={11} strokeWidth={2.8} className="text-white" />
+    (selected && (variant === 'compact' || variant === 'mini') ? (
+      <div className={`grid place-items-center rounded-full bg-accent shadow-sm ${variant === 'mini' ? 'size-4' : 'size-5'}`}>
+        <Icon name="check" size={variant === 'mini' ? 9 : 11} strokeWidth={2.8} className="text-white" />
       </div>
     ) : null);
 
@@ -68,7 +76,8 @@ export const GameTile = ({
       onClick={onClick}
       aria-pressed={onClick ? selected : undefined}
       className={[
-        'group relative w-full overflow-hidden rounded-2xl text-left',
+        'group relative w-full overflow-hidden text-left',
+        variant === 'mini' ? 'rounded-xl' : 'rounded-2xl',
         v.aspect,
         interactive,
         selected ? v.ringOn : v.ring,
@@ -89,7 +98,7 @@ export const GameTile = ({
 
       <div
         className={`absolute inset-0 ${
-          variant === 'compact'
+          variant === 'compact' || variant === 'mini'
             ? selected
               ? v.overlayOn
               : v.overlay
@@ -98,20 +107,20 @@ export const GameTile = ({
       />
 
       {selectionBadge && (
-        <div className={`absolute z-10 ${variant === 'compact' ? 'top-1.5 right-1.5' : 'top-2 right-2'}`}>
+        <div className={`absolute z-10 ${variant === 'mini' ? 'top-1 right-1' : variant === 'compact' ? 'top-1.5 right-1.5' : 'top-2 right-2'}`}>
           {selectionBadge}
         </div>
       )}
 
       <div
         className={`relative z-[1] flex h-full flex-col items-center justify-center gap-2 p-3 ${
-          variant === 'compact' ? 'px-1.5 py-2' : ''
+          variant === 'mini' ? 'px-1 py-1' : variant === 'compact' ? 'px-1.5 py-2' : ''
         }`}
       >
         <GameBrand tag={game.tag} logoUrl={game.logoUrl} fullLogoUrl={game.fullLogoUrl} size={v.brand} />
         {subtitle !== undefined ? (
           subtitle
-        ) : variant !== 'compact' ? (
+        ) : variant !== 'compact' && variant !== 'mini' ? (
           <p className="text-center text-[12px] font-bold leading-tight text-white drop-shadow-sm">
             {game.short}
           </p>
