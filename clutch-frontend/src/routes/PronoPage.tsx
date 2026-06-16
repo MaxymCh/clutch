@@ -159,10 +159,10 @@ export const PronoPage = () => {
         )}
       </div>
 
-      {/* Filtre par jeu — badges lisibles, scroll horizontal */}
+      {/* Filtre par jeu — badges lisibles, retour à la ligne */}
       {availableGames.length > 1 && (
         <div className="px-5 pt-1 pb-4">
-          <div className="scrollbar-none flex gap-2.5 overflow-x-auto" role="tablist">
+          <div className="flex flex-wrap gap-2.5" role="tablist">
             <button
               role="tab"
               aria-selected={!selectedGameId}
@@ -248,7 +248,14 @@ export const PronoPage = () => {
               {isPending && <PageSpinner />}
               <div className="grid grid-cols-2 gap-3 pb-4">
                 {toPredict.map((m) => (
-                  <PredictCard key={m.id} match={m} gameTag={tagOf(m)} onPredict={setPredicting} compact />
+                  <PredictCard
+                    key={m.id}
+                    match={m}
+                    gameTag={tagOf(m)}
+                    gameLogoUrl={games?.find((g) => g.id === m.gameId)?.logoUrl}
+                    onPredict={setPredicting}
+                    compact
+                  />
                 ))}
               </div>
             </>

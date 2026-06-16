@@ -1,4 +1,5 @@
 import { Card } from "../../components/ui/Card";
+import { GameLogo } from "../../components/ui/GameLogo";
 import { Icon } from "../../components/ui/Icon";
 import { TeamLogo } from "../../components/ui/TeamLogo";
 import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
@@ -8,6 +9,7 @@ import { usePredictions } from "./predictionsContext";
 type PredictCardProps = {
   match: Match;
   gameTag: string;
+  gameLogoUrl?: string;
   onPredict: (match: Match) => void;
   compact?: boolean;
 };
@@ -16,6 +18,7 @@ type PredictCardProps = {
 export const PredictCard = ({
   match,
   gameTag,
+  gameLogoUrl,
   onPredict,
   compact,
 }: PredictCardProps) => {
@@ -32,7 +35,8 @@ export const PredictCard = ({
       {/* Méta : jeu · phase · date */}
       <div className={`mb-5 flex items-center justify-between text-ink-2 uppercase ${compact ? 'text-[12px] font-semibold tracking-wide' : 'text-[10.5px] font-semibold tracking-wide'}`}>
         <span className="flex items-center gap-1 truncate">
-          {gameTag}
+          <GameLogo tag={gameTag} size={18} logoUrl={gameLogoUrl} />
+          <span className="text-[11px] font-bold tracking-[.08em] text-dim">{gameTag}</span>
           {!compact && (
             <>
               <span className="size-0.75 rounded-full bg-dim" />
