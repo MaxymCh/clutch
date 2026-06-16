@@ -8,6 +8,7 @@ import { usePredictionHistory } from '../api/queries/useMatches';
 import { useUser } from '../api/queries/useUser';
 import { Avatar } from '../components/ui/Avatar';
 import { Page } from '../components/layout/Page';
+import { GameLogo } from '../components/ui/GameLogo';
 import { Icon } from '../components/ui/Icon';
 import { Seg } from '../components/ui/Seg';
 import { PageSpinner } from '../components/ui/Spinner';
@@ -187,11 +188,7 @@ export const PronoPage = () => {
                     active ? 'border-accent bg-accent/8' : 'border-line-2'
                   }`}
                 >
-                  <img
-                    src={`/games/${g.id}.jpg`}
-                    alt={g.short}
-                    className="size-7 rounded-full object-cover"
-                  />
+                  <GameLogo tag={g.tag} size={18} logoUrl={g.logoUrl} />
                   <span className={`text-[13px] font-semibold ${active ? 'text-accent' : 'text-ink'}`}>
                     {g.short}
                   </span>
@@ -207,7 +204,7 @@ export const PronoPage = () => {
         <Seg
           full
           value={view}
-          onChange={setView}
+          onChange={(value) => setView(value as 'pronos' | 'classement')}
           options={[
             { value: 'pronos', label: 'Pronos' },
             { value: 'classement', label: 'Classement' },
