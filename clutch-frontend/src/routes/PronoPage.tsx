@@ -12,9 +12,11 @@ import { GameLogo } from '../components/ui/GameLogo';
 import { Icon } from '../components/ui/Icon';
 import { Seg } from '../components/ui/Seg';
 import { PageSpinner } from '../components/ui/Spinner';
+import { TeamLogo } from '../components/ui/TeamLogo';
 import { PredictCard } from '../features/prono/PredictCard';
 import { PredictSheet } from '../features/prono/PredictSheet';
 import { RankRow } from '../features/prono/RankRow';
+import { formatDayMonth, formatWeekdayShort } from '../lib/date';
 import { countryFlag } from '../lib/flag';
 import { formatPoints } from '../lib/format';
 import type { GroupMember } from '../types/community';
@@ -280,27 +282,55 @@ export const PronoPage = () => {
                   const exact =
                     prediction.scoreA === (match.scoreA ?? 0) &&
                     prediction.scoreB === (match.scoreB ?? 0);
+                  const game = games?.find((g) => g.id === match.gameId);
+                  const pointsValue = points ?? 0;
 
                   return (
                     <div
                       key={match.id}
-                      className="rounded-xl border border-line bg-surface-2 px-4 py-3"
+                      className="rounded-2xl border border-line bg-surface-2 p-4"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-ink">
-                            {match.teamA.tag} vs {match.teamB.tag}
-                          </p>
-                          <p className="mt-0.5 text-[11px] font-medium text-dim">
-                            <Link to={`/game/${match.gameId}`} className="text-accent">{tagOf(match)}</Link>
-                            {' · '}{match.phase}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-[15px] font-bold tabular-nums text-ink">
-                          {match.scoreA}–{match.scoreB}
+                      <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
+                        <span className="flex items-center gap-1.5">
+                          <Link
+                            to={`/game/${match.gameId}`}
+                            className="inline-flex items-center gap-1.5 text-accent"
+                          >
+                            <GameLogo tag={tagOf(match)} size={18} logoUrl={game?.logoUrl} />
+                            <span className="text-[10px] font-bold tracking-[.08em]">{tagOf(match)}</span>
+                          </Link>
+                          <span className="size-0.75 rounded-full bg-dim" />
+                          {match.phase}
+                        </span>
+                        <span className="text-dim">
+                          {formatWeekdayShort(match.date)} {formatDayMonth(match.date)} · {match.time}
                         </span>
                       </div>
-                      <div className="mt-2.5 flex items-center gap-2.5">
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-1 flex-col items-center gap-1.5">
+                          <TeamLogo tag={match.teamA.tag} size={44} logoUrl={match.teamA.logoUrl} />
+                          <span className={`max-w-full truncate text-center text-[13px] font-bold ${(match.scoreA ?? 0) < (match.scoreB ?? 0) ? 'text-dim' : 'text-ink'}`}>
+                            {match.teamA.name}
+                          </span>
+                        </div>
+
+                        <div className="shrink-0 px-3 text-center">
+                          <div className="mb-1 text-[11px] font-bold text-accent">+{pointsValue} pts</div>
+                          <div className="text-xl font-bold tabular-nums text-ink">
+                            {match.scoreA ?? 0} – {match.scoreB ?? 0}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-1 flex-col items-center gap-1.5">
+                          <TeamLogo tag={match.teamB.tag} size={44} logoUrl={match.teamB.logoUrl} />
+                          <span className={`max-w-full truncate text-center text-[13px] font-bold ${(match.scoreB ?? 0) < (match.scoreA ?? 0) ? 'text-dim' : 'text-ink'}`}>
+                            {match.teamB.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex justify-center">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold ${
                             exact
@@ -313,9 +343,6 @@ export const PronoPage = () => {
                           <Icon name={correct ? 'check' : 'close'} size={11} strokeWidth={2.5} />
                           Mon prono : {pickedTeam.tag} {prediction.scoreA}–{prediction.scoreB}
                         </span>
-                        {points !== undefined && points !== null && points > 0 && (
-                          <span className="text-[12px] font-bold text-accent">+{points}pts</span>
-                        )}
                       </div>
                     </div>
                   );

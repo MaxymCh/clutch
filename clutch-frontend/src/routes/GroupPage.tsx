@@ -11,7 +11,9 @@ import {
 import { useMatches } from "../api/queries/useMatches";
 import { Avatar } from "../components/ui/Avatar";
 import { ConfirmModal } from "../components/ui/ConfirmModal";
+import { GameLogo } from "../components/ui/GameLogo";
 import { Page } from "../components/layout/Page";
+import { TeamLogo } from "../components/ui/TeamLogo";
 import { TopBar } from "../components/layout/TopBar";
 import { Icon } from "../components/ui/Icon";
 import { Seg } from "../components/ui/Seg";
@@ -22,6 +24,7 @@ import { PredictCard } from "../features/prono/PredictCard";
 import { PredictSheet } from "../features/prono/PredictSheet";
 import { RankRow } from "../features/prono/RankRow";
 import { getGroupScopeLabel } from "../features/prono/groupScopeLabel";
+import { formatDayMonth, formatWeekdayShort } from "../lib/date";
 import { formatPoints } from "../lib/format";
 import type { Match } from "../types/esports";
 
@@ -322,23 +325,84 @@ export const GroupPage = () => {
                   {isHistoryPending && <PageSpinner />}
                   <div className="space-y-3 pb-6">
                     {history.map(({ match, members }) => (
-                      <div
-                        key={match.id}
-                        className="rounded-xl border border-line bg-surface-2 px-4 py-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-ink">
-                              {match.teamA.tag} vs {match.teamB.tag}
-                            </p>
-                            <p className="mt-0.5 text-[11px] font-medium text-dim">
-                              {tagOf(match)} · {match.phase}
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-[15px] font-bold tabular-nums text-ink">
-                            {match.scoreA ?? 0}–{match.scoreB ?? 0}
-                          </span>
-                        </div>
+                      <div key={match.id} className="rounded-2xl border border-line bg-surface-2 p-4">
+                        {(() => {
+                          const me = members.find((member) => member.isMe);
+                          const pred = me?.prediction;
+                          const pickedTeam = pred
+                            ? pred.pick === "a"
+                              ? match.teamA
+                              : match.teamB
+                            : null;
+                          const actualWinner = (match.scoreA ?? 0) > (match.scoreB ?? 0) ? match.teamA : match.teamB;
+                          const correct = !!pickedTeam && pickedTeam.id === actualWinner.id;
+                          const exact = !!pred && pred.scoreA === (match.scoreA ?? 0) && pred.scoreB === (match.scoreB ?? 0);
+                          const pointsValue = me?.points ?? 0;
+                          const game = games?.find((g) => g.id === match.gameId);
+
+                          return (
+                            <>
+                              <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="inline-flex items-center gap-1.5 text-accent">
+                                    <GameLogo tag={tagOf(match)} size={18} logoUrl={game?.logoUrl} />
+                                    <span className="text-[10px] font-bold tracking-[.08em]">{tagOf(match)}</span>
+                                  </span>
+                                  <span className="size-0.75 rounded-full bg-dim" />
+                                  {match.phase}
+                                </span>
+                                <span className="text-dim">
+                                  {formatWeekdayShort(match.date)} {formatDayMonth(match.date)} · {match.time}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-1 flex-col items-center gap-1.5">
+                                  <TeamLogo tag={match.teamA.tag} size={44} logoUrl={match.teamA.logoUrl} />
+                                  <span className={`max-w-full truncate text-center text-[13px] font-bold ${(match.scoreA ?? 0) < (match.scoreB ?? 0) ? "text-dim" : "text-ink"}`}>
+                                    {match.teamA.name}
+                                  </span>
+                                </div>
+
+                                <div className="shrink-0 px-3 text-center">
+                                  <div className="mb-1 text-[11px] font-bold text-accent">+{pointsValue} pts</div>
+                                  <div className="text-xl font-bold tabular-nums text-ink">
+                                    {match.scoreA ?? 0} – {match.scoreB ?? 0}
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-1 flex-col items-center gap-1.5">
+                                  <TeamLogo tag={match.teamB.tag} size={44} logoUrl={match.teamB.logoUrl} />
+                                  <span className={`max-w-full truncate text-center text-[13px] font-bold ${(match.scoreB ?? 0) < (match.scoreA ?? 0) ? "text-dim" : "text-ink"}`}>
+                                    {match.teamB.name}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 flex justify-center">
+                                {pred && pickedTeam ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold ${
+                                      exact
+                                        ? "bg-accent/12 text-accent"
+                                        : correct
+                                          ? "bg-green-500/10 text-green-600"
+                                          : "bg-red-500/10 text-red-500"
+                                    }`}
+                                  >
+                                    <Icon name={correct ? "check" : "close"} size={11} strokeWidth={2.5} />
+                                    Mon prono : {pickedTeam.tag} {pred.scoreA}–{pred.scoreB}
+                                  </span>
+                                ) : (
+                                  <span className="rounded-lg bg-surface px-2.5 py-1 text-[11px] font-bold text-dim">
+                                    Aucun prono
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
+
                         {/* Pronos des membres */}
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {members.map((member) => (
