@@ -4,7 +4,7 @@ import type { Match } from "../../types/esports";
 import { GameLogo } from "../../components/ui/GameLogo";
 import { Icon } from "../../components/ui/Icon";
 import { TeamLogo } from "../../components/ui/TeamLogo";
-import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
+import { formatDDMM, formatWeekdayShort } from "../../lib/date";
 import { StatusPill } from "./StatusPill";
 import { usePredictions } from "../prono/predictionsContext";
 import type { Prediction } from "../../types/community";
@@ -15,8 +15,6 @@ type MatchCardProps = {
   gameTag: string;
   /** URL de l'icône locale du jeu */
   gameLogoUrl?: string;
-  /** Affiche le jour du match (listes multi-jours : page équipe) */
-  showDay?: boolean;
   /** Id de l'équipe pronostiquée gagnante (badge PRONO), si prono posé */
   predictedWinnerId?: string | null;
   /** Affiche le mini-encart prono sous la carte (agenda) */
@@ -40,7 +38,6 @@ export const MatchCard = ({
   match,
   gameTag,
   gameLogoUrl,
-  showDay = false,
   showPredictionFooter = false,
   onPredict,
 }: MatchCardProps) => {
@@ -92,14 +89,7 @@ export const MatchCard = ({
               </>
             )}
           </span>
-          <span className="flex items-center gap-2">
-            {showDay && (
-              <span className="text-dim">
-                {formatWeekdayShort(match.date)} {formatDayMonth(match.date)}
-              </span>
-            )}
-            <StatusPill match={match} />
-          </span>
+          <StatusPill match={match} />
         </div>
 
         {/* Équipes face-à-face : logo gros + nom en dessous */}
@@ -136,6 +126,9 @@ export const MatchCard = ({
                 {match.time}
               </span>
             )}
+            <span className="mt-0.5 block text-[11px] font-medium text-faint tabular-nums">
+              {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
+            </span>
           </div>
 
           {/* Équipe B */}

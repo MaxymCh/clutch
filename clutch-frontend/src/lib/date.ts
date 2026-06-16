@@ -12,6 +12,14 @@ export const formatWeekdayShort = (iso: string): string =>
 export const formatDayMonth = (iso: string): string =>
   parse(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
 
+/** "2026-07-11" → "11/07" */
+export const formatDDMM = (iso: string): string => {
+  const d = parse(iso);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}`;
+};
+
 /** "2026-07-11" → "Samedi 11 juillet" */
 export const formatDayFull = (iso: string): string =>
   cap(parse(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }));
