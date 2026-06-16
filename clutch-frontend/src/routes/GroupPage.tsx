@@ -350,6 +350,12 @@ export const GroupPage = () => {
                                   </span>
                                   <span className="size-0.75 rounded-full bg-dim" />
                                   {match.phase}
+                                  {match.bestOf && (
+                                    <>
+                                      <span className="size-0.75 rounded-full bg-dim" />
+                                      <span>{match.bestOf}</span>
+                                    </>
+                                  )}
                                 </span>
                                 <span className="text-dim">
                                   {formatWeekdayShort(match.date)} {formatDayMonth(match.date)} · {match.time}

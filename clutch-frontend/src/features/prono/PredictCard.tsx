@@ -43,6 +43,12 @@ export const PredictCard = ({
               {match.phase}
             </>
           )}
+          {match.bestOf && (
+            <>
+              <span className="size-0.75 rounded-full bg-dim" />
+              {match.bestOf}
+            </>
+          )}
         </span>
         {!compact && (
           <span className="shrink-0 text-dim">
