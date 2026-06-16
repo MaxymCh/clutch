@@ -1,5 +1,3 @@
-import { Icon } from "./Icon";
-
 type ConfirmModalProps = {
   open: boolean;
   onClose: () => void;

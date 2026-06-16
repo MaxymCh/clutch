@@ -43,7 +43,6 @@ export const GroupPage = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmKick, setConfirmKick] = useState<{
     name: string;
     tag: string;
