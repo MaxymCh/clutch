@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     scoring_interval_seconds: int = 60
+    # Secret optionnel pour valider les pings webhook Liquipedia
+    # (envoyé dans l'en-tête X-Webhook-Secret par le serveur appelant).
+    webhook_secret: str = ""
 
 
 @lru_cache

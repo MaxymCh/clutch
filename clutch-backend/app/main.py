@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.community import router as community_router
+from app.api.webhook import router as webhook_router
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.services.scoring import score_finished_matches
@@ -78,3 +79,4 @@ async def attribution_header(request: Request, call_next) -> Response:
 app.include_router(auth_router)
 app.include_router(catalog_router)
 app.include_router(community_router)
+app.include_router(webhook_router)
