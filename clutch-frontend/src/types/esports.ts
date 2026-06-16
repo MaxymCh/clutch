@@ -74,6 +74,22 @@ export interface MapPlayer {
   hs?: number;
   /** Agent joué (Valorant) */
   agent?: string;
+  /** Champion joué (League of Legends) */
+  champion?: string;
+  /** Poste/rôle ("Top", "Mid", "Support"…) — League of Legends */
+  role?: string;
+  /** Héros joué (Dota 2) */
+  hero?: string;
+  /** Gold par minute (Dota 2) */
+  gpm?: number;
+  /** XP par minute (Dota 2) */
+  xpm?: number;
+  /** Last hits / CS (Dota 2) */
+  lasthits?: number;
+  /** Net worth / or total (Dota 2) */
+  networth?: number;
+  /** Niveau du héros (Dota 2) */
+  level?: number;
 }
 
 /** Une étape du veto des cartes (ban / pick / decider) */

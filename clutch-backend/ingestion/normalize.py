@@ -231,14 +231,31 @@ def _round_or_none(value: Any) -> float | int | None:
     return int(number) if number.is_integer() else round(number, 1)
 
 
+# Postes LoL LPDB (minuscules) → libellé du front + ordre d'affichage.
+LOL_ROLE_LABELS: dict[str, str] = {
+    "top": "Top",
+    "jungle": "Jungle",
+    "mid": "Mid",
+    "middle": "Mid",
+    "bottom": "Bot",
+    "bot": "Bot",
+    "adc": "Bot",
+    "support": "Support",
+}
+LOL_ROLE_ORDER: dict[str, int] = {"Top": 0, "Jungle": 1, "Mid": 2, "Bot": 3, "Support": 4}
+
+
 def normalize_participants(
-    raw_game: dict[str, Any], player_country: dict[str, str]
+    raw_game: dict[str, Any], player_country: dict[str, str], game_id: str = ""
 ) -> list[dict[str, Any]] | None:
     """match2games[i].participants → scoreboard par joueur du front.
 
     Clé LPDB "<opp>_<player>" : opp 1 = équipe A, opp 2 = équipe B. On capte
-    les stats génériques (K/D/A) + spécifiques Valorant (ACS, ADR, agent) quand
-    elles existent. `player_country` (nom canonique → ISO) ajoute le drapeau.
+    les stats génériques (K/D/A) + les spécificités par jeu quand elles existent :
+    - Valorant : ACS, ADR, HS, agent ;
+    - League of Legends : champion (`character`), poste (`role`) ;
+    - Dota 2 : héros (`character`), GPM, XPM, last hits, net worth, niveau.
+    `player_country` (nom canonique → ISO) ajoute le drapeau.
     """
     participants = raw_game.get("participants")
     if not isinstance(participants, dict) or not participants:
@@ -276,12 +293,30 @@ def normalize_participants(
         agent = p.get("agent")
         if isinstance(agent, str) and agent.strip():
             entry["agent"] = agent.strip()
+        # "character" = champion (LoL) ou héros (Dota 2) selon le jeu.
+        character = p.get("character")
+        if isinstance(character, str) and character.strip():
+            entry["hero" if game_id == "dota" else "champion"] = character.strip()
+        role = p.get("role")
+        if isinstance(role, str) and role.strip():
+            entry["role"] = LOL_ROLE_LABELS.get(role.strip().lower(), role.strip().title())
+        # Dota 2 : économie/farm par joueur.
+        for src, dst in (("gpm", "gpm"), ("xpm", "xpm"), ("lasthits", "lasthits"), ("gold", "networth"), ("level", "level")):
+            value = _round_or_none(p.get(src))
+            if value is not None:
+                entry[dst] = value
         players.append(entry)
 
     if not players:
         return None
-    # Tri : équipe A puis B, et par ACS (sinon kills) décroissant à l'intérieur.
-    players.sort(key=lambda e: (e["side"], -(e.get("acs") or e["kills"])))
+    # Tri : équipe A puis B. À l'intérieur : ordre des postes (LoL), net worth
+    # décroissant (Dota), sinon ACS/kills décroissant.
+    if game_id == "lol" and any("role" in e for e in players):
+        players.sort(key=lambda e: (e["side"], LOL_ROLE_ORDER.get(e.get("role", ""), 99)))
+    elif game_id == "dota":
+        players.sort(key=lambda e: (e["side"], -(e.get("networth") or e.get("gpm") or e["kills"])))
+    else:
+        players.sort(key=lambda e: (e["side"], -(e.get("acs") or e["kills"])))
     return players
 
 
@@ -289,6 +324,7 @@ def normalize_maps(
     games: list[Any] | None,
     match_status: str,
     player_country: dict[str, str] | None = None,
+    game_id: str = "",
 ) -> list[dict[str, Any]] | None:
     """match2games → MapScore[] du front. Seules les cartes jouées/en cours
     sortent ; la carte en cours (match live) porte live=true, pas de winner.
@@ -306,7 +342,7 @@ def normalize_maps(
         score_a = _as_int(scores[0]) if len(scores) > 0 else None
         score_b = _as_int(scores[1]) if len(scores) > 1 else None
         winner = str(raw.get("winner") or "")
-        players = normalize_participants(raw, player_country)
+        players = normalize_participants(raw, player_country, game_id)
 
         if winner in ("1", "2"):
             entry: dict[str, Any] = {
@@ -516,7 +552,7 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
     status = compute_status(record.get("finished"), start_utc, now)
     games = record.get("match2games") or []
     countries = player_countries(opponents)
-    maps = normalize_maps(games, status, countries)
+    maps = normalize_maps(games, status, countries, game_id)
 
     score_a = _as_int(opponents[0].get("score"))
     score_b = _as_int(opponents[1].get("score"))

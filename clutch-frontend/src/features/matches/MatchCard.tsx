@@ -64,19 +64,25 @@ export const MatchCard = ({
 
   return (
     <div
-      className={`rounded-2xl border border-line bg-surface-2 p-4 ${live ? "relative overflow-hidden" : ""}`}
+      className={`relative rounded-2xl border border-line bg-surface-2 p-4 ${live ? "overflow-hidden" : ""}`}
     >
       {/* barre latérale orange = signal live */}
       {live && <span className="absolute top-0 bottom-0 left-0 w-1 bg-live" />}
 
-      <Link to={`/match/${match.id}`} className="block">
+      <div className="relative">
+        {/* Lien plein-carte (overlay) : évite l'imbrication d'<a> dans un <a> */}
+        <Link
+          to={`/match/${match.id}`}
+          aria-label={`${match.teamA.name} vs ${match.teamB.name}`}
+          className="absolute inset-0 z-0"
+        />
+
         {/* Méta : jeu · phase · statut */}
         <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
           <span className="flex items-center gap-1.5">
             <Link
               to={`/game/${match.gameId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-accent transition-colors hover:text-accent/80"
+              className="relative z-10 text-accent transition-colors hover:text-accent/80"
             >
               {gameTag}
             </Link>
@@ -167,7 +173,7 @@ export const MatchCard = ({
             )}
           </div>
         )}
-      </Link>
+      </div>
 
       {showFooter && (
         <div className="mt-3 border-t border-line pt-3">

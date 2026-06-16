@@ -73,15 +73,24 @@ MAP_POOLS: dict[str, list[str]] = {
     "lol": [],
 }
 
-# Agents Valorant pour les scoreboards (5 distincts attribués par équipe).
-VAL_AGENTS = [
-    "Jett", "Raze", "Omen", "Sova", "Killjoy", "Cypher", "Sage", "Astra", "Viper",
-    "Breach", "Skye", "Fade", "Chamber", "Neon", "Gekko", "Brimstone", "KAY/O",
-    "Reyna", "Phoenix", "Yoru", "Deadlock", "Iso", "Clove", "Vyse", "Tejo", "Waylay",
-]
-
 # Nombre de joueurs par camp sur un scoreboard.
 ROSTER_SIZE = 5
+
+# Postes LoL (par index de roster). Enum stable du jeu.
+LOL_ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"]
+
+# Jeux pour lesquels on fabrique un scoreboard joueur (modèle de stats connu).
+# RL/R6 : modèle trop différent et aucune donnée LPDB → matchs sans scoreboard.
+SCOREBOARD_GAMES = {"val", "cs2", "lol", "dota"}
+
+# Pools de « picks » dérivés des VRAIS matchs Liquipedia déjà en base (cf.
+# `_load_pick_pools`) — aucun nom codé en dur ni d'appel CDN :
+#   - "val_agents"  : agents Valorant réellement joués (set → liste) ;
+#   - "dota_heroes" : héros Dota 2 réellement joués ;
+#   - "lol_by_role" : poste → champions LoL réellement joués à ce poste.
+# Si un pool est vide (jeu sans données), le scoreboard n'aura pas de pick.
+ASSETS: dict[str, list[str]] = {"val_agents": [], "dota_heroes": []}
+ASSETS_LOL_BY_ROLE: dict[str, list[str]] = {}
 
 # Créneaux locaux (DISPLAY_TZ) des matchs d'une journée.
 DAY_SLOTS = ["13:00", "15:30", "18:00", "20:30"]
@@ -177,16 +186,19 @@ def _side_scoreboard(
     game_id: str,
     side: str,
     roster: list[dict],
-    agents: list[str | None],
+    picks: list[str | None],
     *,
     is_winner: bool,
     team_kills: int | None,
     rng: random.Random,
 ) -> list[dict]:
-    """Stat-line par joueur d'un camp, calquée sur les vrais joueurs du roster."""
+    """Stat-line par joueur d'un camp, calquée sur les vrais joueurs du roster.
+
+    `picks` = agent (Valorant) ou champion (LoL) par joueur, dans l'ordre.
+    """
     players = roster[:ROSTER_SIZE]
 
-    if game_id == "lol":
+    if game_id in ("lol", "dota"):
         # Les kills des joueurs somment aux kills d'équipe de la partie.
         kills = _partition(team_kills or 0, len(players), rng)
     elif game_id == "cs2":
@@ -197,8 +209,8 @@ def _side_scoreboard(
     rows: list[dict] = []
     for i, player in enumerate(players):
         k = kills[i]
-        deaths = max(0, rng.randint(8, 16) - (3 if is_winner else 0)) if game_id != "lol" else rng.randint(0, 7)
-        assists = rng.randint(2, 9) if game_id != "lol" else rng.randint(0, 14)
+        deaths = rng.randint(0, 7) if game_id in ("lol", "dota") else max(0, rng.randint(8, 16) - (3 if is_winner else 0))
+        assists = rng.randint(2, 9) if game_id not in ("lol", "dota") else rng.randint(2, 18)
         row: dict = {
             "side": side,
             "name": player["name"],
@@ -207,13 +219,26 @@ def _side_scoreboard(
             "deaths": deaths,
             "assists": assists,
         }
+        pick = picks[i] if i < len(picks) else None
         if game_id == "val":
             row["acs"] = round(k * 11 + rng.uniform(40, 110), 1)
             row["adr"] = round(rng.uniform(115, 175), 1)
             row["hs"] = round(rng.uniform(18, 42), 1)
-            row["agent"] = agents[i] if i < len(agents) else None
+            row["agent"] = pick
         elif game_id == "cs2":
             row["adr"] = round(rng.uniform(55, 105), 1)
+        elif game_id == "lol":
+            row["role"] = LOL_ROLES[i % len(LOL_ROLES)]
+            row["champion"] = pick
+        elif game_id == "dota":
+            # Cores (positions 1-2) farment plus que les supports (4-5).
+            core = i < 3
+            row["hero"] = pick
+            row["gpm"] = rng.randint(480, 820) if core else rng.randint(260, 460)
+            row["xpm"] = rng.randint(500, 900) if core else rng.randint(300, 540)
+            row["lasthits"] = rng.randint(180, 420) if core else rng.randint(20, 130)
+            row["networth"] = rng.randint(14000, 32000) if core else rng.randint(7000, 15000)
+            row["level"] = rng.randint(18, 30) if is_winner else rng.randint(15, 27)
         rows.append(row)
     return rows
 
@@ -222,8 +247,8 @@ def _map_players(
     game_id: str,
     roster_a: list[dict],
     roster_b: list[dict],
-    agents_a: list[str | None],
-    agents_b: list[str | None],
+    picks_a: list[str | None],
+    picks_b: list[str | None],
     *,
     winner: str,
     map_a: int,
@@ -231,20 +256,41 @@ def _map_players(
     rng: random.Random,
 ) -> list[dict]:
     """Scoreboard complet d'une manche (5 joueurs par camp), vrais rosters."""
-    if not roster_a or not roster_b:
+    if game_id not in SCOREBOARD_GAMES or not roster_a or not roster_b:
         return []
     return _side_scoreboard(
-        game_id, "a", roster_a, agents_a, is_winner=winner == "a", team_kills=map_a, rng=rng
+        game_id, "a", roster_a, picks_a, is_winner=winner == "a", team_kills=map_a, rng=rng
     ) + _side_scoreboard(
-        game_id, "b", roster_b, agents_b, is_winner=winner == "b", team_kills=map_b, rng=rng
+        game_id, "b", roster_b, picks_b, is_winner=winner == "b", team_kills=map_b, rng=rng
     )
 
 
-def _agents_for(roster: list[dict], game_id: str, rng: random.Random) -> list[str | None]:
-    """5 agents distincts pour un roster Valorant (None pour les autres jeux)."""
-    if game_id != "val":
-        return [None] * len(roster)
-    return rng.sample(VAL_AGENTS, min(ROSTER_SIZE, len(VAL_AGENTS)))
+def _picks_for(roster: list[dict], game_id: str, rng: random.Random) -> list[str | None]:
+    """Agents (Valorant) ou champions (LoL) par joueur, tirés des pools RÉELS.
+
+    Les pools viennent des vrais matchs Liquipedia (`_load_pick_pools`). Pour
+    LoL, le champion est cohérent avec le poste (un champion réellement joué à
+    ce poste). None pour les jeux sans pick (CS2…) ou pool vide.
+    """
+    if game_id in ("val", "dota"):
+        pool = ASSETS["val_agents" if game_id == "val" else "dota_heroes"]
+        if not pool:
+            return [None] * len(roster)
+        return rng.sample(pool, min(len(roster), len(pool)))
+
+    if game_id == "lol":
+        picks: list[str | None] = []
+        used: set[str] = set()
+        for i in range(len(roster)):
+            role = LOL_ROLES[i % len(LOL_ROLES)]
+            bucket = [c for c in ASSETS_LOL_BY_ROLE.get(role, []) if c not in used]
+            choice = rng.choice(bucket) if bucket else None
+            if choice:
+                used.add(choice)
+            picks.append(choice)
+        return picks
+
+    return [None] * len(roster)
 
 
 def _build_maps(
@@ -263,8 +309,9 @@ def _build_maps(
     winners.remove(winner_side)
     winners.append(winner_side)
 
-    agents_a = _agents_for(roster_a, game_id, rng)
-    agents_b = _agents_for(roster_b, game_id, rng)
+    # Picks (agents/champions) fixés pour la série : un joueur garde le sien.
+    picks_a = _picks_for(roster_a, game_id, rng)
+    picks_b = _picks_for(roster_b, game_id, rng)
 
     pool = MAP_POOLS.get(game_id) or []
     names = rng.sample(pool, len(winners)) if len(pool) >= len(winners) else []
@@ -273,7 +320,7 @@ def _build_maps(
         name = names[i] if names else f"Game {i + 1}"
         m = _map_score(game_id, name, w, rng)
         m["players"] = _map_players(
-            game_id, roster_a, roster_b, agents_a, agents_b,
+            game_id, roster_a, roster_b, picks_a, picks_b,
             winner=w, map_a=m["scoreA"], map_b=m["scoreB"], rng=rng,
         )
         maps.append(m)
@@ -498,6 +545,48 @@ def build_groups(
 # --- Orchestration -----------------------------------------------------------
 
 
+def _load_pick_pools(session: Session) -> None:
+    """Construit les pools de picks à partir des VRAIS matchs Liquipedia en base.
+
+    Parcourt les scoreboards (`maps[].players`) des matchs ingérés (non-seed) :
+    - agents Valorant réellement joués → `ASSETS["val_agents"]` ;
+    - champions LoL par poste réellement joué → `ASSETS_LOL_BY_ROLE`.
+    Aucun nom codé en dur : si Liquipedia ajoute un agent/champion, il entrera
+    dans les pools à la prochaine ingestion.
+    """
+    rows = session.execute(
+        select(Match.maps).where(~Match.id.like(f"{MATCH_PREFIX}%"), Match.maps.is_not(None))
+    ).all()
+
+    agents: set[str] = set()
+    heroes: set[str] = set()
+    by_role: dict[str, set[str]] = {role: set() for role in LOL_ROLES}
+    for (maps,) in rows:
+        for game in maps or []:
+            for player in game.get("players") or []:
+                agent = player.get("agent")
+                if isinstance(agent, str) and agent:
+                    agents.add(agent)
+                hero = player.get("hero")
+                if isinstance(hero, str) and hero:
+                    heroes.add(hero)
+                champion = player.get("champion")
+                role = player.get("role")
+                if isinstance(champion, str) and champion and role in by_role:
+                    by_role[role].add(champion)
+
+    ASSETS["val_agents"] = sorted(agents)
+    ASSETS["dota_heroes"] = sorted(heroes)
+    ASSETS_LOL_BY_ROLE.clear()
+    ASSETS_LOL_BY_ROLE.update({role: sorted(champs) for role, champs in by_role.items()})
+    logger.info(
+        "Pools de picks (Liquipedia) : %d agents Valorant, %d héros Dota, champions LoL par poste %s.",
+        len(agents),
+        len(heroes),
+        {role: len(champs) for role, champs in by_role.items()},
+    )
+
+
 def _load_teams_by_game(session: Session) -> dict[str, list[str]]:
     """Associe chaque jeu à ses équipes via les matchs existants (catalog)."""
     rows = session.execute(
@@ -592,6 +681,8 @@ def seed_demo(
         if not teams_by_game:
             raise ValueError("Catalog vide : lance d'abord l'ingestion (teams/matches).")
         rosters = _load_rosters(session)
+        # Pools de picks (agents/champions) dérivés des vrais matchs ingérés.
+        _load_pick_pools(session)
 
         matches = build_matches(teams_by_game, rosters, start=start, end=end, now=now, tz=tz, rng=rng)
         for payload in matches:

@@ -76,6 +76,14 @@ class MapPlayerOut(ApiModel):
     adr: float | None = None  # Valorant / CS2
     hs: float | None = None  # % headshots (Valorant)
     agent: str | None = None  # Valorant
+    champion: str | None = None  # League of Legends
+    role: str | None = None  # poste LoL ("Top", "Mid", "Support"…)
+    hero: str | None = None  # Dota 2
+    gpm: float | None = None  # gold/min (Dota 2)
+    xpm: float | None = None  # xp/min (Dota 2)
+    lasthits: float | None = None  # last hits / CS (Dota 2)  # JSON : lasthits
+    networth: float | None = None  # or total (Dota 2)
+    level: float | None = None  # niveau du héros (Dota 2)
 
 
 class MapScoreOut(ApiModel):
