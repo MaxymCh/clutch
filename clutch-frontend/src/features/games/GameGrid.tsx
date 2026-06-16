@@ -2,41 +2,40 @@ import { Link } from 'react-router-dom';
 import { useGames } from '../../api/queries/useGames';
 import { useMatches } from '../../api/queries/useMatches';
 import { LiveDot } from '../../components/ui/Badge';
-import { Card } from '../../components/ui/Card';
-import { GameLogo } from '../../components/ui/GameLogo';
+import { GameTile } from '../../components/ui/GameTile';
 import { PageSpinner } from '../../components/ui/Spinner';
 
-/** Grille des jeux de la compétition, avec compteur de matchs / live. */
+/** Grille des jeux — cartes brandées (fond + logo EWC). */
 export const GameGrid = () => {
   const { data: games, isPending } = useGames();
   const { data: matches } = useMatches();
   if (isPending) return <PageSpinner />;
 
   return (
-    <div className="grid grid-cols-2 gap-3 px-5 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 px-5 sm:grid-cols-3 lg:grid-cols-4">
       {(games ?? []).map((game) => {
         const all = (matches ?? []).filter((m) => m.gameId === game.id);
         const liveCount = all.filter((m) => m.status === 'live').length;
+        const subtitle = (
+          <p
+            className={`text-center text-[11px] font-semibold leading-tight text-white/90 drop-shadow-sm ${
+              liveCount > 0 ? 'text-accent' : ''
+            }`}
+          >
+            {liveCount > 0
+              ? `${liveCount} en direct`
+              : `${all.length} match${all.length > 1 ? 's' : ''}`}
+          </p>
+        );
+
         return (
-          <Link key={game.id} to={`/game/${game.id}`}>
-            <Card className="flex flex-col gap-3.5 p-4 transition-transform active:scale-[.97]">
-              <div className="flex items-start justify-between">
-                <GameLogo tag={game.tag} size={42} logoUrl={game.logoUrl} />
-                {liveCount > 0 && <LiveDot size={8} />}
-              </div>
-              <div>
-                <div className="text-base leading-tight font-bold tracking-tight text-ink">
-                  {game.name}
-                </div>
-                <div
-                  className={`mt-1.5 text-xs font-semibold ${liveCount > 0 ? 'text-accent' : 'text-dim'}`}
-                >
-                  {liveCount > 0
-                    ? `${liveCount} en direct`
-                    : `${all.length} match${all.length > 1 ? 's' : ''}`}
-                </div>
-              </div>
-            </Card>
+          <Link key={game.id} to={`/game/${game.id}`} className="block transition-transform active:scale-[.97]">
+            <GameTile
+              game={game}
+              variant="grid"
+              badge={liveCount > 0 ? <LiveDot size={8} /> : undefined}
+              subtitle={subtitle}
+            />
           </Link>
         );
       })}

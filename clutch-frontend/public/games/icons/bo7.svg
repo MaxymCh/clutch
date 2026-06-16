@@ -1,0 +1,8 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100">
+	<defs>
+		<image  width="178" height="46" id="img1" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALIAAAAuBAMAAAB+AF5jAAAAAXNSR0IB2cksfwAAABJQTFRF////9/f3//f3///39//3////ryowigAAAAZ0Uk5TAP//////enng/gAAAXdJREFUeJzFl00OgjAQRmHhXj2BdzDew8R4SmLCPYiJezfcwAMQjbT8ddrON60tcRaEZNrn4wMLLQup9tv5tNz156/h/K4OmzM3qyrKK4us9PF0YNpdjchFB8ifG7RSvwy6yFlLg7aSBm1E7qciKSGOBLJOi5+OyH0c7P0b2khaIKPu8PCwI5LJrHRqGrx0sjMrnU7mxkxk9XDONY0NIzODcpD9JZCnO8i03ZpT7wKdCQSR54usAp1DyYtyndnZQ/ZWPHkJQ1rrItMwlKWVfx2y+c4IJBthALK+p3HOpjIgt41Efj6AMkpDvY3WIatrgjnbZBJG6CoaRCbKOcnLK4CQyb97GvMjeWBBctPGkGkYmPx8RJAtZUzu6vXJ3qJkK4x8ZFsZP3UCmUS0HtkOIxvZUcbk5akTyY7yv8gV/OY3yW4YKWS9mxjLVYbkfqq0AxrLoyyt/NKu7Ucy3uGYMXvCkL4KgLSgXJRHbuZ7XBUuLWybZPKn/AI7Pul2mhO33wAAAABJRU5ErkJggg=="/>
+	</defs>
+	<style>
+	</style>
+	<use id="bo7-call-of-duty" href="#img1" x="11" y="27"/>
+</svg>

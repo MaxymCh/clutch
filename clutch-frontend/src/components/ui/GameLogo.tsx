@@ -12,15 +12,17 @@ export const GameLogo = ({ tag, size = 32, logoUrl }: GameLogoProps) => {
 
   if (logoUrl && !imgFailed) {
     return (
-      <img
-        src={logoUrl}
-        alt={tag}
-        width={size}
-        height={size}
-        className="shrink-0 object-contain"
+      <span
+        className="inline-grid shrink-0 place-items-center overflow-hidden rounded-xl bg-black"
         style={{ width: size, height: size }}
-        onError={() => setImgFailed(true)}
-      />
+      >
+        <img
+          src={logoUrl}
+          alt={tag}
+          className="h-[68%] w-[68%] object-contain"
+          onError={() => setImgFailed(true)}
+        />
+      </span>
     );
   }
 

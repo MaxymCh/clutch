@@ -41,9 +41,12 @@ def ensure_games(session: Session) -> None:
         if game is None:
             session.add(Game(**row))
         else:
-            game.name, game.short, game.tag, game.sort_order, game.bg_url, game.logo_url = (
-                row["name"], row["short"], row["tag"], row["sort_order"], row["bg_url"], row.get("logo_url"),
+            game.name, game.short, game.tag, game.sort_order = (
+                row["name"], row["short"], row["tag"], row["sort_order"],
             )
+            game.bg_url = row["bg_url"]
+            game.logo_url = row.get("logo_url")
+            game.full_logo_url = row.get("full_logo_url")
 
 
 def upsert_team(session: Session, data: dict[str, Any], wiki: str) -> str:

@@ -25,7 +25,7 @@ class Game(Base):
 
     __tablename__ = "games"
 
-    # GameId du contrat front : val | lol | cs2 | dota | rl | ow
+    # GameId du contrat front : val | lol | cs2 | dota | rl | ow | apex | r6 | …
     id: Mapped[str] = mapped_column(String(8), primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
     short: Mapped[str] = mapped_column(String(16))
@@ -34,8 +34,10 @@ class Game(Base):
     sort_order: Mapped[int] = mapped_column(Integer)
     # URL de l'image de fond des cartes jeu (chemin local ou CDN)
     bg_url: Mapped[str] = mapped_column(String(256), default="")
-    # Icône/logo du jeu (chemin local, ex. /games/val-icon.png)
+    # Icône/logo du jeu (chemin local, ex. /games/icons/val.svg)
     logo_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    # Logo horizontal complet (chemin local, ex. /games/full-logo/val.svg)
+    full_logo_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
 
 class Team(Base):

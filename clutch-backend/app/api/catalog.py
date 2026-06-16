@@ -39,7 +39,7 @@ async def get_team(team_id: str, session: AsyncSession = Depends(get_session)) -
 @router.get("/matches", response_model=list[MatchOut], response_model_exclude_none=True)
 async def get_matches(
     session: AsyncSession = Depends(get_session),
-    game: str | None = Query(default=None, description="GameId (val, lol, cs2, dota, rl, ow)"),
+    game: str | None = Query(default=None, description="GameId (val, lol, cs2, apex, tft, …)"),
     team: str | None = Query(default=None, description="Id d'équipe"),
     day: str | None = Query(default=None, description="Jour local YYYY-MM-DD (DISPLAY_TZ)"),
     status: str | None = Query(default=None, pattern="^(upcoming|live|done)$"),

@@ -8,7 +8,10 @@ from typing import Literal
 from app.schemas.base import ApiModel
 
 # Valeurs EXACTES du front (esports.ts)
-GameId = Literal["val", "lol", "cs2", "dota", "rl", "ow"]
+GameId = Literal[
+    "val", "lol", "cs2", "dota", "rl", "ow",
+    "apex", "r6", "pubg", "fn", "ff", "mlbb", "hok", "sf6", "tk8", "bo7", "tft",
+]
 MatchStatus = Literal["upcoming", "live", "done"]
 BestOf = Literal["BO1", "BO3", "BO5"]
 
@@ -22,6 +25,7 @@ class GameOut(ApiModel):
     tag: str
     bg_url: str  # JSON : bgUrl
     logo_url: str | None = None  # JSON : logoUrl
+    full_logo_url: str | None = None  # JSON : fullLogoUrl
 
 
 class TeamOut(ApiModel):
