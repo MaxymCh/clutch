@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGames } from '../api/queries/useGames';
 import { useTeams } from '../api/queries/useTeams';
-import { useUser } from '../api/queries/useUser';
+import { useUpdateUser, useUser } from '../api/queries/useUser';
 import { Page } from '../components/layout/Page';
 import { Avatar } from '../components/ui/Avatar';
 import { Card } from '../components/ui/Card';
@@ -46,6 +47,24 @@ export const ProfilePage = () => {
   const chevron = <Icon name="chevron" size={16} className="text-faint" />;
   const { signOut } = useAuth();
   const { data: user } = useUser();
+  const updateUser = useUpdateUser();
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setNameValue(user?.name ?? '');
+    setEditingName(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const confirmEdit = () => {
+    const trimmed = nameValue.trim();
+    if (!trimmed || trimmed === user?.name) { setEditingName(false); return; }
+    updateUser.mutate({ name: trimmed }, { onSettled: () => setEditingName(false) });
+  };
+
+  const cancelEdit = () => setEditingName(false);
   const { data: teams } = useTeams();
   const { theme, setTheme, notifications, setNotifications } = useSettings();
   const { teams: favTeams, games: favGames, toggleGame } = useFavorites();
@@ -66,8 +85,35 @@ export const ProfilePage = () => {
 
         <Card className="flex items-center gap-4 p-4">
           <Avatar tag={user?.tag ?? 'YOU'} size={56} me />
-          <div>
-            <div className="text-lg leading-none font-bold text-ink">{user?.name ?? '…'}</div>
+          <div className="min-w-0 flex-1">
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') cancelEdit(); }}
+                  className="min-w-0 flex-1 rounded-lg border border-accent bg-surface px-2 py-1 text-[15px] font-bold text-ink outline-none"
+                  maxLength={32}
+                  autoFocus
+                />
+                <button
+                  onClick={confirmEdit}
+                  disabled={updateUser.isPending}
+                  className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg bg-accent text-on-accent disabled:opacity-50"
+                >
+                  <Icon name="check" size={14} strokeWidth={2.5} />
+                </button>
+                <button onClick={cancelEdit} className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-line text-dim">
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={startEdit} className="group flex cursor-pointer items-center gap-1.5">
+                <span className="text-lg leading-none font-bold text-ink">{user?.name ?? '…'}</span>
+                <Icon name="pencil" size={13} className="text-faint transition-colors group-hover:text-dim" />
+              </button>
+            )}
             {user && (
               <div className="mt-1.5 text-[12.5px] leading-none font-semibold text-dim">
                 {formatPoints(user.points)} pts · #{formatPoints(user.globalRank)} mondial
