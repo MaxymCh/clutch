@@ -1,6 +1,7 @@
 import { type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import type { Match } from "../../types/esports";
+import { GameLogo } from "../../components/ui/GameLogo";
 import { Icon } from "../../components/ui/Icon";
 import { TeamLogo } from "../../components/ui/TeamLogo";
 import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
@@ -38,6 +39,7 @@ const computePoints = (prediction: Prediction, match: Match): number => {
 export const MatchCard = ({
   match,
   gameTag,
+  gameLogoUrl,
   showDay = false,
   showPredictionFooter = false,
   onPredict,
@@ -76,9 +78,10 @@ export const MatchCard = ({
             <Link
               to={`/game/${match.gameId}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-accent transition-colors hover:text-accent/80"
+              className="inline-flex items-center gap-1.5 rounded-md text-accent transition-transform hover:scale-[1.03]"
             >
-              {gameTag}
+              <GameLogo tag={gameTag} size={18} logoUrl={gameLogoUrl} />
+              <span className="text-[10px] font-bold tracking-[.08em]">{gameTag}</span>
             </Link>
             <span className="size-0.75 rounded-full bg-dim" />
             {match.phase}
