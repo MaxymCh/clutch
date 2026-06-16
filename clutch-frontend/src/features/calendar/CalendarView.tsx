@@ -111,7 +111,6 @@ export const CalendarView = () => {
           match={m}
           gameTag={g?.tag ?? m.gameId.toUpperCase()}
           gameLogoUrl={g?.logoUrl}
-          showDay={allDays}
           predictedWinnerId={predictedWinnerId(m)}
           showPredictionFooter
           onPredict={setPredicting}

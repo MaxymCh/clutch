@@ -96,7 +96,6 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
               match={m}
               gameTag={g?.tag ?? m.gameId.toUpperCase()}
               gameLogoUrl={g?.logoUrl}
-              showDay
               predictedWinnerId={predictedWinnerId(m)}
             />
           );
