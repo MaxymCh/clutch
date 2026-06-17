@@ -249,6 +249,32 @@ const HalfBreakdown = ({
   );
 };
 
+/** Badge phase ATK/DEF pour les bans R6. */
+const r6PhaseBadge = (type: string) => (
+  <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${
+    type === 'atk' ? 'bg-orange-500/15 text-orange-500' : 'bg-blue-500/15 text-blue-500'
+  }`}>
+    {type}
+  </span>
+);
+
+const R6BanList = ({
+  bans,
+  align,
+}: {
+  bans: { name: string; type: string }[];
+  align: 'left' | 'right';
+}) => (
+  <div className={`flex flex-1 flex-col gap-1.5 ${align === 'right' ? 'items-end' : ''}`}>
+    {bans.map((ban, i) => (
+      <div key={i} className={`flex items-center gap-1.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+        {r6PhaseBadge(ban.type)}
+        <span className="text-[12px] font-medium text-ink">{ban.name}</span>
+      </div>
+    ))}
+  </div>
+);
+
 /** Bans d'opérateurs Rainbow Six Siege avec phase ATK/DEF. */
 const R6OperatorBans = ({
   opBansA, opBansB, teamA, teamB,
@@ -259,37 +285,18 @@ const R6OperatorBans = ({
 }) => {
   if (!opBansA?.length && !opBansB?.length) return null;
 
-  const phaseBadge = (type: string) => (
-    <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${
-      type === 'atk' ? 'bg-orange-500/15 text-orange-500' : 'bg-blue-500/15 text-blue-500'
-    }`}>
-      {type}
-    </span>
-  );
-
-  const BanList = ({ bans, align }: { bans: { name: string; type: string }[]; align: 'left' | 'right' }) => (
-    <div className={`flex flex-1 flex-col gap-1.5 ${align === 'right' ? 'items-end' : ''}`}>
-      {bans.map((ban, i) => (
-        <div key={i} className={`flex items-center gap-1.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
-          {phaseBadge(ban.type)}
-          <span className="text-[12px] font-medium text-ink">{ban.name}</span>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div className="mt-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
       <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-faint">Bans opérateurs</p>
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <p className="mb-1.5 text-[11px] font-bold text-dim">{teamA.tag}</p>
-          <BanList bans={opBansA ?? []} align="left" />
+          <R6BanList bans={opBansA ?? []} align="left" />
         </div>
         <div className="w-px self-stretch bg-line" />
         <div className="flex-1">
           <p className="mb-1.5 text-right text-[11px] font-bold text-dim">{teamB.tag}</p>
-          <BanList bans={opBansB ?? []} align="right" />
+          <R6BanList bans={opBansB ?? []} align="right" />
         </div>
       </div>
     </div>
