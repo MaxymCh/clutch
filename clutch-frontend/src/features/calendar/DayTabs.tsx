@@ -93,7 +93,7 @@ export const DayTabs = ({
             }`}
           >
             <span className="text-[11px] font-medium">
-              {isToday && !active
+              {isToday
                 ? "Auj."
                 : formatWeekdayShort(day.date).toLowerCase() + "."}
             </span>

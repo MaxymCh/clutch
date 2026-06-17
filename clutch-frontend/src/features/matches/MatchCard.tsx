@@ -106,7 +106,7 @@ export const MatchCard = ({
               <span
                 className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
               >
-                {match.scoreA} – {match.scoreB}
+                {match.scoreA ?? 0} – {match.scoreB ?? 0}
               </span>
             ) : (
               <span className="text-xl font-semibold tabular-nums text-ink">

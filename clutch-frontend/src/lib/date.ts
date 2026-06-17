@@ -12,6 +12,25 @@ export const formatWeekdayShort = (iso: string): string =>
 export const formatDayMonth = (iso: string): string =>
   parse(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
 
+/** Section LP type "June 17" — redondante avec la date affichée à côté. */
+export const isDateLikePhase = (phase: string): boolean =>
+  /^(?:january|february|march|april|may|june|july|august|september|october|november|december|janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)\s+\d{1,2}(?:st|nd|rd|th)?$/i.test(
+    phase.trim(),
+  );
+
+/** Sous-titre match : phase (si utile) + jour FR + heure optionnelle. */
+export const formatMatchPhaseDate = (
+  phase: string,
+  dateIso: string,
+  opts?: { time?: string; showTime?: boolean },
+): string => {
+  const parts: string[] = [];
+  if (phase && !isDateLikePhase(phase)) parts.push(phase);
+  parts.push(`${formatWeekdayShort(dateIso)} ${formatDayMonth(dateIso)}`);
+  if (opts?.showTime && opts.time) parts.push(opts.time);
+  return parts.join(' · ');
+};
+
 /** "2026-07-11" → "11/07" */
 export const formatDDMM = (iso: string): string => {
   const d = parse(iso);

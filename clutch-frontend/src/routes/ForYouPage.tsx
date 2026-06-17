@@ -15,7 +15,7 @@ import { PredictSheet } from '../features/prono/PredictSheet';
 import { PronoBadge } from '../features/prono/PronoBadge';
 import { PlatformIcon } from '../components/ui/PlatformIcon';
 import { useFavorites } from '../features/favorites/favoritesContext';
-import { formatDayMonth, formatWeekdayShort } from '../lib/date';
+import { formatDayMonth, formatMatchPhaseDate, formatWeekdayShort } from '../lib/date';
 import type { Match } from '../types/esports';
 
 const todayIso = (() => {
@@ -91,7 +91,7 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
           <div className="flex shrink-0 flex-col items-center px-1">
             <span className={`text-[13px] font-black tabular-nums ${live ? 'text-accent' : done ? 'text-ink' : (upcoming && showCountdown) ? 'text-accent' : 'text-dim'}`}>
               {live || done ? (
-                `${match.scoreA}–${match.scoreB}`
+                `${match.scoreA ?? 0}–${match.scoreB ?? 0}`
               ) : (upcoming && showCountdown) ? (
                 <FeedCountdown date={match.date} time={match.time} />
               ) : (
@@ -106,7 +106,10 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
           </span>
         </div>
         <p className="-mt-1 truncate text-[10px] font-medium text-faint">
-          {match.phase} · {formatWeekdayShort(match.date)} {formatDayMonth(match.date)}{(live || done) ? ` · ${match.time}` : ''}
+          {formatMatchPhaseDate(match.phase, match.date, {
+            time: match.time,
+            showTime: live || done,
+          })}
         </p>
       </Link>
 
