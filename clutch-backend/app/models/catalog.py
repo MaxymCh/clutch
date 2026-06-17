@@ -76,6 +76,10 @@ class Player(Base):
     # Id stable dérivé de team_id + page/nick Liquipedia.
     id: Mapped[str] = mapped_column(String(192), primary_key=True)
     team_id: Mapped[str] = mapped_column(ForeignKey("teams.id"), index=True)
+    # Jeu de l'effectif (val, lol, cs2…) : une équipe peut aligner un roster
+    # par jeu. Déduit du match où le joueur a été vu. Nullable tant que non
+    # ré-ingéré (anciens enregistrements).
+    game_id: Mapped[str | None] = mapped_column(ForeignKey("games.id"), index=True, nullable=True)
     # Pseudo in-game (affiché) ; nom réel non exposé par l'API.
     name: Mapped[str] = mapped_column(String(128))
     country_code: Mapped[str] = mapped_column(String(2), default="XX")

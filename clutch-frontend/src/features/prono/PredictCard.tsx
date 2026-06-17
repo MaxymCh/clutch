@@ -1,6 +1,7 @@
 import { Card } from "../../components/ui/Card";
 import { GameLogo } from "../../components/ui/GameLogo";
 import { TeamLogo } from "../../components/ui/TeamLogo";
+import { canPredictMatch } from "../../lib/date";
 import { formatDayMonth, formatWeekdayShort } from "../../lib/date";
 import type { Match } from "../../types/esports";
 import { PronoBadge } from "./PronoBadge";
@@ -25,12 +26,15 @@ export const PredictCard = ({
   const { predictions } = usePredictions();
   const pred = predictions[match.id];
   const hasPredicted = !!pred;
+  const predictOpen = canPredictMatch(match);
 
   return (
     <Card
       inset
-      className={`cursor-pointer transition-transform active:scale-[.98] ${compact ? 'px-4 py-6' : 'p-4'}`}
-      onClick={() => onPredict(match)}
+      className={`${predictOpen ? 'cursor-pointer active:scale-[.98]' : 'cursor-default'} transition-transform ${compact ? 'px-4 py-6' : 'p-4'}`}
+      onClick={() => {
+        if (predictOpen) onPredict(match);
+      }}
     >
       {/* Méta : jeu · phase · date */}
       <div className={`mb-5 flex items-center justify-between text-ink-2 uppercase ${compact ? 'text-[12px] font-semibold tracking-wide' : 'text-[10.5px] font-semibold tracking-wide'}`}>

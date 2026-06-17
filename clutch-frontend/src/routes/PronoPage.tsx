@@ -16,7 +16,7 @@ import { TeamLogo } from '../components/ui/TeamLogo';
 import { PredictCard } from '../features/prono/PredictCard';
 import { PredictSheet } from '../features/prono/PredictSheet';
 import { RankRow } from '../features/prono/RankRow';
-import { formatDayMonth, formatWeekdayShort } from '../lib/date';
+import { canPredictMatch, formatDayMonth, formatWeekdayShort } from '../lib/date';
 import { countryFlag } from '../lib/flag';
 import { formatPoints } from '../lib/format';
 import type { GroupMember } from '../types/community';
@@ -59,7 +59,7 @@ export const PronoPage = () => {
   }, [matches, selectedGroup, selectedGameId]);
 
   const toPredict = useMemo(
-    () => filteredMatches.filter((m) => m.status === 'upcoming'),
+    () => filteredMatches.filter((m) => canPredictMatch(m)),
     [filteredMatches],
   );
 
@@ -326,6 +326,11 @@ export const PronoPage = () => {
                           <div className="text-xl font-bold tabular-nums text-ink">
                             {match.scoreA ?? 0} – {match.scoreB ?? 0}
                           </div>
+                          {match.likelyForfeit && (
+                            <div className="mt-1 text-[10px] font-semibold text-amber-600">
+                              Forfait probable
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex flex-1 flex-col items-center gap-1.5">

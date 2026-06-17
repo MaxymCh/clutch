@@ -3,6 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { Sheet } from '../../components/ui/Sheet';
 import { TeamLogo } from '../../components/ui/TeamLogo';
+import { canPredictMatch } from '../../lib/date';
 import type { BestOf, Match, Team } from '../../types/esports';
 import { usePredictions } from './predictionsContext';
 
@@ -35,6 +36,7 @@ const Form = ({ match, onClose }: { match: Match; onClose: () => void }) => {
   const [line, setLine] = useState<[number, number] | null>(
     existing ? [Math.max(existing.scoreA, existing.scoreB), Math.min(existing.scoreA, existing.scoreB)] : null,
   );
+  const predictOpen = canPredictMatch(match);
 
   const oddsA = match.oddsA ?? 50;
   const select = (side: 'a' | 'b') => {
@@ -42,6 +44,7 @@ const Form = ({ match, onClose }: { match: Match; onClose: () => void }) => {
     setLine(null);
   };
   const confirm = () => {
+    if (!predictOpen) return;
     if (!pick || !line) return;
     const [hi, lo] = line;
     setPrediction(match.id, { pick, scoreA: pick === 'a' ? hi : lo, scoreB: pick === 'a' ? lo : hi });
@@ -86,9 +89,18 @@ const Form = ({ match, onClose }: { match: Match; onClose: () => void }) => {
           <b className="text-accent">+25 pts</b> si score exact · <b>+10 pts</b> si bon vainqueur.
         </span>
       </div>
-      <Button full size="lg" disabled={!pick || !line} onClick={confirm}>
+      {!predictOpen && (
+        <p className="mb-3 text-center text-[12px] font-semibold text-dim">
+          Ce match a commencé, les pronostics sont fermés.
+        </p>
+      )}
+      <Button full size="lg" disabled={!predictOpen || !pick || !line} onClick={confirm}>
         <Icon name="check" size={18} strokeWidth={2.2} />
-        {pick && line ? 'Valider mon prono' : 'Choisis vainqueur + score'}
+        {!predictOpen
+          ? 'Pronostics fermés'
+          : pick && line
+            ? 'Valider mon prono'
+            : 'Choisis vainqueur + score'}
       </Button>
     </>
   );

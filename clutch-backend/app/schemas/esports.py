@@ -45,6 +45,7 @@ class PlayerOut(ApiModel):
     name: str
     country_code: str  # JSON : countryCode
     role: str | None = None
+    game_id: GameId | None = None  # JSON : gameId (effectif par jeu)
 
 
 class StreamOut(ApiModel):
@@ -123,3 +124,5 @@ class MatchOut(ApiModel):
     viewers: str | None = None
     streams: list[StreamOut] | None = None  # liens de diffusion (streamurls LPDB)
     veto: list[VetoStepOut] | None = None  # veto des cartes (extradata.mapveto)
+    # Drapeau best-effort quand LPDB suggère une victoire administrative.
+    likely_forfeit: bool | None = None  # JSON : likelyForfeit

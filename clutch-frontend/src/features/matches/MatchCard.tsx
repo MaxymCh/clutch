@@ -140,6 +140,11 @@ export const MatchCard = ({
             <span className="mt-0.5 block text-[11px] font-medium text-faint tabular-nums">
               {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
             </span>
+            {match.status === 'done' && match.likelyForfeit && (
+              <span className="mt-1 block text-[10px] font-semibold text-amber-600">
+                Forfait probable
+              </span>
+            )}
           </div>
 
           {/* Équipe B */}

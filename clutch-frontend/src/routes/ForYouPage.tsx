@@ -15,16 +15,13 @@ import { PredictSheet } from '../features/prono/PredictSheet';
 import { PronoBadge } from '../features/prono/PronoBadge';
 import { PlatformIcon } from '../components/ui/PlatformIcon';
 import { useFavorites } from '../features/favorites/favoritesContext';
-import { formatDayMonth, formatMatchPhaseDate, formatWeekdayShort } from '../lib/date';
+import { canPredictMatch, formatDayMonth, formatMatchPhaseDate, formatWeekdayShort, matchStartDateTime } from '../lib/date';
 import type { Match } from '../types/esports';
 
 const todayIso = (() => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 })();
-
-const matchStart = (date: string, time: string): Date =>
-  new Date(`${date}T${time}:00`);
 
 const formatCountdown = (diffMs: number): string => {
   if (diffMs <= 0) return 'imminent';
@@ -38,7 +35,7 @@ const formatCountdown = (diffMs: number): string => {
 };
 
 const FeedCountdown = ({ date, time }: { date: string; time: string }) => {
-  const target = matchStart(date, time).getTime();
+  const target = matchStartDateTime(date, time).getTime();
   const [diffMs, setDiffMs] = useState(() => Math.max(0, target - Date.now()));
 
   useEffect(() => {
@@ -109,6 +106,11 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
                 match.time
               )}
             </span>
+            {done && match.likelyForfeit && (
+              <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600">
+                Forfait
+              </span>
+            )}
             {live && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Direct</span>}
             {upcoming && showCountdown && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Bientôt</span>}
           </div>
@@ -131,7 +133,7 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
       </Link>
 
       {/* Streams + Prono */}
-      {(((live || (upcoming && showCountdown)) && match.streams && match.streams.length > 0) || (match.status === 'upcoming' && onPredict)) && (
+      {(((live || (upcoming && showCountdown)) && match.streams && match.streams.length > 0) || (canPredictMatch(match) && onPredict)) && (
         <div className="relative flex items-center justify-center">
           {(live || (upcoming && showCountdown)) && match.streams && match.streams.length > 0 && (
             <div className="absolute left-0 flex gap-1">
@@ -149,7 +151,7 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
               ))}
             </div>
           )}
-          {match.status === 'upcoming' && onPredict && (
+          {canPredictMatch(match) && onPredict && (
             <PronoBadge match={match} onPredict={onPredict} />
           )}
         </div>
@@ -223,9 +225,9 @@ export const ForYouPage = () => {
   const upcoming2h = useMemo(() => {
     const limit = now.getTime() + 2 * 3600_000;
     return matches.filter((m) => {
-      if (m.status !== 'upcoming') return false;
+      if (!canPredictMatch(m, now)) return false;
       if (!inFavTeams(m) && !inFavGames(m)) return false;
-      const start = matchStart(m.date, m.time).getTime();
+      const start = matchStartDateTime(m.date, m.time).getTime();
       return start > now.getTime() && start <= limit;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,8 +237,8 @@ export const ForYouPage = () => {
     const limit = now.getTime() + 2 * 3600_000;
     return matches
       .filter((m) => {
-        if (m.date !== todayIso || m.status !== 'upcoming' || !inFavTeams(m)) return false;
-        return matchStart(m.date, m.time).getTime() > limit;
+        if (m.date !== todayIso || !canPredictMatch(m, now) || !inFavTeams(m)) return false;
+        return matchStartDateTime(m.date, m.time).getTime() > limit;
       })
       .slice(0, UPCOMING_LIMIT);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,7 +249,8 @@ export const ForYouPage = () => {
     return matches.filter((m) => {
       if (m.date !== todayIso || !inFavGames(m)) return false;
       if (m.status === 'upcoming') {
-        return matchStart(m.date, m.time).getTime() > limit;
+        if (!canPredictMatch(m, now)) return false;
+        return matchStartDateTime(m.date, m.time).getTime() > limit;
       }
       return true;
     });

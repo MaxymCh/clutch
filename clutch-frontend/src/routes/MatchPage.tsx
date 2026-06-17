@@ -12,6 +12,7 @@ import { MatchVeto } from '../features/matches/MatchVeto';
 import { PredictionSummary } from '../features/prono/PredictionSummary';
 import { PredictSheet } from '../features/prono/PredictSheet';
 import { usePredictions } from '../features/prono/predictionsContext';
+import { canPredictMatch } from '../lib/date';
 
 /** Page détail d'un match : /match/:id */
 export const MatchPage = () => {
@@ -41,7 +42,7 @@ export const MatchPage = () => {
             gameName={gameName}
             gameLogoUrl={game?.logoUrl}
             hasPrediction={Boolean(predictions[match.id])}
-            onPredict={() => setPredicting(true)}
+            onPredict={canPredictMatch(match) ? () => setPredicting(true) : undefined}
           />
           <PredictionSummary match={match} />
           {match.streams && match.streams.length > 0 && <MatchStreams streams={match.streams} />}

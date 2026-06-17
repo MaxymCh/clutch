@@ -1,6 +1,7 @@
 import { Icon } from '../../components/ui/Icon';
 import type { Prediction } from '../../types/community';
 import type { Match } from '../../types/esports';
+import { canPredictMatch } from '../../lib/date';
 import { usePredictions } from './predictionsContext';
 
 const computePoints = (prediction: Prediction, match: Match): number => {
@@ -18,6 +19,7 @@ export const PronoBadge = ({ match, onPredict }: PronoBadgeProps) => {
   const { predictions } = usePredictions();
   const pred = predictions[match.id];
   const done = match.status === 'done';
+  const predictOpen = canPredictMatch(match);
 
   if (pred) {
     const pickedName = pred.pick === 'a' ? match.teamA.name : match.teamB.name;
@@ -39,7 +41,7 @@ export const PronoBadge = ({ match, onPredict }: PronoBadgeProps) => {
 
     return (
       <div className="flex justify-center">
-        {onPredict && !done ? (
+        {onPredict && !done && predictOpen ? (
           <button onClick={() => onPredict(match)} className="cursor-pointer transition-transform active:scale-95">
             {badge}
           </button>
@@ -52,6 +54,10 @@ export const PronoBadge = ({ match, onPredict }: PronoBadgeProps) => {
 
   if (done) {
     return <p className="text-center text-[11px] font-semibold text-dim">Pas de prono</p>;
+  }
+
+  if (!predictOpen) {
+    return <p className="text-center text-[11px] font-semibold text-dim">Pronostics fermés</p>;
   }
 
   if (!onPredict) return null;

@@ -150,3 +150,26 @@ def test_maps_match_termine_sans_carte_live():
     )
     assert all("live" not in m for m in maps)
     assert current_map_label(maps) is None
+
+
+def test_forfeit_inferred_from_winner_when_score_is_0_0():
+    record = _lpdb_record(
+        finished=1,
+        winner="2",
+        bestof=3,
+        match2games=[],
+        match2opponents=[
+            {"name": "Team_Falcons", "template": "team falcons", "score": 0, "status": "W"},
+            {"name": "Dandelions", "template": "dandelions", "score": 0, "status": "FF"},
+        ],
+    )
+    result = normalize_match(record, "dota", NOW)
+    assert result is not None
+    assert result["status"] == "done"
+    # winner=2 => équipe B gagnante, score administratif BO3 = 0-2
+    assert result["score_a"] == 0
+    assert result["score_b"] == 2
+    assert result["extradata"]["lpdb_winner"] == "2"
+    assert result["extradata"]["forfeit_inferred"] is True
+    assert result["extradata"]["lpdb_opponent_statuses"] == ["W", "FF"]
+    assert result["extradata"]["forfeiting_side"] == "b"

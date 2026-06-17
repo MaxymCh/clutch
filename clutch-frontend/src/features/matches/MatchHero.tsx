@@ -65,6 +65,9 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
         </span>
       )}
       {done && <Badge variant="neutral">Score final</Badge>}
+      {done && match.likelyForfeit && (
+        <span className="text-[11px] font-semibold text-amber-600">Forfait probable</span>
+      )}
 
       <div className="flex w-full items-start gap-1.5">
         <Side team={match.teamA} score={match.scoreA} won={live ? false : aWon} done={done} />

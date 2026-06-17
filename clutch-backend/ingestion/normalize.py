@@ -485,11 +485,16 @@ def player_countries(opponents: list[Any]) -> dict[str, str]:
     return mapping
 
 
-def normalize_match_players(opponent: dict[str, Any], team_id: str) -> list[dict[str, Any]]:
+def normalize_match_players(
+    opponent: dict[str, Any], team_id: str, game_id: str = ""
+) -> list[dict[str, Any]]:
     """match2opponents[i].match2players → roster du front (joueurs ayant joué).
 
     Source unique du roster : les joueurs réellement alignés en match EWC
     (déjà présents dans la réponse /match → aucune requête supplémentaire).
+
+    `game_id` rattache l'effectif à un jeu : une équipe peut aligner un roster
+    distinct par titre (ex. Vitality en CS2 et en Valorant).
     """
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -508,6 +513,7 @@ def normalize_match_players(opponent: dict[str, Any], team_id: str) -> list[dict
             {
                 "id": pid,
                 "team_id": team_id,
+                "game_id": game_id or None,
                 "name": name,
                 "country_code": country_to_iso(player.get("flag")),
                 "role": None,
@@ -525,6 +531,16 @@ def current_map_label(maps: list[dict[str, Any]] | None) -> str | None:
         if entry.get("live"):
             return f"{entry['name']} · {entry['scoreA']}–{entry['scoreB']}"
     return None
+
+
+def _scoreline_from_winner(best_of: str, winner: str) -> tuple[int, int]:
+    """Construit un score de série minimal à partir du vainqueur LPDB.
+
+    Utile quand LPDB marque un match fini avec un vainqueur explicite mais
+    remonte un score 0-0 (cas forfait / victoire administrative).
+    """
+    wins_needed = {"BO1": 1, "BO3": 2, "BO5": 3}.get(best_of, 2)
+    return (wins_needed, 0) if winner == "1" else (0, wins_needed)
 
 
 def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict[str, Any] | None:
@@ -553,14 +569,31 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
     games = record.get("match2games") or []
     countries = player_countries(opponents)
     maps = normalize_maps(games, status, countries, game_id)
+    opponent_statuses = [str((opponents[i].get("status") or "")).upper() for i in range(2)]
 
     score_a = _as_int(opponents[0].get("score"))
     score_b = _as_int(opponents[1].get("score"))
     result_a = (opponents[0].get("status") or "").strip().upper() or None
     result_b = (opponents[1].get("status") or "").strip().upper() or None
+    best_of = to_best_of(record.get("bestof"), len(games))
+    raw_winner = str(record.get("winner") or "")
+    forfeit_inferred = False
     if status == "upcoming":
         score_a = score_b = None
         result_a = result_b = None
+    elif status == "done":
+        # LPDB peut signaler un vainqueur avec un score de série 0-0
+        # (forfait / default win). On convertit alors vers un score exploitable.
+        tie_like = score_a == score_b
+        if tie_like and raw_winner in ("1", "2"):
+            score_a, score_b = _scoreline_from_winner(best_of, raw_winner)
+            forfeit_inferred = True
+
+    forfeiting_side: str | None = None
+    if opponent_statuses[0] == "FF":
+        forfeiting_side = "a"
+    elif opponent_statuses[1] == "FF":
+        forfeiting_side = "b"
 
     return {
         "id": f"{game_id}_{slugify(match2id)}",
@@ -568,11 +601,11 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
         "team_a": team_a,
         "team_b": team_b,
         # Roster dérivé des joueurs alignés (source unique, 0 requête en plus).
-        "team_a_players": normalize_match_players(opponents[0], team_a["id"]),
-        "team_b_players": normalize_match_players(opponents[1], team_b["id"]),
+        "team_a_players": normalize_match_players(opponents[0], team_a["id"], game_id),
+        "team_b_players": normalize_match_players(opponents[1], team_b["id"], game_id),
         "status": status,
         "phase": translate_phase(record.get("section"), record.get("tickername")),
-        "best_of": to_best_of(record.get("bestof"), len(games)),
+        "best_of": best_of,
         "start_time_utc": start_utc,
         "score_a": score_a,
         "score_b": score_b,
@@ -588,7 +621,12 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
             "wiki": record.get("wiki"),
             "pagename": record.get("pagename"),
             "tournament": record.get("tournament"),
+            "lpdb_finished": record.get("finished"),
+            "lpdb_winner": record.get("winner"),
             "lpdb_status": record.get("status"),
+            "lpdb_opponent_statuses": opponent_statuses,
+            "forfeiting_side": forfeiting_side,
             "raw_section": record.get("section"),
+            "forfeit_inferred": forfeit_inferred,
         },
     }

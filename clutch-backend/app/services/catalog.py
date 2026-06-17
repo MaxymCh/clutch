@@ -33,6 +33,31 @@ def _as_utc(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+def _likely_forfeit(match: Match) -> bool | None:
+    """Best-effort : détecte une victoire administrative depuis `extradata`."""
+    extra = match.extradata if isinstance(match.extradata, dict) else None
+    if not extra:
+        return None
+
+    if bool(extra.get("forfeit_inferred")):
+        return True
+
+    statuses = extra.get("lpdb_opponent_statuses")
+    if isinstance(statuses, list) and any(str(s).upper() == "FF" for s in statuses):
+        return True
+
+    lpdb_winner = str(extra.get("lpdb_winner") or "")
+    if (
+        match.status == "done"
+        and (match.score_a is not None and match.score_b is not None)
+        and match.score_a == match.score_b
+        and lpdb_winner in ("1", "2")
+    ):
+        return True
+
+    return None
+
+
 def match_to_schema(match: Match) -> MatchOut:
     """ORM → schéma front : date/time dérivées du timestamp UTC en DISPLAY_TZ."""
     local = _as_utc(match.start_time_utc).astimezone(_display_tz())
@@ -55,6 +80,7 @@ def match_to_schema(match: Match) -> MatchOut:
         viewers=match.viewers,
         streams=[StreamOut.model_validate(s) for s in match.streams] if match.streams else None,
         veto=[VetoStepOut.model_validate(v) for v in match.veto] if match.veto else None,
+        likely_forfeit=_likely_forfeit(match),
     )
 
 
@@ -78,9 +104,11 @@ async def get_team(session: AsyncSession, team_id: str) -> TeamOut | None:
 
 
 async def list_players(session: AsyncSession, team_id: str) -> list[PlayerOut]:
-    """GET /teams/{id}/players — roster ingéré, dans l'ordre source."""
+    """GET /teams/{id}/players — roster ingéré, groupé par jeu puis ordre source."""
     rows = await session.scalars(
-        select(Player).where(Player.team_id == team_id).order_by(asc(Player.sort_order))
+        select(Player)
+        .where(Player.team_id == team_id)
+        .order_by(asc(Player.game_id), asc(Player.sort_order))
     )
     return [PlayerOut.model_validate(p) for p in rows]
 

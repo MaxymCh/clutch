@@ -24,7 +24,7 @@ import { PredictCard } from "../features/prono/PredictCard";
 import { PredictSheet } from "../features/prono/PredictSheet";
 import { RankRow } from "../features/prono/RankRow";
 import { getGroupScopeLabel } from "../features/prono/groupScopeLabel";
-import { formatDayMonth, formatWeekdayShort } from "../lib/date";
+import { canPredictMatch, formatDayMonth, formatWeekdayShort } from "../lib/date";
 import { formatPoints } from "../lib/format";
 import type { Match } from "../types/esports";
 
@@ -54,7 +54,7 @@ export const GroupPage = () => {
   const upcoming = useMemo(() => {
     if (!group) return [];
     return filterMatchesByGroupScope(
-      (matches ?? []).filter((m) => m.status === "upcoming"),
+      (matches ?? []).filter((m) => canPredictMatch(m)),
       group,
     );
   }, [matches, group]);
@@ -375,6 +375,11 @@ export const GroupPage = () => {
                                   <div className="text-xl font-bold tabular-nums text-ink">
                                     {match.scoreA ?? 0} – {match.scoreB ?? 0}
                                   </div>
+                                  {match.likelyForfeit && (
+                                    <div className="mt-1 text-[10px] font-semibold text-amber-600">
+                                      Forfait probable
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div className="flex flex-1 flex-col items-center gap-1.5">
