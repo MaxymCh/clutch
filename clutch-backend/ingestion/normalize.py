@@ -328,14 +328,20 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
             hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
             ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
             bb = [extra[f"team2ban{i}"] for i in range(1, 8) if extra.get(f"team2ban{i}")]
-            if ha: result["heroesA"] = ha
-            if hb: result["heroesB"] = hb
-            if ba: result["bansA"] = ba
-            if bb: result["bansB"] = bb
+            if ha:
+                result["heroesA"] = ha
+            if hb:
+                result["heroesB"] = hb
+            if ba:
+                result["bansA"] = ba
+            if bb:
+                result["bansB"] = bb
             side_a = str(extra.get("team1side") or "").lower()
             side_b = str(extra.get("team2side") or "").lower()
-            if side_a: result["sideA"] = side_a
-            if side_b: result["sideB"] = side_b
+            if side_a:
+                result["sideA"] = side_a
+            if side_b:
+                result["sideB"] = side_b
 
         elif game_id == "cs2":
             t1halfs = extra.get("t1halfs")
@@ -378,20 +384,24 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
                     for k in sorted(t1bans, key=lambda x: int(x))
                     if str(t1bans.get(k) or "").strip()
                 ]
-                if bans_a: result["opBansA"] = bans_a
+                if bans_a:
+                    result["opBansA"] = bans_a
             if isinstance(t2bans, dict) and isinstance(t2bantypes, dict):
                 bans_b = [
                     {"name": str(t2bans[k]), "type": str(t2bantypes.get(k, "?"))}
                     for k in sorted(t2bans, key=lambda x: int(x))
                     if str(t2bans.get(k) or "").strip()
                 ]
-                if bans_b: result["opBansB"] = bans_b
+                if bans_b:
+                    result["opBansB"] = bans_b
 
     # Champs top-level génériques
     game_length = str(raw.get("length") or "").strip()
-    if game_length: result["length"] = game_length
+    if game_length:
+        result["length"] = game_length
     vod = str(raw.get("vod") or "").strip()
-    if vod: result["vod"] = vod
+    if vod:
+        result["vod"] = vod
 
     return result
 
