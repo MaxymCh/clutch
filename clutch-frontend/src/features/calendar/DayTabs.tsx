@@ -34,8 +34,9 @@ export const DayTabs = ({
   const liveTotal = days.reduce((total, day) => total + day.liveCount, 0);
   const containerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
+  const isMounted = useRef(false);
 
-  // Auto-scroll pour centrer l'onglet actif
+  // Auto-scroll pour centrer l'onglet actif (instant au montage, smooth ensuite)
   useEffect(() => {
     const container = containerRef.current;
     const activeTab = activeRef.current;
@@ -48,7 +49,9 @@ export const DayTabs = ({
       containerRect.left -
       containerRect.width / 2 +
       tabRect.width / 2;
-    container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+    const behavior = isMounted.current ? "smooth" : "instant";
+    isMounted.current = true;
+    container.scrollTo({ left: scrollLeft, behavior });
   }, [value]);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -56,20 +59,31 @@ export const DayTabs = ({
   const currentIndex = days.findIndex((d) => d.date === value);
 
   const goPrev = () => {
-    if (isAll) return;
+    if (isAll) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      const target = days.filter((d) => d.date <= yesterdayStr).at(-1) ?? days[0];
+      if (target) onChange(target.date);
+      return;
+    }
     if (currentIndex > 0) onChange(days[currentIndex - 1].date);
     else if (withAll) onChange(ALL_DAYS);
   };
 
   const goNext = () => {
     if (isAll) {
-      if (days.length > 0) onChange(days[0].date);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      const target = days.find((d) => d.date >= tomorrowStr) ?? days[0];
+      if (target) onChange(target.date);
       return;
     }
     if (currentIndex < days.length - 1) onChange(days[currentIndex + 1].date);
   };
 
-  const canGoPrev = !isAll && (currentIndex > 0 || withAll);
+  const canGoPrev = isAll ? days.length > 0 : currentIndex > 0 || withAll;
   const canGoNext = isAll ? days.length > 0 : currentIndex < days.length - 1;
 
   return (
