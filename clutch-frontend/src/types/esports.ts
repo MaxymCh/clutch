@@ -137,6 +137,8 @@ export interface Match {
   streams?: Stream[];
   /** Veto des cartes (ban/pick/decider) — absent si non fourni */
   veto?: VetoStep[];
+  /** Signal best-effort : victoire administrative / forfait probable */
+  likelyForfeit?: boolean;
   /** % de la communauté qui pronostique l'équipe A gagnante */
   oddsA?: number;
 }

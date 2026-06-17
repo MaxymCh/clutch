@@ -1,8 +1,20 @@
+import type { Match } from '../types/esports';
+
 /** Utilitaires purs de formatage de dates (locale fr). */
 
 const parse = (iso: string): Date => new Date(`${iso}T00:00:00`);
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Date de début locale d'un match à partir de la paire date+heure API. */
+export const matchStartDateTime = (dateIso: string, time: string): Date =>
+  new Date(`${dateIso}T${time}:00`);
+
+/** Un prono est ouvert uniquement pour un match upcoming dont l'heure n'est pas dépassée. */
+export const canPredictMatch = (match: Match, now: Date = new Date()): boolean => {
+  if (match.status !== 'upcoming') return false;
+  return matchStartDateTime(match.date, match.time).getTime() > now.getTime();
+};
 
 /** "2026-07-11" → "Sam" */
 export const formatWeekdayShort = (iso: string): string =>

@@ -8,6 +8,7 @@ import { useMatchFilters } from "../filters/useMatchFilters";
 import { MatchCard } from "../matches/MatchCard";
 import { PredictSheet } from "../prono/PredictSheet";
 import { usePredictions } from "../prono/predictionsContext";
+import { canPredictMatch } from "../../lib/date";
 import { ALL_DAYS, DayTabs, type DayInfo } from "./DayTabs";
 import { Countdown } from "./Countdown";
 import { MatchSection } from "./MatchSection";
@@ -52,7 +53,7 @@ export const CalendarView = () => {
   const globalNextMatch = useMemo(() => {
     return (
       [...(matches ?? [])]
-        .filter((m) => m.status === "upcoming")
+        .filter((m) => canPredictMatch(m))
         .sort(byDateTime)[0] ?? null
     );
   }, [matches]);
@@ -98,7 +99,7 @@ export const CalendarView = () => {
     );
 
   const live = list.filter((m) => m.status === "live").sort(byDateTime);
-  const upcoming = list.filter((m) => m.status === "upcoming").sort(byDateTime);
+  const upcoming = list.filter((m) => canPredictMatch(m)).sort(byDateTime);
   const done = list.filter((m) => m.status === "done").sort(byDateTime);
 
   const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
@@ -113,7 +114,7 @@ export const CalendarView = () => {
           gameLogoUrl={g?.logoUrl}
           predictedWinnerId={predictedWinnerId(m)}
           showPredictionFooter
-          onPredict={setPredicting}
+          onPredict={canPredictMatch(m) ? setPredicting : undefined}
         />
       );
     });
