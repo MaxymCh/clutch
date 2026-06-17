@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../ui/Icon";
 
-/** Barre de navigation des pages de détail : retour + titre. */
-export const TopBar = ({ title }: { title: string }) => {
+/** Barre de navigation des pages de détail : retour + titre + action optionnelle. */
+export const TopBar = ({ title, trailing }: { title: string; trailing?: ReactNode }) => {
   const navigate = useNavigate();
   return (
     <>
@@ -18,9 +19,10 @@ export const TopBar = ({ title }: { title: string }) => {
           >
             <Icon name="back" size={19} />
           </button>
-          <span className="truncate text-base font-bold tracking-tight text-ink">
+          <span className="flex-1 truncate text-base font-bold tracking-tight text-ink">
             {title}
           </span>
+          {trailing}
         </div>
       </div>
       {/* Séparation + espace entre top bar et contenu */}

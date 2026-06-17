@@ -9,6 +9,8 @@ import type { Team } from '../types/esports';
 import { TeamLogo } from '../components/ui/TeamLogo';
 import { Seg } from '../components/ui/Seg';
 import { TopBar } from '../components/layout/TopBar';
+import { Icon } from '../components/ui/Icon';
+import { useFavorites } from '../features/favorites/favoritesContext';
 
 type Tab = 'upcoming' | 'results' | 'teams';
 
@@ -17,7 +19,9 @@ export const GamePage = () => {
   const { id = '' } = useParams();
   const { data: games, isPending } = useGames();
   const { data: matches } = useMatches();
+  const { games: favGames, toggleGame } = useFavorites();
   const [tab, setTab] = useState<Tab>('upcoming');
+  const isFav = favGames.includes(id);
 
   const game = games?.find((g) => g.id === id);
   const list = (matches ?? []).filter((m) => m.gameId === id);
@@ -30,12 +34,26 @@ export const GamePage = () => {
   });
   const teams = [...teamsMap.values()].sort((a, b) => a.name.localeCompare(b.name));
 
-  const upcoming = list.filter((m) => m.status === 'upcoming' || m.status === 'live');
+  const upcoming = list.filter((m) => m.status !== 'done');
   const done = list.filter((m) => m.status === 'done');
 
   return (
     <Page>
-      <TopBar title={game?.name ?? 'Jeu'} />
+      <TopBar
+        title={game?.name ?? 'Jeu'}
+        trailing={
+          game && (
+            <button
+              onClick={() => toggleGame(id)}
+              aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+              className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-transform active:scale-95 ${isFav ? 'bg-accent text-white' : 'border border-line bg-surface-2 text-ink hover:border-accent/40 hover:text-accent'}`}
+            >
+              <Icon name={isFav ? 'check' : 'plus'} size={13} strokeWidth={2.5} />
+              {isFav ? 'Suivi' : 'Suivre'}
+            </button>
+          )
+        }
+      />
       {isPending && <PageSpinner />}
       {!isPending && !game && (
         <p className="px-5 py-16 text-center text-sm font-medium text-dim">Jeu introuvable.</p>
