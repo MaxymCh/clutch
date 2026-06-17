@@ -87,6 +87,13 @@ class MapPlayerOut(ApiModel):
     level: float | None = None  # niveau du héros (Dota 2)
 
 
+class CS2HalfOut(ApiModel):
+    """Score d'une demi-temps CS2 avec le côté joué."""
+
+    side: str   # "ct" | "t"
+    score: int
+
+
 class MapScoreOut(ApiModel):
     """Miroir de `MapScore` (front)."""
 
@@ -104,6 +111,10 @@ class MapScoreOut(ApiModel):
     side_a: str | None = None          # JSON : sideA ("radiant"/"dire")
     side_b: str | None = None          # JSON : sideB
     length: str | None = None          # durée de la partie ("31m48s")
+    # CS2 : mi-temps avec côté CT/T
+    halves_a: list[CS2HalfOut] | None = None  # JSON : halvesA
+    halves_b: list[CS2HalfOut] | None = None  # JSON : halvesB
+    vod: str | None = None                    # lien VOD par carte
 
 
 class MatchOut(ApiModel):

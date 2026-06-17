@@ -123,6 +123,11 @@ export interface MapScore {
   sideB?: string;
   /** Durée de la partie ("31m48s") */
   length?: string;
+  /** CS2 : scores par demi-temps avec le côté (CT/T) pour chaque équipe */
+  halvesA?: { side: 'ct' | 't'; score: number }[];
+  halvesB?: { side: 'ct' | 't'; score: number }[];
+  /** Lien VOD par carte */
+  vod?: string;
 }
 
 export interface Match {

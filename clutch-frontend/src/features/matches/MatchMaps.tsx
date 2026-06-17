@@ -188,6 +188,79 @@ const DotaDraft = ({
   );
 };
 
+/** Détail d'une carte CS2 : mi-temps avec côtés CT/T et lien VOD. */
+const CS2HalfBreakdown = ({
+  halvesA, halvesB, teamA, teamB, vod,
+}: {
+  halvesA?: { side: string; score: number }[];
+  halvesB?: { side: string; score: number }[];
+  teamA: Team;
+  teamB: Team;
+  vod?: string;
+}) => {
+  const count = Math.max(halvesA?.length ?? 0, halvesB?.length ?? 0);
+  if (count === 0) return null;
+
+  const sideBadge = (side: string) => (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+        side === 'ct'
+          ? 'bg-blue-500/15 text-blue-500'
+          : 'bg-yellow-500/15 text-yellow-600'
+      }`}
+    >
+      {side}
+    </span>
+  );
+
+  return (
+    <div className="mt-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
+      {/* Header */}
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[12px] font-bold text-ink">{teamA.tag}</span>
+        {vod ? (
+          <a
+            href={vod}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold text-red-500 transition-opacity hover:opacity-80"
+          >
+            VOD
+          </a>
+        ) : (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-faint">Mi-temps</span>
+        )}
+        <span className="text-[12px] font-bold text-ink">{teamB.tag}</span>
+      </div>
+
+      {/* Lignes par demi-temps */}
+      {Array.from({ length: count }).map((_, i) => {
+        const hA = halvesA?.[i];
+        const hB = halvesB?.[i];
+        return (
+          <div key={i} className="flex items-center gap-2 py-1">
+            <div className="flex flex-1 items-center justify-end gap-2">
+              {hA && sideBadge(hA.side)}
+              <span className="w-6 text-right text-[17px] font-bold tabular-nums text-ink">
+                {hA?.score ?? 0}
+              </span>
+            </div>
+            <span className="w-14 text-center text-[10px] font-semibold text-faint">
+              {i === 0 ? '1re MT' : i === 1 ? '2e MT' : `OT ${i - 1}`}
+            </span>
+            <div className="flex flex-1 items-center gap-2">
+              <span className="w-6 text-left text-[17px] font-bold tabular-nums text-ink">
+                {hB?.score ?? 0}
+              </span>
+              {hB && sideBadge(hB.side)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 /** Manches du match : onglets cliquables + scoreboard joueur réactif. */
 export const MatchMaps = ({
   maps,
@@ -298,6 +371,17 @@ export const MatchMaps = ({
         length={current?.length}
         teamA={teamA} teamB={teamB}
       />
+
+      {/* CS2 : mi-temps CT/T + VOD */}
+      {gameId === 'cs2' && (
+        <CS2HalfBreakdown
+          halvesA={current?.halvesA}
+          halvesB={current?.halvesB}
+          teamA={teamA}
+          teamB={teamB}
+          vod={current?.vod}
+        />
+      )}
 
       {/* Scoreboard de la carte sélectionnée (si dispo pour ce jeu).
           Empilé sur mobile, équipe A à gauche / équipe B à droite sur desktop. */}

@@ -342,10 +342,11 @@ def normalize_maps(
         winner = str(raw.get("winner") or "")
         players = normalize_participants(raw, player_country, game_id)
 
-        # Draft Dota 2 : héros picks/bans + side + durée depuis extradata du game.
+        # Données spécifiques par jeu depuis extradata du game.
         extra = raw.get("extradata")
         draft: dict[str, Any] = {}
         if isinstance(extra, dict):
+            # Dota 2 : draft (picks/bans) + side + durée
             ha = [extra[f"team1hero{i}"] for i in range(1, 6) if extra.get(f"team1hero{i}")]
             hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
             ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
@@ -364,9 +365,29 @@ def normalize_maps(
                 draft["sideA"] = side_a
             if side_b:
                 draft["sideB"] = side_b
+            # CS2 : mi-temps avec côté CT/T (t1halfs/t1sides)
+            if game_id == "cs2":
+                t1halfs = extra.get("t1halfs")
+                t1sides = extra.get("t1sides")
+                t2halfs = extra.get("t2halfs")
+                t2sides = extra.get("t2sides")
+                if isinstance(t1halfs, dict) and isinstance(t1sides, dict):
+                    draft["halvesA"] = [
+                        {"side": str(t1sides.get(k, "?")), "score": int(t1halfs[k])}
+                        for k in sorted(t1halfs, key=lambda x: int(x))
+                    ]
+                if isinstance(t2halfs, dict) and isinstance(t2sides, dict):
+                    draft["halvesB"] = [
+                        {"side": str(t2sides.get(k, "?")), "score": int(t2halfs[k])}
+                        for k in sorted(t2halfs, key=lambda x: int(x))
+                    ]
         game_length = str(raw.get("length") or "").strip()
         if game_length:
             draft["length"] = game_length
+        # VOD : lien par carte (top-level sur le game object)
+        vod = str(raw.get("vod") or "").strip()
+        if vod:
+            draft["vod"] = vod
 
         if winner in ("1", "2"):
             entry: dict[str, Any] = {
