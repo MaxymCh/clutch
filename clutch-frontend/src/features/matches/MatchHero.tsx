@@ -153,11 +153,13 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
       )}
 
       {/* Action principale */}
-      {live && (
-        <Button full className="mt-1">
-          <Icon name="bolt" size={17} strokeWidth={2.1} />
-          Regarder le live
-        </Button>
+      {live && match.streams && match.streams.length > 0 && (
+        <a href={match.streams[0].url} target="_blank" rel="noopener noreferrer" className="mt-1 w-full">
+          <Button full>
+            <Icon name="eye" size={17} strokeWidth={2.1} />
+            Regarder le live
+          </Button>
+        </a>
       )}
       {!live && onPredict && (
         <Button full variant={hasPrediction ? 'soft' : 'primary'} className="mt-1" onClick={onPredict}>
