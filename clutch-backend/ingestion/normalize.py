@@ -556,8 +556,11 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
 
     score_a = _as_int(opponents[0].get("score"))
     score_b = _as_int(opponents[1].get("score"))
+    result_a = (opponents[0].get("status") or "").strip().upper() or None
+    result_b = (opponents[1].get("status") or "").strip().upper() or None
     if status == "upcoming":
         score_a = score_b = None
+        result_a = result_b = None
 
     return {
         "id": f"{game_id}_{slugify(match2id)}",
@@ -573,6 +576,8 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
         "start_time_utc": start_utc,
         "score_a": score_a,
         "score_b": score_b,
+        "result_a": result_a,
+        "result_b": result_b,
         "maps": maps,
         "current_map_label": current_map_label(maps) if status == "live" else None,
         # LPDB ne fournit pas d'audience : champ optionnel, jamais inventé.

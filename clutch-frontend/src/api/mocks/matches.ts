@@ -85,7 +85,7 @@ const LIVE_EXTRAS: Record<string, Pick<Match, 'currentMapLabel' | 'viewers'>> = 
 // % de picks « équipe A » par match (cote communautaire fictive)
 const ODDS_A = [62, 48, 71, 55, 40, 58, 66, 44, 52, 60, 47, 69, 51, 57, 43, 64, 50];
 
-export const MATCHES: Match[] = ROWS.map((r, i) => {
+const BASE_MATCHES: Match[] = ROWS.map((r, i) => {
   const [gameId, a, b, status, phase, bestOf, date, time, scoreA, scoreB] = r;
   const id = `m${i + 1}`;
   return {
@@ -105,3 +105,21 @@ export const MATCHES: Match[] = ROWS.map((r, i) => {
     ...LIVE_EXTRAS[id],
   };
 });
+
+export const MATCHES: Match[] = [
+  ...BASE_MATCHES,
+  // Match forfait (FF) — démo
+  {
+    id: 'ff_demo',
+    gameId: 'dota' as const,
+    teamA: TEAMS['spirit'],
+    teamB: TEAMS['eg'],
+    status: 'done' as const,
+    phase: 'Phase de groupes',
+    bestOf: 'BO1' as const,
+    date: FIXTURE_TODAY,
+    time: '11:00',
+    resultA: 'W',
+    resultB: 'FF',
+  },
+];

@@ -69,6 +69,11 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
   const done = match.status === 'done';
   const upcoming = match.status === 'upcoming';
 
+  const hasResult = match.resultA != null || match.resultB != null;
+  const aIsLoser = done && (hasResult ? match.resultA !== 'W' : (match.scoreA ?? 0) < (match.scoreB ?? 0));
+  const bIsLoser = done && (hasResult ? match.resultB !== 'W' : (match.scoreB ?? 0) < (match.scoreA ?? 0));
+  const isFF = match.resultA === 'FF' || match.resultB === 'FF';
+
   return (
     <div className={`relative flex flex-col gap-2.5 overflow-hidden rounded-xl border p-3 ${live ? 'border-accent/30 bg-accent/5' : 'border-line bg-surface-2'}`}>
       {live && <span className="absolute top-0 right-0 left-0 h-[2px] bg-accent" />}
@@ -85,13 +90,19 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
 
         {/* Équipes + score/heure */}
         <div className="flex items-center gap-1">
-          <span className="min-w-0 flex-1 truncate text-[12px] font-bold text-ink">
-            {match.teamA.tag}
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <TeamLogo tag={match.teamA.tag} size={18} logoUrl={match.teamA.logoUrl} />
+            <span className={`truncate text-[12px] font-bold ${aIsLoser ? 'text-dim' : 'text-ink'}`}>
+              {match.teamA.name}
+            </span>
+            {match.resultA === 'FF' && (
+              <span className="shrink-0 rounded border border-dim/40 px-0.5 text-[8px] font-bold text-dim">FF</span>
+            )}
+          </div>
           <div className="flex shrink-0 flex-col items-center px-1">
             <span className={`text-[13px] font-black tabular-nums ${live ? 'text-accent' : done ? 'text-ink' : (upcoming && showCountdown) ? 'text-accent' : 'text-dim'}`}>
               {live || done ? (
-                `${match.scoreA ?? 0}–${match.scoreB ?? 0}`
+                isFF ? 'FF' : `${match.scoreA ?? 0}–${match.scoreB ?? 0}`
               ) : (upcoming && showCountdown) ? (
                 <FeedCountdown date={match.date} time={match.time} />
               ) : (
@@ -101,9 +112,15 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
             {live && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Direct</span>}
             {upcoming && showCountdown && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Bientôt</span>}
           </div>
-          <span className="min-w-0 flex-1 truncate text-right text-[12px] font-bold text-ink">
-            {match.teamB.tag}
-          </span>
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+            {match.resultB === 'FF' && (
+              <span className="shrink-0 rounded border border-dim/40 px-0.5 text-[8px] font-bold text-dim">FF</span>
+            )}
+            <span className={`truncate text-[12px] font-bold ${bIsLoser ? 'text-dim' : 'text-ink'}`}>
+              {match.teamB.name}
+            </span>
+            <TeamLogo tag={match.teamB.tag} size={18} logoUrl={match.teamB.logoUrl} />
+          </div>
         </div>
         <p className="-mt-1 truncate text-[10px] font-medium text-faint">
           {formatMatchPhaseDate(match.phase, match.date, {

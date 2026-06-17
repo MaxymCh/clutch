@@ -107,6 +107,9 @@ class Match(Base):
     start_time_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     score_a: Mapped[int | None] = mapped_column(Integer, nullable=True)
     score_b: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # "W" | "L" | "FF" | "DQ" — None si match pas encore terminé
+    result_a: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    result_b: Mapped[str | None] = mapped_column(String(4), nullable=True)
     # Cartes déjà au format du front : [{name, scoreA, scoreB, winner?, live?}]
     maps: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     current_map_label: Mapped[str | None] = mapped_column(String(64), nullable=True)

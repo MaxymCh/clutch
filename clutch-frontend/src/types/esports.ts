@@ -128,6 +128,9 @@ export interface Match {
   time: string;
   scoreA?: number;
   scoreB?: number;
+  /** Résultat de l'équipe ("W" | "L" | "FF" | "DQ") — absent si pas encore terminé */
+  resultA?: string;
+  resultB?: string;
   maps?: MapScore[];
   /** Libellé de la carte en cours, ex. "Lotus · 11–9" (live uniquement) */
   currentMapLabel?: string;

@@ -48,6 +48,8 @@ def match_to_schema(match: Match) -> MatchOut:
         time=local.strftime("%H:%M"),
         score_a=match.score_a,
         score_b=match.score_b,
+        result_a=match.result_a,
+        result_b=match.result_b,
         maps=[MapScoreOut.model_validate(m) for m in match.maps] if match.maps else None,
         current_map_label=match.current_map_label,
         viewers=match.viewers,

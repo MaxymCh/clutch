@@ -116,6 +116,8 @@ class MatchOut(ApiModel):
     time: str  # "HH:mm" dans DISPLAY_TZ
     score_a: int | None = None  # JSON : scoreA
     score_b: int | None = None  # JSON : scoreB
+    result_a: str | None = None  # JSON : resultA ("W" | "L" | "FF" | "DQ")
+    result_b: str | None = None  # JSON : resultB
     maps: list[MapScoreOut] | None = None
     current_map_label: str | None = None  # JSON : currentMapLabel
     viewers: str | None = None

@@ -34,7 +34,18 @@ export const MatchCard = ({
 }: MatchCardProps) => {
   const { predictions } = usePredictions();
   const live = match.status === 'live';
+  const isDone = match.status === 'done';
   const pred = predictions[match.id];
+
+  // Déterminer le perdant pour le grisage (résultat explicite > comparaison de scores)
+  const hasResult = match.resultA != null || match.resultB != null;
+  const aIsLoser = isDone && (
+    hasResult ? match.resultA !== 'W' : (match.scoreA ?? 0) < (match.scoreB ?? 0)
+  );
+  const bIsLoser = isDone && (
+    hasResult ? match.resultB !== 'W' : (match.scoreB ?? 0) < (match.scoreA ?? 0)
+  );
+  const isFF = match.resultA === 'FF' || match.resultB === 'FF';
   const showFooter =
     showPredictionFooter &&
     (pred || (match.status === 'upcoming' && onPredict));
@@ -96,25 +107,31 @@ export const MatchCard = ({
               logoUrl={match.teamA.logoUrl}
             />
             <span
-              className={`max-w-full truncate text-center text-[13px] font-bold ${
-                match.status === 'done' &&
-                (match.scoreA ?? 0) < (match.scoreB ?? 0)
-                  ? 'text-dim'
-                  : 'text-ink'
-              }`}
+              className={`max-w-full truncate text-center text-[13px] font-bold ${aIsLoser ? 'text-dim' : 'text-ink'}`}
             >
               {match.teamA.name}
             </span>
+            {match.resultA === 'FF' && (
+              <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
+                FF
+              </span>
+            )}
           </div>
 
           {/* Score / heure au centre */}
           <div className="shrink-0 px-3 text-center">
-            {match.status === 'live' || match.status === 'done' ? (
-              <span
-                className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
-              >
-                {match.scoreA ?? 0} – {match.scoreB ?? 0}
-              </span>
+            {live || isDone ? (
+              isFF ? (
+                <span className="text-sm font-bold uppercase tracking-wide text-dim">
+                  Forfait
+                </span>
+              ) : (
+                <span
+                  className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
+                >
+                  {match.scoreA ?? 0} – {match.scoreB ?? 0}
+                </span>
+              )
             ) : (
               <span className="text-xl font-semibold tabular-nums text-ink">
                 {match.time}
@@ -133,15 +150,15 @@ export const MatchCard = ({
               logoUrl={match.teamB.logoUrl}
             />
             <span
-              className={`max-w-full truncate text-center text-[13px] font-bold ${
-                match.status === 'done' &&
-                (match.scoreB ?? 0) < (match.scoreA ?? 0)
-                  ? 'text-dim'
-                  : 'text-ink'
-              }`}
+              className={`max-w-full truncate text-center text-[13px] font-bold ${bIsLoser ? 'text-dim' : 'text-ink'}`}
             >
               {match.teamB.name}
             </span>
+            {match.resultB === 'FF' && (
+              <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
+                FF
+              </span>
+            )}
           </div>
         </div>
 
