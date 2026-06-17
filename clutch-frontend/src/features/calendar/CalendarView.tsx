@@ -10,7 +10,6 @@ import { PredictSheet } from "../prono/PredictSheet";
 import { usePredictions } from "../prono/predictionsContext";
 import { canPredictMatch } from "../../lib/date";
 import { ALL_DAYS, DayTabs, type DayInfo } from "./DayTabs";
-import { Countdown } from "./Countdown";
 import { MatchSection } from "./MatchSection";
 
 // Tri date+heure : nécessaire en vue « Tous » (équivaut au tri horaire sur un seul jour)
@@ -33,13 +32,23 @@ export const CalendarView = () => {
   // Jours du tournoi dérivés des données, limités aux dates qui ont encore
   // au moins un match non passé (live / upcoming).
   const days = useMemo<DayInfo[]>(() => {
-    const dates = [...new Set((matches ?? []).map((m) => m.date))].sort();
-    return dates.map((date) => ({
-      date,
-      liveCount: (matches ?? []).filter(
-        (m) => m.date === date && m.status === "live",
-      ).length,
-    }));
+    const matchDates = [...new Set((matches ?? []).map((m) => m.date))].sort();
+    if (matchDates.length === 0) return [];
+    // Générer toutes les dates entre le premier et le dernier match
+    const result: DayInfo[] = [];
+    const cursor = new Date(`${matchDates[0]}T00:00:00`);
+    const last = new Date(`${matchDates[matchDates.length - 1]}T00:00:00`);
+    while (cursor <= last) {
+      const date = cursor.toISOString().slice(0, 10);
+      result.push({
+        date,
+        liveCount: (matches ?? []).filter(
+          (m) => m.date === date && m.status === "live",
+        ).length,
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
   }, [matches]);
   const activeDays = useMemo(() => {
     return days.filter((dayInfo) =>
@@ -65,30 +74,19 @@ export const CalendarView = () => {
         Impossible de charger le calendrier. Réessaie plus tard.
       </p>
     );
-  if (activeDays.length === 0)
-    return (
-      <p className="px-5 py-16 text-center text-sm font-medium text-dim">
-        Aucun jour de match à venir pour le moment.
-      </p>
-    );
-
-  const hasUnplayedMatches = (date: string) =>
-    (matches ?? []).some((m) => m.date === date && m.status !== "done");
-  // Jour sélectionné : « Tous » (URL ?day=all) → URL valide non totalement jouée →
-  // premier jour avec au moins un match non terminé → premier jour du tournoi.
+  // Jour sélectionné : par défaut le premier jour avec des matchs actifs,
+  // ou le dernier jour du tournoi si tout est terminé.
   const fallbackDay =
-    activeDays[0]?.date ??
-    days.find((d) => hasUnplayedMatches(d.date))?.date ??
-    days[0].date;
+    activeDays[0]?.date ?? days[days.length - 1]?.date ?? days[0].date;
   const allDays = day === ALL_DAYS;
   const selectedDay = allDays
     ? ALL_DAYS
-    : activeDays.some((d) => d.date === day) && hasUnplayedMatches(day ?? "")
+    : days.some((d) => d.date === day)
       ? (day as string)
       : fallbackDay;
 
   let list = allDays
-    ? [...matches]
+    ? matches.filter((m) => m.status !== "done")
     : matches.filter((m) => m.date === selectedDay);
   if (filterGames.length > 0)
     list = list.filter((m) => filterGames.includes(m.gameId));
@@ -130,7 +128,7 @@ export const CalendarView = () => {
       <div className="min-w-0 flex-1">
         <DayTabs
           withAll
-          days={activeDays}
+          days={days}
           value={selectedDay}
           onChange={(d) => setFilter("day", d)}
         />
@@ -138,11 +136,8 @@ export const CalendarView = () => {
 
         {/* Countdown prochain match — toujours le prochain global */}
         {globalNextMatch && (
-          <div className="flex items-center justify-between px-5 py-3">
-            <Countdown
-              date={globalNextMatch.date}
-              time={globalNextMatch.time}
-            />
+          <div className="flex items-center justify-end px-5 mt-3">
+          
             <span className="text-xs font-semibold text-dim">
               {list.length} matchs
             </span>

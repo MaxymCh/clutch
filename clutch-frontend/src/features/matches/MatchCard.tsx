@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Match } from '../../types/esports';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
+import { PlatformIcon } from '../../components/ui/PlatformIcon';
 import { formatDDMM, formatWeekdayShort, phaseMetaLabel } from '../../lib/date';
 import { StatusPill } from './StatusPill';
+import { Countdown } from '../calendar/Countdown';
 import { usePredictions } from '../prono/predictionsContext';
 import { PronoBadge } from '../prono/PronoBadge';
 
@@ -46,6 +49,10 @@ export const MatchCard = ({
     hasResult ? match.resultB !== 'W' : (match.scoreB ?? 0) < (match.scoreA ?? 0)
   );
   const isFF = match.resultA === 'FF' || match.resultB === 'FF';
+  // useState(Date.now) = initialiseur lazy : Date.now() appelé une seule fois, pas à chaque render
+  const [now] = useState(Date.now);
+  const matchStart = new Date(`${match.date}T${match.time}:00`).getTime();
+  const showCountdown = !live && !isDone && matchStart - now > 0 && matchStart - now <= 3 * 3_600_000;
   const showFooter =
     showPredictionFooter &&
     (pred || (match.status === 'upcoming' && onPredict));
@@ -120,6 +127,11 @@ export const MatchCard = ({
 
           {/* Score / heure au centre */}
           <div className="shrink-0 px-3 text-center">
+            {showCountdown && (
+              <div className="mb-1.5 flex justify-center">
+                <Countdown date={match.date} time={match.time} />
+              </div>
+            )}
             {live || isDone ? (
               isFF ? (
                 <span className="text-sm font-bold uppercase tracking-wide text-dim">
@@ -140,11 +152,6 @@ export const MatchCard = ({
             <span className="mt-0.5 block text-[11px] font-medium text-faint tabular-nums">
               {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
             </span>
-            {match.status === 'done' && match.likelyForfeit && (
-              <span className="mt-1 block text-[10px] font-semibold text-amber-600">
-                Forfait
-              </span>
-            )}
           </div>
 
           {/* Équipe B */}
@@ -167,15 +174,35 @@ export const MatchCard = ({
           </div>
         </div>
 
-        {/* Info live */}
-        {live && match.currentMapLabel && (
-          <div className="mt-2.5 text-center text-[11px] font-semibold text-accent">
-            {match.currentMapLabel}
-            {match.viewers && (
-              <span className="font-medium text-dim">
-                {' '}
-                · {match.viewers} spect.
-              </span>
+        {/* Info live + streams */}
+        {live && (
+          <div className="mt-2.5 flex flex-col items-center gap-2">
+            {match.currentMapLabel && (
+              <div className="text-center text-[11px] font-semibold text-accent">
+                {match.currentMapLabel}
+                {match.viewers && (
+                  <span className="font-medium text-dim">
+                    {' '}· {match.viewers} spect.
+                  </span>
+                )}
+              </div>
+            )}
+            {match.streams && match.streams.length > 0 && (
+              <div className="relative z-10 flex gap-1.5">
+                {match.streams.map((s) => (
+                  <a
+                    key={s.url}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={s.platform}
+                    onClick={(e) => e.stopPropagation()}
+                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-line bg-surface transition-transform active:scale-95"
+                  >
+                    <PlatformIcon platform={s.platform} size={15} />
+                  </a>
+                ))}
+              </div>
             )}
           </div>
         )}

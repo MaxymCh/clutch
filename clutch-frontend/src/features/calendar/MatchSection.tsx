@@ -16,7 +16,7 @@ export const MatchSection = ({
   children,
 }: MatchSectionProps) => (
   <section>
-    <div className="flex items-center gap-2 pt-5 pb-3">
+    <div className="flex items-center gap-2 pt-3 pb-3">
       <h2
         className={`text-[11px] leading-none font-bold tracking-[.1em] uppercase ${
           accent ? "text-accent" : "text-dim"
