@@ -248,7 +248,7 @@ export const PronoPage = () => {
                 À pronostiquer <span className="text-faint">{toPredict.length}</span>
               </h2>
               {isPending && <PageSpinner />}
-              <div className="grid grid-cols-2 gap-3 pb-4">
+              <div className="grid grid-cols-1 gap-3 pb-4 sm:grid-cols-2">
                 {toPredict.map((m) => (
                   <PredictCard
                     key={m.id}
