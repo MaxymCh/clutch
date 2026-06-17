@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { LiveDot } from "../../components/ui/Badge";
 import { Icon } from "../../components/ui/Icon";
-import { formatWeekdayShort } from "../../lib/date";
+import { formatMonthShort, formatWeekdayShort } from "../../lib/date";
 
 export type DayInfo = {
   /** Date ISO "YYYY-MM-DD" */
@@ -152,6 +152,9 @@ export const DayTabs = ({
               <span className="flex items-center gap-1 text-base font-bold">
                 {dayNum}
                 {day.liveCount > 0 && <LiveDot size={5} />}
+              </span>
+              <span className="text-[9px] font-medium opacity-70">
+                {formatMonthShort(day.date)}
               </span>
             </button>
           );

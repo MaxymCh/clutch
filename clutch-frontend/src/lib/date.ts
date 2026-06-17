@@ -25,6 +25,10 @@ export const isMatchLive = (match: Match, now: Date = new Date()): boolean =>
 export const formatWeekdayShort = (iso: string): string =>
   cap(parse(iso).toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''));
 
+/** "2026-07-11" → "juil." */
+export const formatMonthShort = (iso: string): string =>
+  parse(iso).toLocaleDateString('fr-FR', { month: 'short' });
+
 /** "2026-07-11" → "11 juil" */
 export const formatDayMonth = (iso: string): string =>
   parse(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
