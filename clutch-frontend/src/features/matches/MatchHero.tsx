@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
-import { formatDayFull } from '../../lib/date';
+import { formatDayFull, phaseMetaLabel } from '../../lib/date';
 import type { Match, Team } from '../../types/esports';
 
 type MatchHeroProps = {
@@ -18,7 +18,7 @@ type MatchHeroProps = {
 };
 
 /** Colonne équipe : monogramme, nom, grand score — cliquable vers la page équipe. */
-const Side = ({ team, score, won, done }: { team: Team; score?: number; won: boolean; done: boolean }) => (
+const Side = ({ team, score, won, done, ff }: { team: Team; score?: number; won: boolean; done: boolean; ff?: boolean }) => (
   <Link
     to={`/team/${team.id}`}
     className="flex flex-1 flex-col items-center gap-2.5 transition-transform active:scale-[.97]"
@@ -36,6 +36,11 @@ const Side = ({ team, score, won, done }: { team: Team; score?: number; won: boo
         {score}
       </span>
     )}
+    {ff && (
+      <span className="rounded border border-dim/40 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-dim">
+        Forfait
+      </span>
+    )}
   </Link>
 );
 
@@ -43,18 +48,29 @@ const Side = ({ team, score, won, done }: { team: Team; score?: number; won: boo
 export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false, onPredict }: MatchHeroProps) => {
   const live = match.status === 'live';
   const done = match.status === 'done';
-  const aWon = done && (match.scoreA ?? 0) > (match.scoreB ?? 0);
-  const bWon = done && (match.scoreB ?? 0) > (match.scoreA ?? 0);
+  const hasResult = match.resultA != null || match.resultB != null;
+  const aWon = done && (hasResult ? match.resultA === 'W' : (match.scoreA ?? 0) > (match.scoreB ?? 0));
+  const bWon = done && (hasResult ? match.resultB === 'W' : (match.scoreB ?? 0) > (match.scoreA ?? 0));
+  const isFF = match.resultA === 'FF' || match.resultB === 'FF';
+  const phaseLabel = phaseMetaLabel(match.phase, match.date);
 
   return (
     <div className="flex flex-col items-center gap-3.5 border-b border-line px-5 pt-3 pb-6">
       <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-dim uppercase">
         <GameLogo tag={match.gameId.toUpperCase()} size={16} logoUrl={gameLogoUrl} />
         {gameName}
-        <span className="size-[3px] rounded-full bg-faint" />
-        {match.phase}
-        <span className="size-[3px] rounded-full bg-faint" />
-        {match.bestOf}
+        {phaseLabel && (
+          <>
+            <span className="size-[3px] rounded-full bg-faint" />
+            {phaseLabel}
+          </>
+        )}
+        {match.bestOf && (
+          <>
+            <span className="size-[3px] rounded-full bg-faint" />
+            {match.bestOf}
+          </>
+        )}
       </div>
 
       {live && <LiveBadge />}
@@ -64,21 +80,39 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
           {formatDayFull(match.date)} · {match.time}
         </span>
       )}
-      {done && <Badge variant="neutral">Score final</Badge>}
-      {done && match.likelyForfeit && (
+      {done && !isFF && <Badge variant="neutral">Score final</Badge>}
+      {done && !isFF && match.likelyForfeit && (
         <span className="text-[11px] font-semibold text-amber-600">Forfait probable</span>
       )}
 
-      <div className="flex w-full items-start gap-1.5">
-        <Side team={match.teamA} score={match.scoreA} won={live ? false : aWon} done={done} />
-        <span
-          className={`self-center text-[15px] font-medium text-faint ${
-            live || done ? 'pt-14' : 'pt-6'
-          }`}
-        >
-          {live || done ? '—' : 'vs'}
-        </span>
-        <Side team={match.teamB} score={match.scoreB} won={live ? false : bWon} done={done} />
+      <div className={`flex w-full gap-1.5 ${isFF ? 'items-center' : 'items-start'}`}>
+        <Side
+          team={match.teamA}
+          score={isFF ? undefined : match.scoreA}
+          won={live ? false : aWon}
+          done={done}
+          ff={match.resultA === 'FF'}
+        />
+        {isFF ? (
+          <span className="shrink-0 px-3 text-center text-2xl font-bold uppercase tracking-wide text-dim">
+            Forfait
+          </span>
+        ) : (
+          <span
+            className={`self-center text-[15px] font-medium text-faint ${
+              live || done ? 'pt-14' : 'pt-6'
+            }`}
+          >
+            {live || done ? '—' : 'vs'}
+          </span>
+        )}
+        <Side
+          team={match.teamB}
+          score={isFF ? undefined : match.scoreB}
+          won={live ? false : bWon}
+          done={done}
+          ff={match.resultB === 'FF'}
+        />
       </div>
 
       {live && match.currentMapLabel && (

@@ -142,7 +142,7 @@ export const MatchCard = ({
             </span>
             {match.status === 'done' && match.likelyForfeit && (
               <span className="mt-1 block text-[10px] font-semibold text-amber-600">
-                Forfait probable
+                Forfait
               </span>
             )}
           </div>
