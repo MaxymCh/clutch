@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { AgentIcon } from '../../components/ui/AgentIcon';
 import { ChampionIcon } from '../../components/ui/ChampionIcon';
+import { Flag } from '../../components/ui/Flag';
 import { HeroIcon } from '../../components/ui/HeroIcon';
-import { countryFlag } from '../../lib/flag';
 import { useMapImages, valoSlug } from '../../lib/valorant';
 import type { GameId, MapPlayer, MapScore, Team } from '../../types/esports';
 
@@ -24,7 +24,7 @@ const PlayerRow = ({ player, isMvp, cols }: { player: MapPlayer; isMvp: boolean;
       {player.agent && <AgentIcon agent={player.agent} size={22} />}
       {player.champion && <ChampionIcon champion={player.champion} size={22} />}
       {player.hero && <HeroIcon hero={player.hero} size={22} />}
-      <span className="text-[12px] leading-none">{countryFlag(player.countryCode)}</span>
+      <Flag countryCode={player.countryCode} size={12} className="shrink-0" />
       <span className="truncate text-[14px] font-semibold text-ink">{player.name}</span>
       {player.role && (
         <span className="shrink-0 rounded bg-surface-2 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-dim uppercase">

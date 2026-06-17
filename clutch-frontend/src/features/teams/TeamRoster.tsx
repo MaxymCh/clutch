@@ -1,8 +1,9 @@
 import { useGames } from '../../api/queries/useGames';
 import { useTeamPlayers } from '../../api/queries/useTeams';
 import { Card } from '../../components/ui/Card';
+import { Flag } from '../../components/ui/Flag';
 import { GameLogo } from '../../components/ui/GameLogo';
-import { countryFlag, countryName } from '../../lib/flag';
+import { countryName } from '../../lib/flag';
 import type { Game, Player, Team } from '../../types/esports';
 
 // Palette de dégradés déterministes pour les avatars (faute de vraie photo).
@@ -30,8 +31,8 @@ const PlayerAvatar = ({ player }: { player: Player }) => (
     >
       {player.name.charAt(0).toUpperCase()}
     </span>
-    <span className="absolute -right-0.5 -bottom-0.5 grid size-5 place-items-center rounded-full bg-surface text-[12px] leading-none">
-      {countryFlag(player.countryCode)}
+    <span className="absolute -right-0.5 -bottom-0.5 grid size-5 place-items-center overflow-hidden rounded-full bg-surface shadow-sm ring-1 ring-line">
+      <Flag countryCode={player.countryCode} size={11} className="rounded-none" />
     </span>
   </span>
 );

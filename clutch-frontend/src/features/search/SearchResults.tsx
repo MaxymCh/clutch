@@ -3,9 +3,9 @@ import { useGames } from '../../api/queries/useGames';
 import { useMatches } from '../../api/queries/useMatches';
 import { useTeams } from '../../api/queries/useTeams';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Flag } from '../../components/ui/Flag';
 import { Icon } from '../../components/ui/Icon';
 import { TeamLogo } from '../../components/ui/TeamLogo';
-import { countryFlag } from '../../lib/flag';
 import type { Match } from '../../types/esports';
 import { MatchCard } from '../matches/MatchCard';
 import { usePredictions } from '../prono/predictionsContext';
@@ -78,7 +78,7 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
             >
               <TeamLogo tag={t.tag} size={34} logoUrl={t.logoUrl} />
               <span className="flex-1 text-[15px] font-semibold text-ink">{t.name}</span>
-              <span className="text-[13px]">{countryFlag(t.countryCode)}</span>
+              <Flag countryCode={t.countryCode} size={13} />
               <Icon name="chevron" size={15} className="text-faint" />
             </Link>
           ))}
