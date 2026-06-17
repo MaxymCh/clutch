@@ -45,6 +45,7 @@ class PlayerOut(ApiModel):
     name: str
     country_code: str  # JSON : countryCode
     role: str | None = None
+    game_id: GameId | None = None  # JSON : gameId (effectif par jeu)
 
 
 class StreamOut(ApiModel):

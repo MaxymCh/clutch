@@ -48,6 +48,8 @@ export interface Player {
   countryCode: string;
   /** Poste/rôle ("Duelist", "Mid", "IGL"…) — absent si inconnu */
   role?: string;
+  /** Jeu de l'effectif (une équipe peut avoir un roster par jeu) — absent si inconnu */
+  gameId?: GameId;
 }
 
 /** Lien de diffusion d'un match (Twitch, YouTube…) */

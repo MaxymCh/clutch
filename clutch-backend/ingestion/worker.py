@@ -95,6 +95,9 @@ def upsert_players(session: Session, players: list[dict[str, Any]]) -> None:
             player.name = data["name"]
             if data["country_code"] != "XX":
                 player.country_code = data["country_code"]
+            # Renseigne le jeu si on le connaît (anciens rosters sans game_id).
+            if data.get("game_id") and not player.game_id:
+                player.game_id = data["game_id"]
             player.updated_at = utcnow()
 
 

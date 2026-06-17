@@ -102,9 +102,11 @@ async def get_team(session: AsyncSession, team_id: str) -> TeamOut | None:
 
 
 async def list_players(session: AsyncSession, team_id: str) -> list[PlayerOut]:
-    """GET /teams/{id}/players — roster ingéré, dans l'ordre source."""
+    """GET /teams/{id}/players — roster ingéré, groupé par jeu puis ordre source."""
     rows = await session.scalars(
-        select(Player).where(Player.team_id == team_id).order_by(asc(Player.sort_order))
+        select(Player)
+        .where(Player.team_id == team_id)
+        .order_by(asc(Player.game_id), asc(Player.sort_order))
     )
     return [PlayerOut.model_validate(p) for p in rows]
 

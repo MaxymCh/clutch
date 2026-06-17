@@ -485,11 +485,16 @@ def player_countries(opponents: list[Any]) -> dict[str, str]:
     return mapping
 
 
-def normalize_match_players(opponent: dict[str, Any], team_id: str) -> list[dict[str, Any]]:
+def normalize_match_players(
+    opponent: dict[str, Any], team_id: str, game_id: str = ""
+) -> list[dict[str, Any]]:
     """match2opponents[i].match2players → roster du front (joueurs ayant joué).
 
     Source unique du roster : les joueurs réellement alignés en match EWC
     (déjà présents dans la réponse /match → aucune requête supplémentaire).
+
+    `game_id` rattache l'effectif à un jeu : une équipe peut aligner un roster
+    distinct par titre (ex. Vitality en CS2 et en Valorant).
     """
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -508,6 +513,7 @@ def normalize_match_players(opponent: dict[str, Any], team_id: str) -> list[dict
             {
                 "id": pid,
                 "team_id": team_id,
+                "game_id": game_id or None,
                 "name": name,
                 "country_code": country_to_iso(player.get("flag")),
                 "role": None,
@@ -592,8 +598,8 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
         "team_a": team_a,
         "team_b": team_b,
         # Roster dérivé des joueurs alignés (source unique, 0 requête en plus).
-        "team_a_players": normalize_match_players(opponents[0], team_a["id"]),
-        "team_b_players": normalize_match_players(opponents[1], team_b["id"]),
+        "team_a_players": normalize_match_players(opponents[0], team_a["id"], game_id),
+        "team_b_players": normalize_match_players(opponents[1], team_b["id"], game_id),
         "status": status,
         "phase": translate_phase(record.get("section"), record.get("tickername")),
         "best_of": best_of,

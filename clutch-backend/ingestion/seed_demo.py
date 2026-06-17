@@ -34,7 +34,7 @@ import selectors
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import create_engine, delete, select
+from sqlalchemy import create_engine, delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
@@ -730,6 +730,39 @@ def seed_demo(
     return stats
 
 
+def purge_demo() -> dict[str, int]:
+    """Supprime UNIQUEMENT les données mockées (`seed-*`), garde le catalog.
+
+    Ne touche jamais aux données ingérées de Liquipedia (games/teams/players/
+    matchs réels) ni aux éventuels utilisateurs/pronos réels (non `seed-*`).
+    """
+    settings = get_settings()
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    session_local = sessionmaker(engine)
+
+    with session_local() as session:
+        n_matches = session.scalar(
+            select(func.count()).select_from(Match).where(Match.id.like(f"{MATCH_PREFIX}%"))
+        ) or 0
+        n_users = session.scalar(
+            select(func.count()).select_from(User).where(User.id.like(f"{USER_PREFIX}%"))
+        ) or 0
+        n_groups = session.scalar(
+            select(func.count()).select_from(Group).where(Group.id.like(f"{GROUP_PREFIX}%"))
+        ) or 0
+        _purge_seed(session)
+        session.commit()
+
+    stats = {"matches": n_matches, "users": n_users, "groups": n_groups}
+    logger.info(
+        "Purge démo terminée : %(matches)d matchs seed, %(users)d users seed, "
+        "%(groups)d groupes seed supprimés (+ pronos/memberships associés). "
+        "Catalog Liquipedia conservé.",
+        stats,
+    )
+    return stats
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Seed de démo complet (matchs + communauté)")
     parser.add_argument("--start-date", type=date.fromisoformat, default=DEFAULT_START_DATE, help="Premier jour de matchs (YYYY-MM-DD)")
@@ -737,6 +770,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--users", type=int, default=DEFAULT_USER_COUNT, help="Nombre de pronostiqueurs à créer")
     parser.add_argument("--seed", type=int, default=DEFAULT_RNG_SEED, help="Graine RNG (reproductibilité)")
     parser.add_argument("--no-replace", dest="replace", action="store_false", help="Ne purge pas les données seed existantes avant d'insérer")
+    parser.add_argument("--purge-only", action="store_true", help="Supprime UNIQUEMENT les données mockées (seed-*) et s'arrête, sans rien réinsérer")
     parser.set_defaults(replace=True)
     return parser
 
@@ -744,6 +778,9 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
+    if args.purge_only:
+        purge_demo()
+        return
     if args.end_date < args.start_date:
         parser.error("--end-date doit être >= --start-date")
     if args.users < 1:

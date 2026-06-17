@@ -30,6 +30,10 @@ export const TeamPage = () => {
   ).length;
 
   const gameOf = (m: Match) => games?.find((g) => g.id === m.gameId);
+
+  // Jeux disputés par l'équipe (dans l'ordre d'affichage du catalogue).
+  const playedGameIds = new Set(list.map((m) => m.gameId));
+  const teamGames = (games ?? []).filter((g) => playedGameIds.has(g.id));
   const section = (label: string, items: Match[]) =>
     items.length > 0 && (
       <section>
@@ -65,6 +69,7 @@ export const TeamPage = () => {
           <TeamHeader
             team={team}
             stats={{ wins, played: done.length, upcoming: next.length }}
+            games={teamGames}
           />
           <TeamRoster team={team} />
           <div className="px-5">
