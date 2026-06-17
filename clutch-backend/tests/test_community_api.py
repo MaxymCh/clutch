@@ -7,18 +7,16 @@ from tests.conftest import make_match, seed_catalog
 UTC = timezone.utc
 
 
-async def test_me_cree_un_utilisateur_anonyme_et_pose_le_cookie(client):
-    response = await client.get("/me", headers={"Accept-Language": "en-US,en;q=0.9"})
+async def test_me_cree_un_utilisateur_et_retourne_son_profil(client):
+    response = await client.get("/me")
     assert response.status_code == 200
-    assert "clutch_session" in response.cookies
 
     me = response.json()
     assert set(me) == {"id", "name", "tag", "countryCode", "points", "globalRank", "streak"}
     assert me["name"].startswith("clutcher_")
-    assert me["countryCode"] == "US"  # déduit d'Accept-Language
     assert me["points"] == 0 and me["streak"] == 0 and me["globalRank"] >= 1
 
-    # Deuxième appel avec le cookie : MÊME utilisateur (pas de re-création)
+    # Deuxième appel : MÊME utilisateur (identité stable par token)
     again = (await client.get("/me")).json()
     assert again["id"] == me["id"]
 
@@ -103,9 +101,9 @@ async def test_groupe_scope_par_jeu_filtre_historique_et_points(client, second_c
     me_a = (await client.get("/me")).json()
 
     created = (
-        await client.post("/groups", json={"name": "LoL only", "emoji": "🎮", "gameId": "lol"})
+        await client.post("/groups", json={"name": "LoL only", "emoji": "🎮", "gameIds": ["lol"]})
     ).json()
-    assert created["gameId"] == "lol"
+    assert created["gameIds"] == ["lol"]
     assert "teamId" not in created
 
     val_done = make_match(
@@ -169,7 +167,12 @@ async def test_prono_regles_du_front(client, session_factory):
                 current_map_label=None, viewers=None,
             )
         )
-        session.add(make_match(id="started"))  # live, déjà commencé
+        session.add(make_match(
+            id="started",
+            start_time_utc=datetime.now(UTC) - timedelta(hours=1),
+            score_a=None, score_b=None, maps=None,
+            current_map_label=None, viewers=None,
+        ))  # upcoming mais déjà commencé (start passé)
         await session.commit()
 
     # BO5 : le vainqueur doit avoir exactement 3 — 3-1 valide
@@ -212,6 +215,9 @@ async def test_historique_pronostics_ne_retourne_que_les_matchs_termines(client,
     future = datetime.now(UTC) + timedelta(hours=4)
     past = datetime.now(UTC) - timedelta(hours=6)
 
+    # Créer l'utilisateur d'abord pour récupérer son id
+    me = (await client.get("/me")).json()
+
     async with session_factory() as session:
         await seed_catalog(session)
         session.add_all(
@@ -240,8 +246,23 @@ async def test_historique_pronostics_ne_retourne_que_les_matchs_termines(client,
         )
         await session.commit()
 
-    await client.post("/predictions", json={"matchId": "done-past", "pick": "a", "scoreA": 2, "scoreB": 1})
-    await client.post("/predictions", json={"matchId": "upcoming-future", "pick": "a", "scoreA": 2, "scoreB": 0})
+    # Insertion directe : l'API refuse les pronos sur matchs terminés
+    async with session_factory() as session:
+        from app.models.community import Prediction
+
+        session.add_all(
+            [
+                Prediction(
+                    user_id=me["id"], match_id="done-past",
+                    pick="a", score_a=2, score_b=1, scored=False,
+                ),
+                Prediction(
+                    user_id=me["id"], match_id="upcoming-future",
+                    pick="a", score_a=2, score_b=0, scored=False,
+                ),
+            ]
+        )
+        await session.commit()
 
     history = (await client.get("/predictions/history")).json()
     assert len(history) == 1

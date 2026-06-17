@@ -3,6 +3,7 @@ import { useGames } from '../../api/queries/useGames';
 import { useMatches } from '../../api/queries/useMatches';
 import { LiveDot } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { isMatchLive } from '../../lib/date';
 
 /** Grille des jeux de la compétition — carte avec image de fond. */
 export const GameGrid = () => {
@@ -14,8 +15,8 @@ export const GameGrid = () => {
     <div className="grid grid-cols-1 gap-4 px-5 sm:grid-cols-2">
       {(games ?? []).map((game) => {
         const all = (matches ?? []).filter((m) => m.gameId === game.id);
-        const liveCount = all.filter((m) => m.status === 'live').length;
-        const upcoming = all.filter((m) => m.status === 'upcoming').length;
+        const liveCount = all.filter((m) => isMatchLive(m)).length;
+        const upcoming = all.filter((m) => m.status === 'upcoming' && !isMatchLive(m)).length;
         const done = all.filter((m) => m.status === 'done').length;
 
         return (

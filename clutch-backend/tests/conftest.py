@@ -9,14 +9,17 @@ from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 
 import pytest
+from fastapi import Depends, Request
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from app.api.deps import get_current_user
 from app.core.db import get_session
 from app.main import app
 from app.models.base import Base
 from app.models.catalog import Game, Match, Team
+from app.models.community import User
 
 UTC = timezone.utc
 
@@ -42,6 +45,33 @@ async def session(session_factory) -> AsyncIterator[AsyncSession]:
         yield s
 
 
+async def _user_dep(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    """Remplace get_current_user en tests : identité tirée du header X-Test-User."""
+    user_id = request.headers.get("x-test-user", "testusera")
+    user = await session.get(User, user_id)
+    if user:
+        return user
+    number = abs(hash(user_id)) % 10_000
+    user = User(
+        id=user_id,
+        name=f"clutcher_{number:04d}",
+        tag="CL",
+        country_code="FR",
+        points=0,
+        streak=0,
+    )
+    session.add(user)
+    try:
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        user = await session.get(User, user_id)
+    return user
+
+
 @pytest.fixture
 async def client(session_factory) -> AsyncIterator[AsyncClient]:
     """Client HTTP branché sur l'app, session DB substituée."""
@@ -51,17 +81,26 @@ async def client(session_factory) -> AsyncIterator[AsyncClient]:
             yield s
 
     app.dependency_overrides[get_session] = _override
+    app.dependency_overrides[get_current_user] = _user_dep
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Test-User": "testusera"},
+    ) as c:
         yield c
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
 async def second_client(session_factory) -> AsyncIterator[AsyncClient]:
-    """Deuxième client = deuxième utilisateur (jar de cookies séparé)."""
+    """Deuxième client = deuxième utilisateur (header X-Test-User distinct)."""
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-Test-User": "testuserb"},
+    ) as c:
         yield c
 
 
@@ -89,13 +128,13 @@ async def seed_catalog(session: AsyncSession) -> None:
 
 
 def make_match(**overrides) -> Match:
-    """Match « m6 » du front par défaut (live, complet) — surchargable."""
+    """Match « m6 » du front par défaut (upcoming en cours) — surchargable."""
     values = dict(
         id="m6",
         game_id="val",
         team_a_id="flcn",
         team_b_id="t1",
-        status="live",
+        status="upcoming",
         phase="Demi-finale",
         best_of="BO5",
         # 18:00 Europe/Paris (été, UTC+2) le 11/07/2026 → 16:00 UTC

@@ -16,6 +16,11 @@ export const canPredictMatch = (match: Match, now: Date = new Date()): boolean =
   return matchStartDateTime(match.date, match.time).getTime() > now.getTime();
 };
 
+/** Match en cours : status upcoming ET heure de début dépassée (Liquipedia ne ping qu'à la fin). */
+export const isMatchLive = (match: Match, now: Date = new Date()): boolean =>
+  match.status === 'upcoming' &&
+  matchStartDateTime(match.date, match.time).getTime() <= now.getTime();
+
 /** "2026-07-11" → "Sam" */
 export const formatWeekdayShort = (iso: string): string =>
   cap(parse(iso).toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''));

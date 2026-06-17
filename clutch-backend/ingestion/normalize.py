@@ -190,11 +190,9 @@ def _ensure_utc(value: Any) -> datetime | None:
 
 
 def compute_status(finished: Any, start_utc: datetime | None, now: datetime) -> str:
-    """Statut front : done si terminé, live si commencé, sinon upcoming."""
+    """Statut front : done si terminé, upcoming sinon (le live est calculé côté front)."""
     if str(finished) == "1":
         return "done"
-    if start_utc and start_utc <= now:
-        return "live"
     return "upcoming"
 
 
@@ -354,7 +352,7 @@ def normalize_maps(
             if players:
                 entry["players"] = players
             maps.append(entry)
-        elif match_status == "live" and not live_marked and score_a is not None and score_b is not None:
+        elif match_status != "done" and not live_marked and score_a is not None and score_b is not None:
             # Première carte non décidée avec un score : c'est la carte en cours.
             entry = {
                 "name": str(raw.get("map") or f"Carte {index + 1}"),
@@ -578,7 +576,8 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
     best_of = to_best_of(record.get("bestof"), len(games))
     raw_winner = str(record.get("winner") or "")
     forfeit_inferred = False
-    if status == "upcoming":
+    if status == "upcoming" and (start_utc is None or start_utc > now):
+        # Pas encore commencé : pas de scores
         score_a = score_b = None
         result_a = result_b = None
     elif status == "done":
@@ -612,7 +611,7 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
         "result_a": result_a,
         "result_b": result_b,
         "maps": maps,
-        "current_map_label": current_map_label(maps) if status == "live" else None,
+        "current_map_label": current_map_label(maps),
         # LPDB ne fournit pas d'audience : champ optionnel, jamais inventé.
         "viewers": None,
         "streams": normalize_streams(record.get("stream")),

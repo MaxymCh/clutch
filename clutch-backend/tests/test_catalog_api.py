@@ -12,7 +12,7 @@ async def _seed_three_matches(session_factory) -> None:
         await seed_catalog(session)
         session.add_all(
             [
-                make_match(),  # m6 : val, flcn vs t1, live, 11/07
+                make_match(),  # m6 : val, flcn vs t1, upcoming (en cours), 11/07
                 make_match(
                     id="m17",
                     game_id="cs2",
@@ -59,8 +59,10 @@ async def test_filtre_day_en_fuseau_affichage(client, session_factory):
 
 async def test_filtre_status_et_q(client, session_factory):
     await _seed_three_matches(session_factory)
-    ids = [m["id"] for m in (await client.get("/matches", params={"status": "live"})).json()]
-    assert ids == ["m6"]
+    ids = [m["id"] for m in (await client.get("/matches", params={"status": "done"})).json()]
+    assert ids == ["m1"]
+    ids = [m["id"] for m in (await client.get("/matches", params={"status": "upcoming"})).json()]
+    assert sorted(ids) == ["m17", "m6"]
     ids = [m["id"] for m in (await client.get("/matches", params={"q": "falcons"})).json()]
     assert sorted(ids) == ["m1", "m6"]
 
@@ -81,3 +83,33 @@ async def test_404_match_et_team(client, session_factory):
     await _seed_three_matches(session_factory)
     assert (await client.get("/matches/inconnu")).status_code == 404
     assert (await client.get("/teams/inconnu")).status_code == 404
+
+
+async def test_match_ff_expose_result_dans_api(client, session_factory):
+    """resultA/resultB présents en JSON quand renseignés ; absents sinon (exclude_none)."""
+    async with session_factory() as session:
+        await seed_catalog(session)
+        session.add(
+            make_match(
+                id="ff1",
+                status="done",
+                start_time_utc=datetime(2026, 7, 10, 14, 0, tzinfo=UTC),
+                score_a=0,
+                score_b=2,
+                maps=None,
+                current_map_label=None,
+                viewers=None,
+                result_a="FF",
+                result_b="W",
+            )
+        )
+        session.add(make_match())  # m6 sans result_a/result_b
+        await session.commit()
+
+    ff = (await client.get("/matches/ff1")).json()
+    assert ff["resultA"] == "FF"
+    assert ff["resultB"] == "W"
+
+    m6 = (await client.get("/matches/m6")).json()
+    assert "resultA" not in m6
+    assert "resultB" not in m6

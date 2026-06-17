@@ -20,8 +20,8 @@ const ROWS: Row[] = [
   // 11 juil — aujourd'hui
   ['rl', 'vit', 'g2', 'done', 'Quart de finale', 'BO5', '2026-07-11', '13:30', 4, 2],
   ['val', 'drx', 'fnc', 'done', 'Quart de finale', 'BO3', '2026-07-11', '15:30', 0, 2],
-  ['val', 'flcn', 't1', 'live', 'Demi-finale', 'BO5', '2026-07-11', '18:00', 2, 1],
-  ['cs2', 'faze', 'navi', 'live', 'Quart de finale', 'BO3', '2026-07-11', '18:30', 1, 1],
+  ['val', 'flcn', 't1', 'upcoming', 'Demi-finale', 'BO5', '2026-07-11', '18:00', 2, 1],
+  ['cs2', 'faze', 'navi', 'upcoming', 'Quart de finale', 'BO3', '2026-07-11', '18:30', 1, 1],
   ['lol', 'geng', 'blg', 'upcoming', 'Demi-finale', 'BO5', '2026-07-11', '20:00'],
   ['dota', 'spirit', 'tl', 'upcoming', 'Quart de finale', 'BO3', '2026-07-11', '21:30'],
   // 12 juil — demain

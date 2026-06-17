@@ -66,7 +66,7 @@ def match_to_schema(match: Match) -> MatchOut:
         game_id=match.game_id,
         team_a=TeamOut.model_validate(match.team_a),
         team_b=TeamOut.model_validate(match.team_b),
-        status=match.status,
+        status="upcoming" if match.status == "live" else match.status,
         phase=match.phase,
         best_of=match.best_of,
         date=local.strftime("%Y-%m-%d"),

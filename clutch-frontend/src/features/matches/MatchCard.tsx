@@ -4,7 +4,7 @@ import type { Match } from '../../types/esports';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
 import { PlatformIcon } from '../../components/ui/PlatformIcon';
-import { formatDDMM, formatWeekdayShort, phaseMetaLabel } from '../../lib/date';
+import { formatDDMM, formatWeekdayShort, isMatchLive, phaseMetaLabel } from '../../lib/date';
 import { StatusPill } from './StatusPill';
 import { Countdown } from '../calendar/Countdown';
 import { usePredictions } from '../prono/predictionsContext';
@@ -36,7 +36,7 @@ export const MatchCard = ({
   onPredict,
 }: MatchCardProps) => {
   const { predictions } = usePredictions();
-  const live = match.status === 'live';
+  const live = isMatchLive(match);
   const isDone = match.status === 'done';
   const pred = predictions[match.id];
 
@@ -55,7 +55,7 @@ export const MatchCard = ({
   const showCountdown = !live && !isDone && matchStart - now > 0 && matchStart - now <= 3 * 3_600_000;
   const showFooter =
     showPredictionFooter &&
-    (pred || (match.status === 'upcoming' && onPredict));
+    (pred || !!onPredict);
   const phaseLabel = phaseMetaLabel(match.phase, match.date);
 
   return (

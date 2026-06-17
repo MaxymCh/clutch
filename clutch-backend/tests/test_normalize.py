@@ -42,11 +42,11 @@ def _lpdb_record(**overrides):
     return record
 
 
-def test_normalize_match_complet_live():
+def test_normalize_match_complet_en_cours():
     result = normalize_match(_lpdb_record(), "val", NOW)
     assert result is not None
     assert result["id"] == "val_ewc-2026-val-r1m1"
-    assert result["status"] == "live"  # commencé, pas fini
+    assert result["status"] == "upcoming"  # commencé mais pas fini : le live est calculé côté front
     assert result["best_of"] == "BO5"
     assert result["phase"] == "Demi-finale"  # Semifinals → FR
     assert result["start_time_utc"].tzinfo is not None  # UTC aware
@@ -66,11 +66,11 @@ def test_normalize_match_complet_live():
 
 
 def test_statuts_front_exacts():
-    """done / live / upcoming — valeurs EXACTES du contrat (pas `finished`)."""
+    """done / upcoming — valeurs EXACTES du contrat (le live est calculé côté front)."""
     start_past = datetime(2026, 7, 11, 16, 0, tzinfo=timezone.utc)
     start_future = datetime(2026, 7, 12, 16, 0, tzinfo=timezone.utc)
     assert compute_status(1, start_past, NOW) == "done"
-    assert compute_status(0, start_past, NOW) == "live"
+    assert compute_status(0, start_past, NOW) == "upcoming"  # commencé, pas fini → upcoming
     assert compute_status(0, start_future, NOW) == "upcoming"
 
 
@@ -150,6 +150,37 @@ def test_maps_match_termine_sans_carte_live():
     )
     assert all("live" not in m for m in maps)
     assert current_map_label(maps) is None
+
+
+def test_result_a_result_b_extraits_des_statuts_lpdb():
+    """W/FF dans match2opponents[].status → result_a/result_b au top level du dict."""
+    record = _lpdb_record(
+        finished=1,
+        match2opponents=[
+            {"name": "Team_Falcons", "template": "team falcons", "score": 2, "status": "W"},
+            {"name": "T1", "template": "t1", "score": 0, "status": "FF"},
+        ],
+    )
+    result = normalize_match(record, "val", NOW)
+    assert result is not None
+    assert result["result_a"] == "W"
+    assert result["result_b"] == "FF"
+
+
+def test_result_none_pour_match_upcoming():
+    """Avant le début du match, result_a et result_b doivent être None (aucune valeur anticipée)."""
+    record = _lpdb_record(
+        date=datetime(2026, 7, 12, 16, 0),  # futur par rapport à NOW
+        match2opponents=[
+            {"name": "Team_Falcons", "template": "team falcons", "score": -1, "status": ""},
+            {"name": "T1", "template": "t1", "score": -1, "status": ""},
+        ],
+    )
+    result = normalize_match(record, "val", NOW)
+    assert result is not None
+    assert result["status"] == "upcoming"
+    assert result["result_a"] is None
+    assert result["result_b"] is None
 
 
 def test_forfeit_inferred_from_winner_when_score_is_0_0():

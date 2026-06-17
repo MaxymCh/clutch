@@ -8,7 +8,7 @@ import { useMatchFilters } from "../filters/useMatchFilters";
 import { MatchCard } from "../matches/MatchCard";
 import { PredictSheet } from "../prono/PredictSheet";
 import { usePredictions } from "../prono/predictionsContext";
-import { canPredictMatch } from "../../lib/date";
+import { canPredictMatch, isMatchLive } from "../../lib/date";
 import { ALL_DAYS, DayTabs, type DayInfo } from "./DayTabs";
 import { MatchSection } from "./MatchSection";
 
@@ -43,7 +43,7 @@ export const CalendarView = () => {
       result.push({
         date,
         liveCount: (matches ?? []).filter(
-          (m) => m.date === date && m.status === "live",
+          (m) => m.date === date && isMatchLive(m),
         ).length,
       });
       cursor.setDate(cursor.getDate() + 1);
@@ -96,7 +96,7 @@ export const CalendarView = () => {
         filterTeams.includes(m.teamA.id) || filterTeams.includes(m.teamB.id),
     );
 
-  const live = list.filter((m) => m.status === "live").sort(byDateTime);
+  const live = list.filter((m) => isMatchLive(m)).sort(byDateTime);
   const upcoming = list.filter((m) => canPredictMatch(m)).sort(byDateTime);
   const done = list.filter((m) => m.status === "done").sort(byDateTime);
 

@@ -15,7 +15,7 @@ import { PredictSheet } from '../features/prono/PredictSheet';
 import { PronoBadge } from '../features/prono/PronoBadge';
 import { PlatformIcon } from '../components/ui/PlatformIcon';
 import { useFavorites } from '../features/favorites/favoritesContext';
-import { canPredictMatch, formatDayMonth, formatMatchPhaseDate, formatWeekdayShort, matchStartDateTime } from '../lib/date';
+import { canPredictMatch, formatDayMonth, formatMatchPhaseDate, formatWeekdayShort, isMatchLive, matchStartDateTime } from '../lib/date';
 import type { Match } from '../types/esports';
 
 const todayIso = (() => {
@@ -62,9 +62,9 @@ type FeedCardProps = {
 };
 
 const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountdown = false }: FeedCardProps) => {
-  const live = match.status === 'live';
+  const live = isMatchLive(match);
   const done = match.status === 'done';
-  const upcoming = match.status === 'upcoming';
+  const upcoming = !live && match.status === 'upcoming';
 
   const hasResult = match.resultA != null || match.resultB != null;
   const aIsLoser = done && (hasResult ? match.resultA !== 'W' : (match.scoreA ?? 0) < (match.scoreB ?? 0));
@@ -217,7 +217,7 @@ export const ForYouPage = () => {
   const inFavGames = (m: Match) => favGames.includes(m.gameId);
 
   const live = useMemo(
-    () => matches.filter((m) => m.status === 'live' && (inFavTeams(m) || inFavGames(m))),
+    () => matches.filter((m) => isMatchLive(m) && (inFavTeams(m) || inFavGames(m))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [matches, favTeams, favGames],
   );
@@ -325,7 +325,7 @@ export const ForYouPage = () => {
       )}
 
       {/* Prochain(s) dans les 2h — si rien en live */}
-      {live.length === 0 && upcoming2h.length > 0 && (
+      {upcoming2h.length > 0 && (
         <Section title="Bientôt en direct" live>
           {upcoming2h.map((m) => (
             <FeedCard key={m.id} match={m} gameTag={gameTag(m)} gameName={gameName(m)} gameLogoUrl={gameLogoUrl(m)} onPredict={setPredicting} showCountdown />

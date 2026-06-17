@@ -15,19 +15,19 @@ from app.services import catalog
 router = APIRouter(tags=["catalog"])
 
 
-@router.get("/games", response_model=list[GameOut])
+@router.get("/games", response_model=list[GameOut], response_model_exclude_none=True)
 async def get_games(session: AsyncSession = Depends(get_session)) -> list[GameOut]:
     """Sert le hook front `useGames` — ordre GAME_ORDER."""
     return await catalog.list_games(session)
 
 
-@router.get("/teams", response_model=list[TeamOut])
+@router.get("/teams", response_model=list[TeamOut], response_model_exclude_none=True)
 async def get_teams(session: AsyncSession = Depends(get_session)) -> list[TeamOut]:
     """Sert `useTeams` — tri alphabétique sur name."""
     return await catalog.list_teams(session)
 
 
-@router.get("/teams/{team_id}", response_model=TeamOut)
+@router.get("/teams/{team_id}", response_model=TeamOut, response_model_exclude_none=True)
 async def get_team(team_id: str, session: AsyncSession = Depends(get_session)) -> TeamOut:
     """Sert `useTeam`."""
     team = await catalog.get_team(session, team_id)
@@ -50,7 +50,7 @@ async def get_matches(
     game: str | None = Query(default=None, description="GameId (val, lol, cs2, apex, tft, …)"),
     team: str | None = Query(default=None, description="Id d'équipe"),
     day: str | None = Query(default=None, description="Jour local YYYY-MM-DD (DISPLAY_TZ)"),
-    status: str | None = Query(default=None, pattern="^(upcoming|live|done)$"),
+    status: str | None = Query(default=None, pattern="^(upcoming|done)$"),
     q: str | None = Query(default=None, description="Recherche texte (équipe, phase)"),
 ) -> list[MatchOut]:
     """Sert `useMatches` — filtres exacts du front, tous optionnels."""

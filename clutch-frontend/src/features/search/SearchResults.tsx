@@ -7,6 +7,7 @@ import { Flag } from '../../components/ui/Flag';
 import { Icon } from '../../components/ui/Icon';
 import { TeamLogo } from '../../components/ui/TeamLogo';
 import type { Match } from '../../types/esports';
+import { isMatchLive } from '../../lib/date';
 import { MatchCard } from '../matches/MatchCard';
 import { usePredictions } from '../prono/predictionsContext';
 
@@ -53,7 +54,8 @@ export const SearchResults = ({ q, status, game }: SearchResultsProps) => {
     : [];
 
   let list = matches ?? [];
-  if (status !== 'all') list = list.filter((m) => m.status === status);
+  if (status === 'live') list = list.filter((m) => isMatchLive(m));
+  else if (status !== 'all') list = list.filter((m) => m.status === status);
   if (game !== 'all') list = list.filter((m) => m.gameId === game);
   if (s) {
     list = list.filter(

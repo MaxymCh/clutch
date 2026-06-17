@@ -12,7 +12,7 @@ GameId = Literal[
     "val", "lol", "cs2", "dota", "rl", "ow",
     "apex", "r6", "pubg", "fn", "ff", "mlbb", "hok", "sf6", "tk8", "bo7", "tft",
 ]
-MatchStatus = Literal["upcoming", "live", "done"]
+MatchStatus = Literal["upcoming", "done"]
 BestOf = Literal["BO1", "BO3", "BO5"]
 
 

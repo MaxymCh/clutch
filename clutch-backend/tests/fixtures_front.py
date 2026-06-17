@@ -12,7 +12,7 @@ FRONT_MATCH_M6 = {
     "gameId": "val",
     "teamA": {"id": "flcn", "name": "Team Falcons", "tag": "FLCN", "countryCode": "SA"},
     "teamB": {"id": "t1", "name": "T1", "tag": "T1", "countryCode": "KR"},
-    "status": "live",
+    "status": "upcoming",
     "phase": "Demi-finale",
     "bestOf": "BO5",
     "date": "2026-07-11",

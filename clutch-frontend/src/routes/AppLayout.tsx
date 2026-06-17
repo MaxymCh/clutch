@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { usePreferences } from "../api/queries/usePreferences";
 import { useMatches } from "../api/queries/useMatches";
+import { isMatchLive } from "../lib/date";
 import { BottomNav } from "../components/layout/BottomNav";
 import { FloatingNav } from "../components/layout/FloatingNav";
 import { FavoritesProvider } from "../features/favorites/FavoritesProvider";
@@ -15,7 +16,7 @@ const Shell = () => {
   const { onboarded, setOnboarded } = useSettings();
   const { isPlaceholderData: prefsLoading } = usePreferences();
   const { data: matches } = useMatches();
-  const agendaLive = (matches ?? []).some((m) => m.status === "live");
+  const agendaLive = (matches ?? []).some((m) => isMatchLive(m));
 
   return (
     <>

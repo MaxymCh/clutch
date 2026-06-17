@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
-import { formatDayFull, phaseMetaLabel } from '../../lib/date';
+import { formatDayFull, isMatchLive, phaseMetaLabel } from '../../lib/date';
 import type { Match, Team } from '../../types/esports';
 
 type MatchHeroProps = {
@@ -46,7 +46,7 @@ const Side = ({ team, score, won, done, ff }: { team: Team; score?: number; won:
 
 /** Hero du détail de match : méta, statut, face-à-face, action principale. */
 export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false, onPredict }: MatchHeroProps) => {
-  const live = match.status === 'live';
+  const live = isMatchLive(match);
   const done = match.status === 'done';
   const hasResult = match.resultA != null || match.resultB != null;
   const aWon = done && (hasResult ? match.resultA === 'W' : (match.scoreA ?? 0) > (match.scoreB ?? 0));
@@ -74,7 +74,7 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
       </div>
 
       {live && <LiveBadge />}
-      {match.status === 'upcoming' && (
+      {!live && match.status === 'upcoming' && (
         <span className="flex items-center gap-1.5 text-xs font-semibold text-dim">
           <Icon name="clock" size={13} />
           {formatDayFull(match.date)} · {match.time}
@@ -133,7 +133,7 @@ export const MatchHero = ({ match, gameName, gameLogoUrl, hasPrediction = false,
           Regarder le live
         </Button>
       )}
-      {match.status === 'upcoming' && onPredict && (
+      {!live && onPredict && (
         <Button full variant={hasPrediction ? 'soft' : 'primary'} className="mt-1" onClick={onPredict}>
           <Icon name={hasPrediction ? 'check' : 'trophy'} size={17} strokeWidth={2.1} />
           {hasPrediction ? 'Modifier mon prono' : 'Pronostiquer'}

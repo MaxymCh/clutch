@@ -547,7 +547,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "upcoming" | "live" | "done";
+            status: "upcoming" | "done";
             /** Phase */
             phase: string;
             /**
