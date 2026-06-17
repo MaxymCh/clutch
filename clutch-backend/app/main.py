@@ -21,7 +21,11 @@ from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.services.scoring import score_finished_matches
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s:%(name)s:%(message)s",
+    datefmt="%H:%M:%S",
+)
 
 ATTRIBUTION = (
     "Données esport issues de Liquipedia (https://liquipedia.net), "
