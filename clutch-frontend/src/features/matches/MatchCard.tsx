@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Match } from '../../types/esports';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { TeamLogo } from '../../components/ui/TeamLogo';
-import { formatDDMM, formatWeekdayShort } from '../../lib/date';
+import { formatDDMM, formatWeekdayShort, phaseMetaLabel } from '../../lib/date';
 import { StatusPill } from './StatusPill';
 import { usePredictions } from '../prono/predictionsContext';
 import { PronoBadge } from '../prono/PronoBadge';
@@ -38,6 +38,7 @@ export const MatchCard = ({
   const showFooter =
     showPredictionFooter &&
     (pred || (match.status === 'upcoming' && onPredict));
+  const phaseLabel = phaseMetaLabel(match.phase, match.date);
 
   return (
     <div
@@ -55,28 +56,34 @@ export const MatchCard = ({
         />
 
         {/* Méta : jeu · phase · statut */}
-        <div className="mb-3 flex items-center justify-between text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
-          <span className="flex items-center gap-1.5">
+        <div className="mb-3 flex items-center justify-between gap-2 text-[10px] font-semibold tracking-wide text-ink-2 uppercase">
+          <span className="flex min-w-0 items-center gap-2">
             <Link
               to={`/game/${match.gameId}`}
               onClick={(e) => e.stopPropagation()}
-              className="relative z-10 text-accent transition-colors hover:text-accent/80"
+              className="relative z-10 inline-flex shrink-0 items-center gap-1.5 text-accent transition-colors hover:text-accent/80"
             >
               <GameLogo tag={gameTag} size={18} logoUrl={gameLogoUrl} />
-              <span className="text-[10px] font-bold tracking-[.08em]">
+              <span className="text-[10px] font-bold leading-none tracking-[.08em]">
                 {gameTag}
               </span>
             </Link>
-            <span className="size-0.75 rounded-full bg-dim" />
-            {match.phase}
+            {phaseLabel && (
+              <>
+                <span className="size-0.75 shrink-0 rounded-full bg-dim" />
+                <span className="truncate">{phaseLabel}</span>
+              </>
+            )}
             {match.bestOf && (
               <>
-                <span className="size-0.75 rounded-full bg-dim" />
-                <span>{match.bestOf}</span>
+                <span className="size-0.75 shrink-0 rounded-full bg-dim" />
+                <span className="shrink-0">{match.bestOf}</span>
               </>
             )}
           </span>
-          <StatusPill match={match} />
+          <div className="shrink-0">
+            <StatusPill match={match} />
+          </div>
         </div>
 
         {/* Équipes face-à-face : logo gros + nom en dessous */}

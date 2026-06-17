@@ -18,6 +18,15 @@ export const isDateLikePhase = (phase: string): boolean =>
     phase.trim(),
   );
 
+/** Phase affichable en méta : "June 17" → "17 juin", sinon libellé de phase. */
+export const phaseMetaLabel = (phase: string, dateIso?: string): string | null => {
+  if (isDateLikePhase(phase)) {
+    return dateIso ? formatDayMonth(dateIso) : null;
+  }
+  if (phase?.trim()) return phase.trim();
+  return null;
+};
+
 /** Sous-titre match : phase (si utile) + jour FR + heure optionnelle. */
 export const formatMatchPhaseDate = (
   phase: string,
