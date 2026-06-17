@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { usePreferences } from "../api/queries/usePreferences";
 import { useMatches } from "../api/queries/useMatches";
+import { useFavorites } from "../features/favorites/favoritesContext";
 import { isMatchLive } from "../lib/date";
 import { BottomNav } from "../components/layout/BottomNav";
 import { FloatingNav } from "../components/layout/FloatingNav";
@@ -16,7 +17,11 @@ const Shell = () => {
   const { onboarded, setOnboarded } = useSettings();
   const { isPlaceholderData: prefsLoading } = usePreferences();
   const { data: matches } = useMatches();
+  const { teams: favTeams } = useFavorites();
   const agendaLive = (matches ?? []).some((m) => isMatchLive(m));
+  const forYouLive = (matches ?? []).some(
+    (m) => isMatchLive(m) && (favTeams.includes(m.teamA.id) || favTeams.includes(m.teamB.id)),
+  );
 
   return (
     <>
@@ -25,7 +30,7 @@ const Shell = () => {
         aria-hidden="true"
         className="pointer-events-none fixed inset-x-0 top-0 z-20 hidden h-5 backdrop-blur-xl lg:block"
       />
-      <FloatingNav agendaLive={agendaLive} themeToggle={<ThemeToggle />} />
+      <FloatingNav agendaLive={agendaLive} forYouLive={forYouLive} themeToggle={<ThemeToggle />} />
       <div className="lg:pt-28">
         <Outlet />
       </div>

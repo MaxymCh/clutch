@@ -15,7 +15,7 @@ export const TABS: { id: string; label: string; icon: IconName; to: string }[] =
 export const activeTabId = (pathname: string): string => {
   if (pathname === "/") return "home";
   if (pathname.startsWith("/games") || pathname.startsWith("/game/")) return "games";
-  if (pathname.startsWith("/calendar") || pathname.startsWith("/match/") || pathname.startsWith("/team") || pathname.startsWith("/search"))
+  if (pathname.startsWith("/calendar") || pathname.startsWith("/match/") || pathname.startsWith("/team/") || pathname.startsWith("/search"))
     return "agenda";
   if (pathname.startsWith("/prono")) return "prono";
   if (pathname.startsWith("/ligues")) return "ligues";

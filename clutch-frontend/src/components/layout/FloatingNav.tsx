@@ -6,6 +6,7 @@ import { TABS, activeTabId } from "./navTabs";
 
 type FloatingNavProps = {
   agendaLive?: boolean;
+  forYouLive?: boolean;
   themeToggle?: ReactNode;
 };
 
@@ -27,6 +28,7 @@ const CompSwitcher = () => {
 /** Navigation desktop (≥ lg) : barre flottante centrée, style pill. */
 export const FloatingNav = ({
   agendaLive = false,
+  forYouLive = false,
   themeToggle,
 }: FloatingNavProps) => {
   const { pathname } = useLocation();
@@ -36,7 +38,7 @@ export const FloatingNav = ({
     <header
       className={[
         "fixed top-4 left-1/2 z-20 hidden",
-        "w-[calc(100%-3rem)] max-w-3xl lg:w-[62vw] lg:max-w-none",
+        "w-[calc(100%-3rem)] max-w-[1100px]",
         "-translate-x-1/2",
         "items-center gap-2",
         "rounded-2xl",
@@ -68,7 +70,7 @@ export const FloatingNav = ({
               to={tab.to}
               aria-current={on ? "page" : undefined}
               className={[
-                "flex items-center gap-2 rounded-[11px] px-4 py-2.5",
+                "flex items-center gap-1.5 rounded-[11px] px-3 py-2.5",
                 "text-sm tracking-tight transition-transform active:scale-[.97]",
                 on
                   ? "bg-surface font-bold text-ink shadow-card"
@@ -77,7 +79,12 @@ export const FloatingNav = ({
             >
               <Icon name={tab.icon} size={18} strokeWidth={on ? 2.2 : 1.8} />
               {tab.label}
-              {(tab.id === "home" || tab.id === "agenda") && agendaLive && (
+              {tab.id === "home" && forYouLive && (
+                <span className="ml-0.5">
+                  <LiveDot />
+                </span>
+              )}
+              {tab.id === "agenda" && agendaLive && (
                 <span className="ml-0.5">
                   <LiveDot />
                 </span>
@@ -87,7 +94,7 @@ export const FloatingNav = ({
         })}
         <Link
           to="/search"
-          className="flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-sm font-semibold tracking-tight text-dim transition-transform hover:text-ink-2 active:scale-[.97]"
+          className="flex items-center gap-1.5 rounded-[11px] px-3 py-2.5 text-sm font-semibold tracking-tight text-dim transition-transform hover:text-ink-2 active:scale-[.97]"
         >
           <Icon name="search" size={18} />
           Recherche
