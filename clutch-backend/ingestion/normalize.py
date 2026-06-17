@@ -342,12 +342,32 @@ def normalize_maps(
         winner = str(raw.get("winner") or "")
         players = normalize_participants(raw, player_country, game_id)
 
+        # Draft Dota 2 : héros picks/bans + side + durée depuis extradata du game.
+        extra = raw.get("extradata")
+        draft: dict[str, Any] = {}
+        if isinstance(extra, dict):
+            ha = [extra[f"team1hero{i}"] for i in range(1, 6) if extra.get(f"team1hero{i}")]
+            hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
+            ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
+            bb = [extra[f"team2ban{i}"] for i in range(1, 8) if extra.get(f"team2ban{i}")]
+            if ha: draft["heroesA"] = ha
+            if hb: draft["heroesB"] = hb
+            if ba: draft["bansA"] = ba
+            if bb: draft["bansB"] = bb
+            side_a = str(extra.get("team1side") or "").lower()
+            side_b = str(extra.get("team2side") or "").lower()
+            if side_a: draft["sideA"] = side_a
+            if side_b: draft["sideB"] = side_b
+        game_length = str(raw.get("length") or "").strip()
+        if game_length: draft["length"] = game_length
+
         if winner in ("1", "2"):
             entry: dict[str, Any] = {
                 "name": str(raw.get("map") or f"Carte {index + 1}"),
                 "scoreA": score_a if score_a is not None else 0,
                 "scoreB": score_b if score_b is not None else 0,
                 "winner": "a" if winner == "1" else "b",
+                **draft,
             }
             if players:
                 entry["players"] = players
@@ -359,6 +379,7 @@ def normalize_maps(
                 "scoreA": score_a,
                 "scoreB": score_b,
                 "live": True,
+                **draft,
             }
             if players:
                 entry["players"] = players

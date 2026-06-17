@@ -112,6 +112,17 @@ export interface MapScore {
   live?: boolean;
   /** Scoreboard par joueur (si disponible, ex. Valorant) */
   players?: MapPlayer[];
+  /** Draft Dota 2 : héros picks par équipe */
+  heroesA?: string[];
+  heroesB?: string[];
+  /** Draft Dota 2 : bans par équipe */
+  bansA?: string[];
+  bansB?: string[];
+  /** Côté joué ("radiant" | "dire") */
+  sideA?: string;
+  sideB?: string;
+  /** Durée de la partie ("31m48s") */
+  length?: string;
 }
 
 export interface Match {

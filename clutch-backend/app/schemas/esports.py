@@ -96,6 +96,14 @@ class MapScoreOut(ApiModel):
     winner: Literal["a", "b"] | None = None
     live: bool | None = None
     players: list[MapPlayerOut] | None = None  # scoreboard par joueur
+    # Draft Dota 2 : picks, bans, side, durée
+    heroes_a: list[str] | None = None  # JSON : heroesA
+    heroes_b: list[str] | None = None  # JSON : heroesB
+    bans_a: list[str] | None = None    # JSON : bansA
+    bans_b: list[str] | None = None    # JSON : bansB
+    side_a: str | None = None          # JSON : sideA ("radiant"/"dire")
+    side_b: str | None = None          # JSON : sideB
+    length: str | None = None          # durée de la partie ("31m48s")
 
 
 class MatchOut(ApiModel):
