@@ -318,6 +318,84 @@ def normalize_participants(
     return players
 
 
+def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
+    """Données spécifiques au jeu depuis extradata + champs top-level du game."""
+    result: dict[str, Any] = {}
+
+    if isinstance(extra, dict):
+        if game_id == "dota":
+            ha = [extra[f"team1hero{i}"] for i in range(1, 6) if extra.get(f"team1hero{i}")]
+            hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
+            ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
+            bb = [extra[f"team2ban{i}"] for i in range(1, 8) if extra.get(f"team2ban{i}")]
+            if ha: result["heroesA"] = ha
+            if hb: result["heroesB"] = hb
+            if ba: result["bansA"] = ba
+            if bb: result["bansB"] = bb
+            side_a = str(extra.get("team1side") or "").lower()
+            side_b = str(extra.get("team2side") or "").lower()
+            if side_a: result["sideA"] = side_a
+            if side_b: result["sideB"] = side_b
+
+        elif game_id == "cs2":
+            t1halfs = extra.get("t1halfs")
+            t1sides = extra.get("t1sides")
+            t2halfs = extra.get("t2halfs")
+            t2sides = extra.get("t2sides")
+            if isinstance(t1halfs, dict) and isinstance(t1sides, dict):
+                result["halvesA"] = [
+                    {"side": str(t1sides.get(k, "?")), "score": int(t1halfs[k])}
+                    for k in sorted(t1halfs, key=lambda x: int(x))
+                ]
+            if isinstance(t2halfs, dict) and isinstance(t2sides, dict):
+                result["halvesB"] = [
+                    {"side": str(t2sides.get(k, "?")), "score": int(t2halfs[k])}
+                    for k in sorted(t2halfs, key=lambda x: int(x))
+                ]
+
+        elif game_id == "r6":
+            t1halfs = extra.get("t1halfs")   # {"atk": "1", "def": "1"}
+            t2halfs = extra.get("t2halfs")   # {"atk": "5", "def": "2"}
+            t1firstside_raw = extra.get("t1firstside")  # {"rt": "def"}
+            first_side = None
+            if isinstance(t1firstside_raw, dict):
+                first_side = str(t1firstside_raw.get("rt") or "").lower() or None
+            if isinstance(t1halfs, dict) and isinstance(t2halfs, dict):
+                sides = (["atk", "def"] if first_side == "atk"
+                         else ["def", "atk"] if first_side == "def"
+                         else ["atk", "def"])
+                result["halvesA"] = [{"side": s, "score": int(t1halfs.get(s) or 0)} for s in sides if s in t1halfs]
+                result["halvesB"] = [{"side": sides[1] if i == 0 else sides[0], "score": int(t2halfs.get(s) or 0)}
+                                     for i, s in enumerate(sides) if s in t2halfs]
+            # Bans d'opérateurs
+            t1bans = extra.get("t1bans")
+            t1bantypes = extra.get("t1bantypes")
+            t2bans = extra.get("t2bans")
+            t2bantypes = extra.get("t2bantypes")
+            if isinstance(t1bans, dict) and isinstance(t1bantypes, dict):
+                bans_a = [
+                    {"name": str(t1bans[k]), "type": str(t1bantypes.get(k, "?"))}
+                    for k in sorted(t1bans, key=lambda x: int(x))
+                    if str(t1bans.get(k) or "").strip()
+                ]
+                if bans_a: result["opBansA"] = bans_a
+            if isinstance(t2bans, dict) and isinstance(t2bantypes, dict):
+                bans_b = [
+                    {"name": str(t2bans[k]), "type": str(t2bantypes.get(k, "?"))}
+                    for k in sorted(t2bans, key=lambda x: int(x))
+                    if str(t2bans.get(k) or "").strip()
+                ]
+                if bans_b: result["opBansB"] = bans_b
+
+    # Champs top-level génériques
+    game_length = str(raw.get("length") or "").strip()
+    if game_length: result["length"] = game_length
+    vod = str(raw.get("vod") or "").strip()
+    if vod: result["vod"] = vod
+
+    return result
+
+
 def normalize_maps(
     games: list[Any] | None,
     match_status: str,
@@ -342,52 +420,7 @@ def normalize_maps(
         winner = str(raw.get("winner") or "")
         players = normalize_participants(raw, player_country, game_id)
 
-        # Données spécifiques par jeu depuis extradata du game.
-        extra = raw.get("extradata")
-        draft: dict[str, Any] = {}
-        if isinstance(extra, dict):
-            # Dota 2 : draft (picks/bans) + side + durée
-            ha = [extra[f"team1hero{i}"] for i in range(1, 6) if extra.get(f"team1hero{i}")]
-            hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
-            ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
-            bb = [extra[f"team2ban{i}"] for i in range(1, 8) if extra.get(f"team2ban{i}")]
-            if ha:
-                draft["heroesA"] = ha
-            if hb:
-                draft["heroesB"] = hb
-            if ba:
-                draft["bansA"] = ba
-            if bb:
-                draft["bansB"] = bb
-            side_a = str(extra.get("team1side") or "").lower()
-            side_b = str(extra.get("team2side") or "").lower()
-            if side_a:
-                draft["sideA"] = side_a
-            if side_b:
-                draft["sideB"] = side_b
-            # CS2 : mi-temps avec côté CT/T (t1halfs/t1sides)
-            if game_id == "cs2":
-                t1halfs = extra.get("t1halfs")
-                t1sides = extra.get("t1sides")
-                t2halfs = extra.get("t2halfs")
-                t2sides = extra.get("t2sides")
-                if isinstance(t1halfs, dict) and isinstance(t1sides, dict):
-                    draft["halvesA"] = [
-                        {"side": str(t1sides.get(k, "?")), "score": int(t1halfs[k])}
-                        for k in sorted(t1halfs, key=lambda x: int(x))
-                    ]
-                if isinstance(t2halfs, dict) and isinstance(t2sides, dict):
-                    draft["halvesB"] = [
-                        {"side": str(t2sides.get(k, "?")), "score": int(t2halfs[k])}
-                        for k in sorted(t2halfs, key=lambda x: int(x))
-                    ]
-        game_length = str(raw.get("length") or "").strip()
-        if game_length:
-            draft["length"] = game_length
-        # VOD : lien par carte (top-level sur le game object)
-        vod = str(raw.get("vod") or "").strip()
-        if vod:
-            draft["vod"] = vod
+        extras = _extract_game_extras(raw.get("extradata"), raw, game_id)
 
         if winner in ("1", "2"):
             entry: dict[str, Any] = {
@@ -395,7 +428,7 @@ def normalize_maps(
                 "scoreA": score_a if score_a is not None else 0,
                 "scoreB": score_b if score_b is not None else 0,
                 "winner": "a" if winner == "1" else "b",
-                **draft,
+                **extras,
             }
             if players:
                 entry["players"] = players
@@ -407,7 +440,7 @@ def normalize_maps(
                 "scoreA": score_a,
                 "scoreB": score_b,
                 "live": True,
-                **draft,
+                **extras,
             }
             if players:
                 entry["players"] = players

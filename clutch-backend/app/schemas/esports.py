@@ -87,11 +87,18 @@ class MapPlayerOut(ApiModel):
     level: float | None = None  # niveau du héros (Dota 2)
 
 
-class CS2HalfOut(ApiModel):
-    """Score d'une demi-temps CS2 avec le côté joué."""
+class HalfOut(ApiModel):
+    """Score d'une demi-temps (CS2 : ct/t ; R6 : atk/def)."""
 
-    side: str   # "ct" | "t"
+    side: str   # "ct" | "t" | "atk" | "def"
     score: int
+
+
+class OpBanOut(ApiModel):
+    """Ban d'opérateur R6 : nom + phase (atk/def)."""
+
+    name: str
+    type: str   # "atk" | "def"
 
 
 class MapScoreOut(ApiModel):
@@ -111,10 +118,13 @@ class MapScoreOut(ApiModel):
     side_a: str | None = None          # JSON : sideA ("radiant"/"dire")
     side_b: str | None = None          # JSON : sideB
     length: str | None = None          # durée de la partie ("31m48s")
-    # CS2 : mi-temps avec côté CT/T
-    halves_a: list[CS2HalfOut] | None = None  # JSON : halvesA
-    halves_b: list[CS2HalfOut] | None = None  # JSON : halvesB
-    vod: str | None = None                    # lien VOD par carte
+    # CS2/R6 : mi-temps avec côté
+    halves_a: list[HalfOut] | None = None   # JSON : halvesA
+    halves_b: list[HalfOut] | None = None   # JSON : halvesB
+    vod: str | None = None                  # lien VOD par carte
+    # R6 : bans d'opérateurs
+    op_bans_a: list[OpBanOut] | None = None  # JSON : opBansA
+    op_bans_b: list[OpBanOut] | None = None  # JSON : opBansB
 
 
 class MatchOut(ApiModel):

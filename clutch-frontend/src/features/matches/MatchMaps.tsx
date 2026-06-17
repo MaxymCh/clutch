@@ -188,43 +188,39 @@ const DotaDraft = ({
   );
 };
 
-/** Détail d'une carte CS2 : mi-temps avec côtés CT/T et lien VOD. */
-const CS2HalfBreakdown = ({
+const SIDE_STYLE: Record<string, string> = {
+  ct:  'bg-blue-500/15 text-blue-500',
+  t:   'bg-yellow-500/15 text-yellow-600',
+  atk: 'bg-orange-500/15 text-orange-500',
+  def: 'bg-blue-500/15 text-blue-500',
+};
+const SIDE_LABEL: Record<string, string> = { ct: 'CT', t: 'T', atk: 'ATK', def: 'DEF' };
+const halfLabel = (i: number) => (i === 0 ? '1re MT' : i === 1 ? '2e MT' : `OT ${i - 1}`);
+
+/** Mi-temps avec côtés CT/T (CS2) ou ATK/DEF (R6) — commun aux deux jeux. */
+const HalfBreakdown = ({
   halvesA, halvesB, teamA, teamB, vod,
 }: {
   halvesA?: { side: string; score: number }[];
   halvesB?: { side: string; score: number }[];
-  teamA: Team;
-  teamB: Team;
-  vod?: string;
+  teamA: Team; teamB: Team; vod?: string;
 }) => {
   const count = Math.max(halvesA?.length ?? 0, halvesB?.length ?? 0);
   if (count === 0) return null;
 
   const sideBadge = (side: string) => (
-    <span
-      className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-        side === 'ct'
-          ? 'bg-blue-500/15 text-blue-500'
-          : 'bg-yellow-500/15 text-yellow-600'
-      }`}
-    >
-      {side}
+    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? 'bg-surface-2 text-dim'}`}>
+      {SIDE_LABEL[side] ?? side}
     </span>
   );
 
   return (
     <div className="mt-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
-      {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[12px] font-bold text-ink">{teamA.tag}</span>
         {vod ? (
-          <a
-            href={vod}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold text-red-500 transition-opacity hover:opacity-80"
-          >
+          <a href={vod} target="_blank" rel="noopener noreferrer"
+             className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold text-red-500 hover:opacity-80">
             VOD
           </a>
         ) : (
@@ -232,8 +228,6 @@ const CS2HalfBreakdown = ({
         )}
         <span className="text-[12px] font-bold text-ink">{teamB.tag}</span>
       </div>
-
-      {/* Lignes par demi-temps */}
       {Array.from({ length: count }).map((_, i) => {
         const hA = halvesA?.[i];
         const hB = halvesB?.[i];
@@ -241,17 +235,11 @@ const CS2HalfBreakdown = ({
           <div key={i} className="flex items-center gap-2 py-1">
             <div className="flex flex-1 items-center justify-end gap-2">
               {hA && sideBadge(hA.side)}
-              <span className="w-6 text-right text-[17px] font-bold tabular-nums text-ink">
-                {hA?.score ?? 0}
-              </span>
+              <span className="w-6 text-right text-[17px] font-bold tabular-nums text-ink">{hA?.score ?? 0}</span>
             </div>
-            <span className="w-14 text-center text-[10px] font-semibold text-faint">
-              {i === 0 ? '1re MT' : i === 1 ? '2e MT' : `OT ${i - 1}`}
-            </span>
+            <span className="w-14 text-center text-[10px] font-semibold text-faint">{halfLabel(i)}</span>
             <div className="flex flex-1 items-center gap-2">
-              <span className="w-6 text-left text-[17px] font-bold tabular-nums text-ink">
-                {hB?.score ?? 0}
-              </span>
+              <span className="w-6 text-left text-[17px] font-bold tabular-nums text-ink">{hB?.score ?? 0}</span>
               {hB && sideBadge(hB.side)}
             </div>
           </div>
@@ -259,6 +247,84 @@ const CS2HalfBreakdown = ({
       })}
     </div>
   );
+};
+
+/** Bans d'opérateurs Rainbow Six Siege avec phase ATK/DEF. */
+const R6OperatorBans = ({
+  opBansA, opBansB, teamA, teamB,
+}: {
+  opBansA?: { name: string; type: string }[];
+  opBansB?: { name: string; type: string }[];
+  teamA: Team; teamB: Team;
+}) => {
+  if (!opBansA?.length && !opBansB?.length) return null;
+
+  const phaseBadge = (type: string) => (
+    <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${
+      type === 'atk' ? 'bg-orange-500/15 text-orange-500' : 'bg-blue-500/15 text-blue-500'
+    }`}>
+      {type}
+    </span>
+  );
+
+  const BanList = ({ bans, align }: { bans: { name: string; type: string }[]; align: 'left' | 'right' }) => (
+    <div className={`flex flex-1 flex-col gap-1.5 ${align === 'right' ? 'items-end' : ''}`}>
+      {bans.map((ban, i) => (
+        <div key={i} className={`flex items-center gap-1.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+          {phaseBadge(ban.type)}
+          <span className="text-[12px] font-medium text-ink">{ban.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="mt-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
+      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-faint">Bans opérateurs</p>
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          <p className="mb-1.5 text-[11px] font-bold text-dim">{teamA.tag}</p>
+          <BanList bans={opBansA ?? []} align="left" />
+        </div>
+        <div className="w-px self-stretch bg-line" />
+        <div className="flex-1">
+          <p className="mb-1.5 text-right text-[11px] font-bold text-dim">{teamB.tag}</p>
+          <BanList bans={opBansB ?? []} align="right" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** Dispatch vers le composant de détail spécifique au jeu. */
+const GameMapDetail = ({
+  map, teamA, teamB, gameId,
+}: {
+  map: MapScore; teamA: Team; teamB: Team; gameId: GameId;
+}) => {
+  switch (gameId) {
+    case 'dota':
+      return (
+        <DotaDraft
+          heroesA={map.heroesA} heroesB={map.heroesB}
+          bansA={map.bansA} bansB={map.bansB}
+          sideA={map.sideA} sideB={map.sideB}
+          length={map.length}
+          teamA={teamA} teamB={teamB}
+        />
+      );
+    case 'cs2':
+      return <HalfBreakdown halvesA={map.halvesA} halvesB={map.halvesB} teamA={teamA} teamB={teamB} vod={map.vod} />;
+    case 'r6':
+      return (
+        <>
+          <HalfBreakdown halvesA={map.halvesA} halvesB={map.halvesB} teamA={teamA} teamB={teamB} vod={map.vod} />
+          <R6OperatorBans opBansA={map.opBansA} opBansB={map.opBansB} teamA={teamA} teamB={teamB} />
+        </>
+      );
+    default:
+      return null;
+  }
 };
 
 /** Manches du match : onglets cliquables + scoreboard joueur réactif. */
@@ -363,25 +429,8 @@ export const MatchMaps = ({
         </div>
       )}
 
-      {/* Draft Dota 2 (picks + bans + durée + side) */}
-      <DotaDraft
-        heroesA={current?.heroesA} heroesB={current?.heroesB}
-        bansA={current?.bansA} bansB={current?.bansB}
-        sideA={current?.sideA} sideB={current?.sideB}
-        length={current?.length}
-        teamA={teamA} teamB={teamB}
-      />
-
-      {/* CS2 : mi-temps CT/T + VOD */}
-      {gameId === 'cs2' && (
-        <CS2HalfBreakdown
-          halvesA={current?.halvesA}
-          halvesB={current?.halvesB}
-          teamA={teamA}
-          teamB={teamB}
-          vod={current?.vod}
-        />
-      )}
+      {/* Détail spécifique au jeu (draft Dota, mi-temps CS2/R6, bans R6…) */}
+      {current && <GameMapDetail map={current} teamA={teamA} teamB={teamB} gameId={gameId} />}
 
       {/* Scoreboard de la carte sélectionnée (si dispo pour ce jeu).
           Empilé sur mobile, équipe A à gauche / équipe B à droite sur desktop. */}

@@ -123,11 +123,14 @@ export interface MapScore {
   sideB?: string;
   /** Durée de la partie ("31m48s") */
   length?: string;
-  /** CS2 : scores par demi-temps avec le côté (CT/T) pour chaque équipe */
-  halvesA?: { side: 'ct' | 't'; score: number }[];
-  halvesB?: { side: 'ct' | 't'; score: number }[];
+  /** CS2/R6 : scores par demi-temps avec le côté pour chaque équipe */
+  halvesA?: { side: 'ct' | 't' | 'atk' | 'def'; score: number }[];
+  halvesB?: { side: 'ct' | 't' | 'atk' | 'def'; score: number }[];
   /** Lien VOD par carte */
   vod?: string;
+  /** R6 : bans d'opérateurs par équipe */
+  opBansA?: { name: string; type: 'atk' | 'def' }[];
+  opBansB?: { name: string; type: 'atk' | 'def' }[];
 }
 
 export interface Match {
