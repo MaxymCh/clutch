@@ -134,7 +134,7 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
 
       {/* Streams + Prono */}
       {(((live || (upcoming && showCountdown)) && match.streams && match.streams.length > 0) || (canPredictMatch(match) && onPredict)) && (
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center pt-1 pb-1.5">
           {(live || (upcoming && showCountdown)) && match.streams && match.streams.length > 0 && (
             <div className="absolute left-0 flex gap-1">
               {match.streams.map((s) => (
