@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../components/ui/Icon";
 
 type CountdownProps = {
@@ -12,20 +12,20 @@ type CountdownProps = {
 export const Countdown = ({ date, time }: CountdownProps) => {
   const target = new Date(`${date}T${time}:00`).getTime();
 
-  const calc = () => {
+  const calc = useCallback(() => {
     const diff = Math.max(0, target - Date.now());
     const h = Math.floor(diff / 3_600_000);
     const m = Math.floor((diff % 3_600_000) / 60_000);
     const s = Math.floor((diff % 60_000) / 1_000);
     return { h, m, s, done: diff === 0 };
-  };
+  }, [target]);
 
   const [state, setState] = useState(calc);
 
   useEffect(() => {
     const id = setInterval(() => setState(calc()), 1_000);
     return () => clearInterval(id);
-  }, [target]);
+  }, [calc]);
 
   const pad = (n: number) => String(n).padStart(2, "0");
 

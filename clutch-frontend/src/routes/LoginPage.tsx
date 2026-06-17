@@ -7,8 +7,6 @@ import { Icon } from '../components/ui/Icon';
 
 export const LoginPage = () => {
   const { session, loading: authLoading } = useAuth();
-  if (!authLoading && session) return <Navigate to="/" replace />;
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,6 +16,8 @@ export const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  if (!authLoading && session) return <Navigate to="/" replace />;
 
   const handleGoogle = async () => {
     setLoading(true);
