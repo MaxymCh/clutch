@@ -126,3 +126,6 @@ class MatchOut(ApiModel):
     veto: list[VetoStepOut] | None = None  # veto des cartes (extradata.mapveto)
     # Drapeau best-effort quand LPDB suggère une victoire administrative.
     likely_forfeit: bool | None = None  # JSON : likelyForfeit
+    # Roster des joueurs alignés pour ce match (chargé uniquement sur /matches/{id})
+    team_a_players: list[PlayerOut] | None = None  # JSON : teamAPlayers
+    team_b_players: list[PlayerOut] | None = None  # JSON : teamBPlayers

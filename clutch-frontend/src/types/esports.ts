@@ -146,4 +146,7 @@ export interface Match {
   likelyForfeit?: boolean;
   /** % de la communauté qui pronostique l'équipe A gagnante */
   oddsA?: number;
+  /** Roster des joueurs alignés pour ce match (présent uniquement sur /match/:id) */
+  teamAPlayers?: Player[];
+  teamBPlayers?: Player[];
 }

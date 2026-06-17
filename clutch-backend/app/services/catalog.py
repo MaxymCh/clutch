@@ -58,7 +58,11 @@ def _likely_forfeit(match: Match) -> bool | None:
     return None
 
 
-def match_to_schema(match: Match) -> MatchOut:
+def match_to_schema(
+    match: Match,
+    players_a: list[Player] | None = None,
+    players_b: list[Player] | None = None,
+) -> MatchOut:
     """ORM → schéma front : date/time dérivées du timestamp UTC en DISPLAY_TZ."""
     local = _as_utc(match.start_time_utc).astimezone(_display_tz())
     return MatchOut(
@@ -81,6 +85,8 @@ def match_to_schema(match: Match) -> MatchOut:
         streams=[StreamOut.model_validate(s) for s in match.streams] if match.streams else None,
         veto=[VetoStepOut.model_validate(v) for v in match.veto] if match.veto else None,
         likely_forfeit=_likely_forfeit(match),
+        team_a_players=[PlayerOut.model_validate(p) for p in players_a] if players_a else None,
+        team_b_players=[PlayerOut.model_validate(p) for p in players_b] if players_b else None,
     )
 
 
@@ -157,4 +163,16 @@ async def list_matches(
 
 async def get_match(session: AsyncSession, match_id: str) -> MatchOut | None:
     match = await session.get(Match, match_id)
-    return match_to_schema(match) if match else None
+    if not match:
+        return None
+    pa = list(await session.scalars(
+        select(Player)
+        .where(Player.team_id == match.team_a_id, Player.game_id == match.game_id)
+        .order_by(Player.sort_order)
+    ))
+    pb = list(await session.scalars(
+        select(Player)
+        .where(Player.team_id == match.team_b_id, Player.game_id == match.game_id)
+        .order_by(Player.sort_order)
+    ))
+    return match_to_schema(match, pa or None, pb or None)
