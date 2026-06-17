@@ -350,16 +350,23 @@ def normalize_maps(
             hb = [extra[f"team2hero{i}"] for i in range(1, 6) if extra.get(f"team2hero{i}")]
             ba = [extra[f"team1ban{i}"] for i in range(1, 8) if extra.get(f"team1ban{i}")]
             bb = [extra[f"team2ban{i}"] for i in range(1, 8) if extra.get(f"team2ban{i}")]
-            if ha: draft["heroesA"] = ha
-            if hb: draft["heroesB"] = hb
-            if ba: draft["bansA"] = ba
-            if bb: draft["bansB"] = bb
+            if ha:
+                draft["heroesA"] = ha
+            if hb:
+                draft["heroesB"] = hb
+            if ba:
+                draft["bansA"] = ba
+            if bb:
+                draft["bansB"] = bb
             side_a = str(extra.get("team1side") or "").lower()
             side_b = str(extra.get("team2side") or "").lower()
-            if side_a: draft["sideA"] = side_a
-            if side_b: draft["sideB"] = side_b
+            if side_a:
+                draft["sideA"] = side_a
+            if side_b:
+                draft["sideB"] = side_b
         game_length = str(raw.get("length") or "").strip()
-        if game_length: draft["length"] = game_length
+        if game_length:
+            draft["length"] = game_length
 
         if winner in ("1", "2"):
             entry: dict[str, Any] = {
