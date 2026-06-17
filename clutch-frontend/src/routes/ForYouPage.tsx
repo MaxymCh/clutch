@@ -95,6 +95,11 @@ const FeedCard = ({ match, gameTag, gameName, gameLogoUrl, onPredict, showCountd
                 match.time
               )}
             </span>
+            {done && match.likelyForfeit && (
+              <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600">
+                Forfait
+              </span>
+            )}
             {live && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Direct</span>}
             {upcoming && showCountdown && <span className="text-[9px] font-bold uppercase tracking-wide text-accent">Bientôt</span>}
           </div>
