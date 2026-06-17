@@ -16,8 +16,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
+from pydantic import BaseModel, ValidationError
 
 from app.core.config import get_settings
 
@@ -107,7 +107,7 @@ async def _run_reingest(pagename: str, game_ids: list[str]) -> None:
 
 @router.post("/webhook/liquipedia", status_code=200)
 async def liquipedia_webhook(
-    payload: LiquipediaEditEvent,
+    request: Request,
     background_tasks: BackgroundTasks,
     x_webhook_secret: str | None = Header(default=None),
 ) -> dict[str, Any]:
@@ -119,17 +119,44 @@ async def liquipedia_webhook(
     - Retourne 200 immédiatement ; la re-ingestion tourne en tâche de fond.
     """
     settings = get_settings()
+    raw_body = await request.body()
+    body_text = raw_body.decode("utf-8", errors="replace")
+    logger.info(
+        "Webhook Liquipedia reçu — body brut : %s | secret header : %s",
+        body_text,
+        "présent" if x_webhook_secret else "absent",
+    )
+
+    try:
+        payload = LiquipediaEditEvent.model_validate_json(raw_body)
+    except ValidationError as exc:
+        logger.warning("Webhook payload invalide : %s", exc)
+        raise HTTPException(status_code=422, detail="Payload webhook invalide.") from exc
+
+    logger.info(
+        "Webhook Liquipedia parsé : %s",
+        payload.model_dump(exclude_none=True),
+    )
 
     # Vérification du secret (optionnel — activer en prod via .env)
     if settings.webhook_secret and x_webhook_secret != settings.webhook_secret:
+        logger.warning("Webhook rejeté : secret invalide (configuré=%s).", bool(settings.webhook_secret))
         raise HTTPException(status_code=401, detail="Secret webhook invalide.")
 
     # Seul le namespace principal nous intéresse
     if payload.namespace != 0:
+        logger.info(
+            "Webhook ignoré — namespace %d (page=%r, wiki=%r, event=%r).",
+            payload.namespace, payload.page, payload.wiki, payload.event,
+        )
         return {"ok": True, "skipped": "namespace_ignored"}
 
     # Seuls edit et purge déclenchent une re-ingestion
     if payload.event not in ("edit", "purge"):
+        logger.info(
+            "Webhook ignoré — event %r non géré (page=%r, wiki=%r).",
+            payload.event, payload.page, payload.wiki,
+        )
         return {"ok": True, "skipped": f"event_{payload.event}_ignored"}
 
     # Identifier les jeux trackés pour ce pagename
@@ -140,21 +167,28 @@ async def liquipedia_webhook(
     ]
 
     if not matched_games:
-        logger.debug("Webhook ignoré : page %r non trackée.", payload.page)
+        logger.info(
+            "Webhook ignoré — page %r non trackée dans EWC_TOURNAMENTS (wiki=%r, event=%r).",
+            payload.page, payload.wiki, payload.event,
+        )
         return {"ok": True, "skipped": "page_not_tracked"}
 
     # Debounce
     now_ts = datetime.now(timezone.utc).timestamp()
     last = _last_ingest.get(payload.page, 0.0)
     if now_ts - last < DEBOUNCE_SECONDS:
-        logger.debug("Webhook debounce : %s (%.0fs restantes).", payload.page, DEBOUNCE_SECONDS - (now_ts - last))
+        remaining = DEBOUNCE_SECONDS - (now_ts - last)
+        logger.info(
+            "Webhook debounce — %s ignoré (%.0fs restantes, wiki=%r, event=%r).",
+            payload.page, remaining, payload.wiki, payload.event,
+        )
         return {"ok": True, "skipped": "debounce"}
 
     _last_ingest[payload.page] = now_ts
 
     logger.info(
-        "Webhook %s → %s/%s — re-ingestion de %d jeu(x) en tâche de fond.",
-        payload.event, payload.wiki, payload.page, len(matched_games),
+        "Webhook accepté — %s %s/%s → re-ingestion de %s en tâche de fond.",
+        payload.event, payload.wiki, payload.page, matched_games,
     )
 
     background_tasks.add_task(_run_reingest, payload.page, matched_games)
