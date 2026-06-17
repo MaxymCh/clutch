@@ -1,8 +1,8 @@
 import { Button } from '../../components/ui/Button';
+import { Flag } from '../../components/ui/Flag';
 import { GameLogo } from '../../components/ui/GameLogo';
 import { Icon } from '../../components/ui/Icon';
 import { TeamLogo } from '../../components/ui/TeamLogo';
-import { countryFlag } from '../../lib/flag';
 import type { Game, Team } from '../../types/esports';
 import { useFavorites } from '../favorites/favoritesContext';
 
@@ -24,8 +24,9 @@ export const TeamHeader = ({ team, stats, games = [] }: TeamHeaderProps) => {
     <TeamLogo tag={team.tag} size={76} logoUrl={team.logoUrl} />
     <div className="text-center">
       <h1 className="text-[23px] leading-tight font-bold tracking-tight text-ink">{team.name}</h1>
-      <p className="mt-1.5 text-[13px] font-semibold text-dim">
-        {countryFlag(team.countryCode)} {team.tag} · EWC 2026
+      <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[13px] font-semibold text-dim">
+        <Flag countryCode={team.countryCode} size={13} />
+        {team.tag} · EWC 2026
       </p>
     </div>
 

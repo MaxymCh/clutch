@@ -8,6 +8,7 @@ import { usePredictionHistory } from '../api/queries/useMatches';
 import { useUser } from '../api/queries/useUser';
 import { Avatar } from '../components/ui/Avatar';
 import { Page } from '../components/layout/Page';
+import { Flag } from '../components/ui/Flag';
 import { GameLogo } from '../components/ui/GameLogo';
 import { Icon } from '../components/ui/Icon';
 import { Seg } from '../components/ui/Seg';
@@ -17,7 +18,6 @@ import { PredictCard } from '../features/prono/PredictCard';
 import { PredictSheet } from '../features/prono/PredictSheet';
 import { RankRow } from '../features/prono/RankRow';
 import { canPredictMatch, formatDayMonth, formatWeekdayShort } from '../lib/date';
-import { countryFlag } from '../lib/flag';
 import { formatPoints } from '../lib/format';
 import type { GroupMember } from '../types/community';
 import type { Match } from '../types/esports';
@@ -479,7 +479,7 @@ const Podium = ({ entries }: { entries: PodiumEntry[] }) => {
               {entry.name}
             </span>
             {entry.countryCode && (
-              <span className="text-xs">{countryFlag(entry.countryCode)}</span>
+              <Flag countryCode={entry.countryCode} size={12} />
             )}
             <span className={`font-bold tabular-nums text-accent ${isFirst ? 'text-base' : 'text-[13px]'}`}>
               {formatPoints(entry.points)} Pts

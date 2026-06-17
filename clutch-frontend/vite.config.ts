@@ -22,6 +22,20 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Drapeaux servis en local : pas dans le précache (install légère),
+        // mais mis en cache à la première vue → disponibles hors-ligne ensuite.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/flags/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'flags',
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'Clutch — Calendrier EWC 2026',
         short_name: 'Clutch',

@@ -7,8 +7,8 @@ import { Page } from "../components/layout/Page";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
 import { PageSpinner } from "../components/ui/Spinner";
+import { Flag } from "../components/ui/Flag";
 import { TeamLogo } from "../components/ui/TeamLogo";
-import { countryFlag } from "../lib/flag";
 import { useFavorites } from "../features/favorites/favoritesContext";
 
 /** Page dédiée aux équipes : recherche, filtre par jeu et suivi facile. */
@@ -131,8 +131,8 @@ export const TeamsPage = () => {
                     <div className="truncate text-[15px] font-bold text-ink">
                       {team.name}
                     </div>
-                    <div className="mt-0.5 text-[12px] font-semibold text-dim">
-                      {team.tag} · {countryFlag(team.countryCode)}
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[12px] font-semibold text-dim">
+                      {team.tag} · <Flag countryCode={team.countryCode} size={12} />
                     </div>
                   </div>
                 </Link>
