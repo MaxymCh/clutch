@@ -47,7 +47,7 @@ export const MatchPage = () => {
           <PredictionSummary match={match} />
           {match.streams && match.streams.length > 0 && <MatchStreams streams={match.streams} />}
           {match.veto && match.veto.length > 0 && (
-            <MatchVeto veto={match.veto} teamA={match.teamA} teamB={match.teamB} />
+            <MatchVeto veto={match.veto} teamA={match.teamA} teamB={match.teamB} gameId={match.gameId} />
           )}
           {match.maps && match.maps.length > 0 && (
             <MatchMaps maps={match.maps} teamA={match.teamA} teamB={match.teamB} gameId={match.gameId} />
