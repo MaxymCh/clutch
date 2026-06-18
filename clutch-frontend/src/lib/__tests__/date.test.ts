@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Match } from '../../types/esports';
-import { canPredictMatch } from '../date';
+import { canPredictMatch, isMatchLive, phaseMetaLabel } from '../date';
 
 const baseMatch: Match = {
   id: 'm1',
@@ -28,5 +28,27 @@ describe('canPredictMatch', () => {
   it('returns false for done matches even if date is in the future', () => {
     const doneMatch: Match = { ...baseMatch, status: 'done' };
     expect(canPredictMatch(doneMatch, new Date('2026-06-20T17:00:00'))).toBe(false);
+  });
+});
+
+describe('isMatchLive', () => {
+  it('returns true for upcoming matches once start time has been reached', () => {
+    expect(isMatchLive(baseMatch, new Date('2026-06-20T18:00:00'))).toBe(true);
+    expect(isMatchLive(baseMatch, new Date('2026-06-20T18:30:00'))).toBe(true);
+  });
+
+  it('returns false before start or when match is done', () => {
+    expect(isMatchLive(baseMatch, new Date('2026-06-20T17:59:00'))).toBe(false);
+    expect(isMatchLive({ ...baseMatch, status: 'done' }, new Date('2026-06-20T18:30:00'))).toBe(false);
+  });
+});
+
+describe('phaseMetaLabel', () => {
+  it('converts date-like phases to localized day-month labels', () => {
+    expect(phaseMetaLabel('June 17', '2026-06-17')).toBe('17 juin');
+  });
+
+  it('keeps regular phase labels untouched', () => {
+    expect(phaseMetaLabel('Upper Bracket Semi')).toBe('Upper Bracket Semi');
   });
 });
