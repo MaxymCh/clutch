@@ -2,8 +2,6 @@
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 
 async def test_mlbb_heroes_proxy(client):
     fake = {"sora": "https://cdn.example/sora.png", "fanny": "https://cdn.example/fanny.png"}
