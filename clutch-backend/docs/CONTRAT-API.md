@@ -15,7 +15,7 @@
 
 | Enum | Valeurs | Remarque |
 |---|---|---|
-| `GameId` | `"val"`, `"lol"`, `"cs2"`, `"dota"`, `"rl"`, `"ow"` | identifiants fermés, minuscules |
+| `GameId` | `"val"`, `"lol"`, `"cs2"`, `"dota"`, `"rl"`, `"ow"`, `"apex"`, `"r6"`, `"pubg"`, `"fn"`, `"ff"`, `"mlbb"`, `"hok"`, `"sf6"`, `"tk8"`, `"bo7"`, `"tft"` | identifiants fermés, minuscules |
 | `MatchStatus` | `"upcoming"`, `"live"`, `"done"` | ⚠️ c'est `done`, PAS `finished` |
 | `BestOf` | `"BO1"`, `"BO3"`, `"BO5"` | chaîne, pas un entier |
 | `MapScore.winner` / `Prediction.pick` | `"a"`, `"b"` | côté A ou B du match |
@@ -31,7 +31,7 @@
 | `short` | `string` | oui | `"LoL"` |
 | `tag` | `string` | oui | `"LOL"` |
 
-Ordre `/games` : `val, lol, cs2, dota, rl, ow` (cf. `GAME_ORDER`).
+Ordre `/games` : `val, lol, cs2, dota, rl, ow, apex, r6, pubg, fn, ff, mlbb, hok, sf6, tk8, bo7, tft` (cf. `GAME_ORDER`).
 
 ### Team
 
@@ -179,8 +179,7 @@ Notes :
 - **Applicatif** (`users`, `groups`, `predictions`, leaderboard) :
   `app/models/community.py`, lecture-écriture par l'API, jamais touché par le
   worker.
-- Jeux ingérés au départ : `val`, `lol`, `cs2` — pagenames des tournois
-  EWC 2026 configurables par `.env` (ajout/retrait sans toucher au code).
+- Jeux supportés (17) : `val`, `lol`, `cs2`, `dota`, `rl`, `ow`, `apex`, `r6`, `pubg`, `fn`, `ff`, `mlbb`, `hok`, `sf6`, `tk8`, `bo7`, `tft` — pagenames des tournois configurables par `.env` (`EWC_TOURNAMENTS`, ajout/retrait sans toucher au code).
 
 ## 7. Authentification — VALIDÉE
 
@@ -206,6 +205,5 @@ passe, pas d'OAuth, pas de récupération de compte.
 3. UTC en base, normalisation à l'ingestion ; sérialisation `date`/`time` en
    `DISPLAY_TZ` (défaut `Europe/Paris`). 4. `oddsA` omis, aucune valeur fabriquée.
 5. `viewers`/`currentMapLabel` best effort, jamais inventés.
-6. Auth cookie anonyme validée. 7. Ingestion initiale : val + lol + cs2,
-   pagenames EWC 2026 en `.env`. 8. Scoring exclusif 25/10/0, tâche côté API,
+6. Auth cookie anonyme validée. 7. 17 jeux supportés configurables via `EWC_TOURNAMENTS` dans `.env`. 8. Scoring exclusif 25/10/0, tâche côté API,
    worker = catalog uniquement. 9. `/leaderboard?limit=` (défaut 50).

@@ -7,6 +7,7 @@ Invariants non négociables :
 
 - JSON de sortie en camelCase, identique aux types TS du front
   (`clutch-frontend/src/types/esports.ts` et `community.ts`).
+- `GameId` (17 valeurs) : `val`, `lol`, `cs2`, `dota`, `rl`, `ow`, `apex`, `r6`, `pubg`, `fn`, `ff`, `mlbb`, `hok`, `sf6`, `tk8`, `bo7`, `tft`.
 - Statuts de match : `upcoming` / `live` / `done` (jamais `finished`).
 - `bestOf` : chaînes `"BO1"` / `"BO3"` / `"BO5"`.
 - `Match.teamA`/`teamB` : objets `Team` embarqués, jamais des ids.
