@@ -6,6 +6,13 @@ const parse = (iso: string): Date => new Date(`${iso}T00:00:00`);
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** Date locale "YYYY-MM-DD" — évite le décalage d'un jour via toISOString() (UTC). */
+export const toIsoDateLocal = (d: Date): string => {
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+};
+
 /** Date de début locale d'un match à partir de la paire date+heure API. */
 export const matchStartDateTime = (dateIso: string, time: string): Date =>
   new Date(`${dateIso}T${time}:00`);

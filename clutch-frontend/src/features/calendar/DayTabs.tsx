@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { LiveDot } from "../../components/ui/Badge";
 import { Icon } from "../../components/ui/Icon";
-import { formatMonthShort, formatWeekdayShort } from "../../lib/date";
+import { formatMonthShort, formatWeekdayShort, toIsoDateLocal } from "../../lib/date";
 
 export type DayInfo = {
   /** Date ISO "YYYY-MM-DD" */
@@ -10,7 +10,8 @@ export type DayInfo = {
   liveCount: number;
 };
 
-/** Valeur spéciale de l'onglet « À venir » (portée par l'URL : ?day=all) */
+/** Onglets spéciaux portés par l'URL : ?day=upcoming | ?day=all */
+export const UPCOMING_DAYS = "upcoming";
 export const ALL_DAYS = "all";
 
 type DayTabsProps = {
@@ -21,10 +22,10 @@ type DayTabsProps = {
   withAll?: boolean;
 };
 
-/** Largeur fixe du bouton "À venir" — miroir à droite pour centrer le slider. */
-const AVENIR_W = "w-16";
+/** Largeur fixe d'un bouton spécial (Tous / À venir) de chaque côté du slider. */
+const SPECIAL_TAB_W = "w-[4.5rem]";
 
-/** Slider de jours : bouton "À venir" fixe + flèches prev/next + scroll centré. */
+/** Slider de jours : boutons « À venir » / « Tous » + flèches prev/next + scroll centré. */
 export const DayTabs = ({
   days,
   value,
@@ -54,28 +55,30 @@ export const DayTabs = ({
     container.scrollTo({ left: scrollLeft, behavior });
   }, [value]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toIsoDateLocal(new Date());
+  const isUpcoming = value === UPCOMING_DAYS;
   const isAll = value === ALL_DAYS;
+  const isSpecial = isUpcoming || isAll;
   const currentIndex = days.findIndex((d) => d.date === value);
 
   const goPrev = () => {
-    if (isAll) {
+    if (isSpecial) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      const yesterdayStr = toIsoDateLocal(yesterday);
       const target = days.filter((d) => d.date <= yesterdayStr).at(-1) ?? days[0];
       if (target) onChange(target.date);
       return;
     }
     if (currentIndex > 0) onChange(days[currentIndex - 1].date);
-    else if (withAll) onChange(ALL_DAYS);
+    else if (withAll) onChange(UPCOMING_DAYS);
   };
 
   const goNext = () => {
-    if (isAll) {
+    if (isSpecial) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      const tomorrowStr = toIsoDateLocal(tomorrow);
       const target = days.find((d) => d.date >= tomorrowStr) ?? days[0];
       if (target) onChange(target.date);
       return;
@@ -83,29 +86,23 @@ export const DayTabs = ({
     if (currentIndex < days.length - 1) onChange(days[currentIndex + 1].date);
   };
 
-  const canGoPrev = isAll ? days.length > 0 : currentIndex > 0 || withAll;
-  const canGoNext = isAll ? days.length > 0 : currentIndex < days.length - 1;
+  const canGoPrev = isSpecial ? days.length > 0 : currentIndex > 0 || withAll;
+  const canGoNext = isSpecial ? days.length > 0 : currentIndex < days.length - 1;
 
   return (
     <div className="flex items-stretch">
-      {/* Bouton fixe "À venir" — largeur fixe pour pouvoir le mirorer à droite */}
+      {/* Bouton fixe « Tous » à gauche */}
       {withAll ? (
-        <>
-          <button
-            role="tab"
-            aria-selected={isAll}
-            onClick={() => onChange(ALL_DAYS)}
-            className={`${AVENIR_W} shrink-0 cursor-pointer flex flex-col items-center justify-center gap-0.5 py-2 mx-1 rounded-xl transition-all active:scale-95 ${
-              isAll ? "bg-ink text-surface" : "text-dim hover:text-ink"
-            }`}
-          >
-            <span className="text-[10px] font-medium">À venir</span>
-            <span className="flex items-center gap-1 text-sm font-bold">
-              ∞{liveTotal > 0 && <LiveDot size={5} />}
-            </span>
-          </button>
-          <div className="w-px shrink-0 self-stretch bg-line my-1.5" />
-        </>
+        <button
+          role="tab"
+          aria-selected={isAll}
+          onClick={() => onChange(ALL_DAYS)}
+          className={`${SPECIAL_TAB_W} mx-1 flex shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl py-2 transition-all active:scale-95 ${
+            isAll ? "bg-ink text-surface" : "text-dim hover:text-ink"
+          }`}
+        >
+          <span className="text-[10px] font-medium leading-tight">Tous</span>
+        </button>
       ) : null}
 
       {/* Flèche précédent */}
@@ -172,8 +169,20 @@ export const DayTabs = ({
         <Icon name="chevron" size={16} strokeWidth={2.5} />
       </button>
 
-      {/* Spacer miroir de "À venir" pour rééquilibrer le centrage du slider */}
-      {withAll && <div className={`${AVENIR_W} shrink-0`} aria-hidden="true" />}
+      {/* Bouton fixe « À venir » à droite */}
+      {withAll ? (
+        <button
+          role="tab"
+          aria-selected={isUpcoming}
+          onClick={() => onChange(UPCOMING_DAYS)}
+          className={`${SPECIAL_TAB_W} mx-1 flex shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl py-2 transition-all active:scale-95 ${
+            isUpcoming ? "bg-ink text-surface" : "text-dim hover:text-ink"
+          }`}
+        >
+          <span className="text-[10px] font-medium leading-tight">À venir</span>
+          {liveTotal > 0 && <LiveDot size={5} />}
+        </button>
+      ) : null}
     </div>
   );
 };

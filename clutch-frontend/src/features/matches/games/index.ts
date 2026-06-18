@@ -1,12 +1,26 @@
-import type { GameId, MapPlayer, MapScore, Team } from '../../../types/esports';
+import type { BRStanding, GameId, MapPlayer, MapScore, Team } from '../../../types/esports';
+import { apexPlugin } from './apex';
 import { cs2Plugin } from './cs2';
 import { dotaPlugin } from './dota';
+import { ffPlugin } from './ff';
+import { fnPlugin } from './fn';
+import { hokPlugin } from './hok';
 import { lolPlugin } from './lol';
+import { mlbbPlugin } from './mlbb';
+import { owPlugin } from './ow';
+import { pubgPlugin } from './pubg';
 import { r6Plugin } from './r6';
+import { rlPlugin } from './rl';
 import { valPlugin } from './val';
 
 export interface MapDetailProps {
   map: MapScore;
+  teamA: Team;
+  teamB: Team;
+}
+
+export interface OverallDetailProps {
+  standings: BRStanding[];
   teamA: Team;
   teamB: Team;
 }
@@ -29,8 +43,10 @@ export interface GamePlugin {
   useMapImage?: (mapName: string) => { splash?: string; icon?: string } | undefined;
   /** Hook React : retourne l'image veto d'une carte nommée. */
   useVetoImage?: (mapName: string) => { splash?: string; icon?: string } | undefined;
-  /** Composant de détail game-specific (draft, mi-temps, bans…). */
+  /** Composant de détail game-specific par partie (draft, mi-temps, bans, classement BR…). */
   MapDetail?: React.FC<MapDetailProps>;
+  /** Composant de classement global (Battle Royale uniquement). */
+  OverallDetail?: React.FC<OverallDetailProps>;
   /** Icône du personnage joué dans le scoreboard (agent, champion, héros…). */
   PlayerIcon?: React.FC<PlayerIconProps>;
 }
@@ -41,6 +57,14 @@ export const GAME_PLUGINS: Partial<Record<GameId, GamePlugin>> = {
   dota: dotaPlugin,
   lol: lolPlugin,
   r6: r6Plugin,
+  rl: rlPlugin,
+  ow: owPlugin,
+  pubg: pubgPlugin,
+  fn: fnPlugin,
+  ff: ffPlugin,
+  mlbb: mlbbPlugin,
+  hok: hokPlugin,
+  apex: apexPlugin,
 };
 
 export const getPlugin = (gameId: GameId): GamePlugin | undefined => GAME_PLUGINS[gameId];

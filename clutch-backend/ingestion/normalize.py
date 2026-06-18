@@ -47,7 +47,7 @@ WIKI_BY_GAME: dict[str, str] = {
     "ow": "overwatch",
     "apex": "apexlegends",
     "r6": "rainbowsix",
-    "pubg": "pubgmobile",
+    "pubg": "pubg",
     "fn": "fortnite",
     "ff": "freefire",
     "mlbb": "mobilelegends",
@@ -60,6 +60,9 @@ WIKI_BY_GAME: dict[str, str] = {
     "tft": "tft",
 }
 GAME_BY_WIKI: dict[str, str] = {wiki: game for game, wiki in WIKI_BY_GAME.items()}
+BR_GAMES: frozenset[str] = frozenset({"pubg", "fn", "ff", "apex"})
+MOBA_PARTIE_GAMES: frozenset[str] = frozenset({"mlbb", "hok", "lol", "dota"})
+MOBA_DRAFT_GAMES: frozenset[str] = frozenset({"mlbb", "hok"})
 GAMES_BY_WIKI: dict[str, list[str]] = {}
 for _game_id, _wiki in WIKI_BY_GAME.items():
     GAMES_BY_WIKI.setdefault(_wiki, []).append(_game_id)
@@ -291,8 +294,8 @@ def normalize_participants(
         agent = p.get("agent")
         if isinstance(agent, str) and agent.strip():
             entry["agent"] = agent.strip()
-        # "character" = champion (LoL) ou héros (Dota 2) selon le jeu.
-        character = p.get("character")
+        # "character" = champion (LoL) ou héros (Dota 2) ; MLBB utilise "champion".
+        character = p.get("character") or p.get("champion")
         if isinstance(character, str) and character.strip():
             entry["hero" if game_id == "dota" else "champion"] = character.strip()
         role = p.get("role")
@@ -343,6 +346,26 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
             if side_b:
                 result["sideB"] = side_b
 
+        elif game_id in MOBA_DRAFT_GAMES:
+            ca = [extra[f"team1champion{i}"] for i in range(1, 6) if extra.get(f"team1champion{i}")]
+            cb = [extra[f"team2champion{i}"] for i in range(1, 6) if extra.get(f"team2champion{i}")]
+            ba = [extra[f"team1ban{i}"] for i in range(1, 6) if extra.get(f"team1ban{i}")]
+            bb = [extra[f"team2ban{i}"] for i in range(1, 6) if extra.get(f"team2ban{i}")]
+            if ca:
+                result["heroesA"] = ca
+            if cb:
+                result["heroesB"] = cb
+            if ba:
+                result["bansA"] = ba
+            if bb:
+                result["bansB"] = bb
+            side_a = str(extra.get("team1side") or "").lower()
+            side_b = str(extra.get("team2side") or "").lower()
+            if side_a:
+                result["sideA"] = side_a
+            if side_b:
+                result["sideB"] = side_b
+
         elif game_id == "cs2":
             t1halfs = extra.get("t1halfs")
             t1sides = extra.get("t1sides")
@@ -358,6 +381,14 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
                     {"side": str(t2sides.get(k, "?")), "score": int(t2halfs[k])}
                     for k in sorted(t2halfs, key=lambda x: int(x))
                 ]
+
+        elif game_id == "ow":
+            bans_a = [extra[f"team1ban{i}"] for i in range(1, 5) if extra.get(f"team1ban{i}")]
+            bans_b = [extra[f"team2ban{i}"] for i in range(1, 5) if extra.get(f"team2ban{i}")]
+            if bans_a:
+                result["bansA"] = bans_a
+            if bans_b:
+                result["bansB"] = bans_b
 
         elif game_id == "r6":
             t1halfs = extra.get("t1halfs")   # {"atk": "1", "def": "1"}
@@ -396,6 +427,9 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
                     result["opBansB"] = bans_b
 
     # Champs top-level génériques
+    mode = str(raw.get("mode") or "").strip()
+    if mode:
+        result["mode"] = mode
     game_length = str(raw.get("length") or "").strip()
     if game_length:
         result["length"] = game_length
@@ -406,11 +440,237 @@ def _extract_game_extras(extra: Any, raw: dict, game_id: str) -> dict[str, Any]:
     return result
 
 
+def _map_label(game_id: str, map_name: str, index: int) -> str:
+    """Libellé de carte/partie : MLBB/LoL/Dota → « Partie N », sinon « Carte N »."""
+    if map_name.strip():
+        return map_name.strip()
+    unit = "Partie" if game_id in MOBA_PARTIE_GAMES else "Carte"
+    return f"{unit} {index + 1}"
+
+
+def _mlbb_champions_from_opponents(game_opps: list[Any], side_idx: int) -> list[str]:
+    if side_idx >= len(game_opps) or not isinstance(game_opps[side_idx], dict):
+        return []
+    champs: list[str] = []
+    for slot in game_opps[side_idx].get("players") or []:
+        if isinstance(slot, dict) and slot.get("champion"):
+            champs.append(str(slot["champion"]).strip())
+    return champs
+
+
+def _mlbb_champions_from_extradata(extra: dict[str, Any], team_num: int) -> list[str]:
+    return [
+        str(extra[f"team{team_num}champion{i}"]).strip()
+        for i in range(1, 6)
+        if extra.get(f"team{team_num}champion{i}")
+    ]
+
+
+def normalize_mlbb_players(
+    raw_game: dict[str, Any],
+    opp_a: dict[str, Any],
+    opp_b: dict[str, Any],
+    player_country: dict[str, str],
+) -> list[dict[str, Any]] | None:
+    """match2games[i] MLBB → scoreboard avec champion par joueur (sans stats LPDB)."""
+    game_opps = raw_game.get("opponents") or []
+    extra = raw_game.get("extradata") if isinstance(raw_game.get("extradata"), dict) else {}
+    players: list[dict[str, Any]] = []
+
+    for side_idx, (side, opp) in enumerate([("a", opp_a), ("b", opp_b)]):
+        champs = _mlbb_champions_from_opponents(game_opps, side_idx)
+        if not champs and extra:
+            champs = _mlbb_champions_from_extradata(extra, side_idx + 1)
+        roster = opp.get("match2players") or []
+        for i, champ in enumerate(champs[:5]):
+            rp = roster[i] if i < len(roster) and isinstance(roster[i], dict) else {}
+            canonical = str(rp.get("name") or rp.get("displayname") or "").strip().lower()
+            name = str(rp.get("displayname") or rp.get("name") or champ).strip()
+            players.append({
+                "side": side,
+                "name": name,
+                "countryCode": player_country.get(canonical, "XX") if canonical else "XX",
+                "kills": 0,
+                "deaths": 0,
+                "assists": 0,
+                "champion": champ,
+            })
+
+    return players or None
+
+
+def _build_team_lookup(opponents: list[Any]) -> dict[int, dict[str, Any]]:
+    """Index match2opponents → {name, tag, logoUrl} pour les jeux BR."""
+    result: dict[int, dict[str, Any]] = {}
+    for i, opp in enumerate(opponents):
+        if not isinstance(opp, dict):
+            continue
+        teamtemplate = opp.get("teamtemplate") or {}
+        name = (opp.get("name") or "").replace("_", " ").strip()
+        template = (opp.get("template") or "").strip()
+        display = name or template
+        logo_url = teamtemplate.get("imageurl") if isinstance(teamtemplate, dict) else None
+        tag_val = (teamtemplate.get("shortname") if isinstance(teamtemplate, dict) else None) or derive_tag(display)
+        result[i] = {"name": display, "tag": tag_val, "logoUrl": logo_url}
+    return result
+
+
+def _build_br_overall_standings(
+    opponents: list[Any],
+    extradata: Any,
+    games: list[Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Classement général BR.
+
+    Stratégie 1 (prioritaire) : agrégation depuis match2games[i].opponents —
+    la même source que le détail par partie, donc toujours cohérente.
+    Stratégie 2 (fallback) : extradata.placementinfo, si les parties ne sont
+    pas renseignées (ex. données partielles LPDB).
+    Retourne [] si aucune donnée n'est disponible (match à venir).
+    """
+    lookup = _build_team_lookup(opponents)
+
+    # --- Stratégie 1 : agrégation des parties ---
+    if games:
+        agg: dict[int, dict[str, Any]] = {
+            i: {
+                "name": t["name"],
+                "tag": t["tag"],
+                "logoUrl": t.get("logoUrl"),
+                "totalPoints": 0,
+                "killPoints": 0,
+                "placementPoints": 0,
+            }
+            for i, t in lookup.items()
+            if t.get("name") and t["name"].lower() != "tbd"
+        }
+        name_to_idx = {t["name"]: i for i, t in lookup.items()}
+        games_with_data = 0
+
+        for raw in games:
+            if not isinstance(raw, dict):
+                continue
+            game_opps = raw.get("opponents") or []
+            if not game_opps:
+                continue
+            game_standings = _build_br_game_standings(game_opps, lookup)
+            if not game_standings:
+                continue
+            games_with_data += 1
+            for entry in game_standings:
+                idx = name_to_idx.get(entry["name"])
+                if idx is not None and idx in agg:
+                    agg[idx]["totalPoints"] += entry["totalPoints"]
+                    agg[idx]["killPoints"] += entry["killPoints"]
+                    agg[idx]["placementPoints"] += entry["placementPoints"]
+
+        if games_with_data > 0:
+            standings = list(agg.values())
+            standings.sort(key=lambda x: (-x["totalPoints"], -x["killPoints"]))
+            for rank, s in enumerate(standings, 1):
+                s["placement"] = rank
+            return standings
+
+    # --- Stratégie 2 : placementinfo (fallback) ---
+    placementinfo: dict = {}
+    if isinstance(extradata, dict):
+        placementinfo = extradata.get("placementinfo") or {}
+    if not placementinfo:
+        return []
+
+    standings: list[dict[str, Any]] = []
+    for i, opp in enumerate(opponents):
+        if not isinstance(opp, dict):
+            continue
+        teamtemplate = opp.get("teamtemplate") or {}
+        name = (opp.get("name") or "").replace("_", " ").strip()
+        template = (opp.get("template") or "").strip()
+        display = name or template
+        if not display or display.lower() == "tbd":
+            continue
+        logo_url = teamtemplate.get("imageurl") if isinstance(teamtemplate, dict) else None
+        tag_val = (teamtemplate.get("shortname") if isinstance(teamtemplate, dict) else None) or derive_tag(display)
+        pi = placementinfo.get(str(i + 1)) or {}
+        kill_pts = _as_int(pi.get("killPoints")) or 0
+        place_pts = _as_int(pi.get("placementPoints")) or 0
+        total = kill_pts + place_pts if (kill_pts or place_pts) else (_as_int(opp.get("score")) or 0)
+        placement_lpdb = _as_int(pi.get("placement") or opp.get("placement"))
+        standings.append({
+            "_placement_lpdb": placement_lpdb,
+            "name": display,
+            "tag": tag_val,
+            "logoUrl": logo_url,
+            "totalPoints": total,
+            "killPoints": kill_pts,
+            "placementPoints": place_pts,
+        })
+
+    if any(s["_placement_lpdb"] is not None for s in standings):
+        standings.sort(key=lambda x: x["_placement_lpdb"] or 999)
+    else:
+        standings.sort(key=lambda x: (-x["totalPoints"], -x["killPoints"]))
+    for rank, s in enumerate(standings, 1):
+        s["placement"] = rank
+        del s["_placement_lpdb"]
+    return standings
+
+
+def _build_br_game_standings(
+    game_opponents: list[Any], team_lookup: dict[int, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """match2games[i].opponents → classement d'une partie BR (index → équipe via team_lookup)."""
+    standings: list[dict[str, Any]] = []
+    for j, game_opp in enumerate(game_opponents):
+        if not isinstance(game_opp, dict):
+            continue
+        team = team_lookup.get(j)
+        if not team:
+            continue
+        breakdown = game_opp.get("scoreBreakdown") or {}
+        kill_pts = _as_int(breakdown.get("killPoints")) or 0
+        place_pts = _as_int(breakdown.get("placePoints")) or 0
+        # Priorité : breakdown.totalPoints (y compris 0) ; sinon kill+place ; sinon opp.score
+        _raw_total = breakdown.get("totalPoints")
+        _parsed_total = _as_int(_raw_total) if _raw_total is not None else None
+        total = (
+            _parsed_total
+            if _parsed_total is not None
+            else (kill_pts + place_pts if (kill_pts or place_pts) else None)
+                or _as_int(game_opp.get("score"))
+                or 0
+        )
+        placement_lpdb = _as_int(game_opp.get("placement"))
+        standings.append({
+            "_placement_lpdb": placement_lpdb,
+            "name": team["name"],
+            "tag": team["tag"],
+            "logoUrl": team.get("logoUrl"),
+            "totalPoints": total,
+            "killPoints": kill_pts,
+            "placementPoints": place_pts,
+        })
+
+    if any(s["_placement_lpdb"] is not None for s in standings):
+        standings.sort(key=lambda x: x["_placement_lpdb"] or 999)
+    else:
+        standings.sort(key=lambda x: (-x["totalPoints"], -x["killPoints"]))
+
+    for rank, s in enumerate(standings, 1):
+        s["placement"] = rank
+        del s["_placement_lpdb"]
+
+    return standings
+
+
 def normalize_maps(
     games: list[Any] | None,
     match_status: str,
     player_country: dict[str, str] | None = None,
     game_id: str = "",
+    br_team_lookup: dict[int, dict[str, Any]] | None = None,
+    opponents: list[Any] | None = None,
+    team_a_name: str | None = None,
+    team_b_name: str | None = None,
 ) -> list[dict[str, Any]] | None:
     """match2games → MapScore[] du front. Seules les cartes jouées/en cours
     sortent ; la carte en cours (match live) porte live=true, pas de winner.
@@ -424,17 +684,60 @@ def normalize_maps(
     for index, raw in enumerate(games):
         if not isinstance(raw, dict):
             continue
+
+        if str(raw.get("status") or "").lower() == "notplayed":
+            continue
+        if str(raw.get("resulttype") or "").lower() == "np":
+            continue
+
+        # --- Jeux Battle Royale : classement par partie ---
+        if br_team_lookup is not None:
+            game_opps = raw.get("opponents") or []
+            if not game_opps:
+                continue
+            game_standings = _build_br_game_standings(game_opps, br_team_lookup)
+            if not game_standings:
+                continue
+            entry_a = next((s for s in game_standings if s["name"] == team_a_name), None) if team_a_name else None
+            entry_b = next((s for s in game_standings if s["name"] == team_b_name), None) if team_b_name else None
+            if entry_a and entry_b:
+                winner_br = "a" if entry_a["placement"] < entry_b["placement"] else "b"
+            else:
+                winner_br = "a" if entry_a else "b"
+            maps.append({
+                "name": str(raw.get("map") or f"Partie {index + 1}"),
+                "scoreA": entry_a["totalPoints"] if entry_a else 0,
+                "scoreB": entry_b["totalPoints"] if entry_b else 0,
+                "winner": winner_br,
+                "standings": game_standings,
+            })
+            continue
+
+        # --- Jeux 1v1 standard ---
         scores = raw.get("scores") or []
         score_a = _as_int(scores[0]) if len(scores) > 0 else None
         score_b = _as_int(scores[1]) if len(scores) > 1 else None
         winner = str(raw.get("winner") or "")
         players = normalize_participants(raw, player_country, game_id)
+        if game_id in MOBA_DRAFT_GAMES and opponents and len(opponents) >= 2:
+            moba_players = normalize_mlbb_players(
+                raw,
+                opponents[0] if isinstance(opponents[0], dict) else {},
+                opponents[1] if isinstance(opponents[1], dict) else {},
+                player_country,
+            )
+            if not players and moba_players:
+                players = moba_players
 
         extras = _extract_game_extras(raw.get("extradata"), raw, game_id)
+        label = _map_label(game_id, str(raw.get("map") or ""), index)
 
         if winner in ("1", "2"):
+            if score_a is None and score_b is None:
+                score_a = 1 if winner == "1" else 0
+                score_b = 1 if winner == "2" else 0
             entry: dict[str, Any] = {
-                "name": str(raw.get("map") or f"Carte {index + 1}"),
+                "name": label,
                 "scoreA": score_a if score_a is not None else 0,
                 "scoreB": score_b if score_b is not None else 0,
                 "winner": "a" if winner == "1" else "b",
@@ -446,7 +749,7 @@ def normalize_maps(
         elif match_status != "done" and not live_marked and score_a is not None and score_b is not None:
             # Première carte non décidée avec un score : c'est la carte en cours.
             entry = {
-                "name": str(raw.get("map") or f"Carte {index + 1}"),
+                "name": label,
                 "scoreA": score_a,
                 "scoreB": score_b,
                 "live": True,
@@ -640,10 +943,38 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
     pas de date) — jamais de données fabriquées pour combler.
     """
     opponents = record.get("match2opponents") or []
+    is_br = game_id in BR_GAMES
     if len(opponents) < 2:
         return None
-    team_a = normalize_opponent(opponents[0])
-    team_b = normalize_opponent(opponents[1])
+
+    # --- Sélection teamA/teamB : par classement (BR) ou ordre source (standard) ---
+    br_team_lookup: dict[int, dict[str, Any]] | None = None
+    br_overall_standings: list[dict[str, Any]] | None = None
+    if is_br:
+        br_team_lookup = _build_team_lookup(opponents)
+        br_overall_standings = _build_br_overall_standings(
+            opponents,
+            record.get("extradata"),
+            games=record.get("match2games") or [],
+        )
+        if len(br_overall_standings) >= 2:
+            top1_name = br_overall_standings[0]["name"]
+            top2_name = br_overall_standings[1]["name"]
+            opp_a = next(
+                (o for o in opponents if (o.get("name") or "").replace("_", " ").strip() == top1_name),
+                opponents[0],
+            )
+            opp_b = next(
+                (o for o in opponents if (o.get("name") or "").replace("_", " ").strip() == top2_name),
+                opponents[1],
+            )
+        else:
+            opp_a, opp_b = opponents[0], opponents[1]
+    else:
+        opp_a, opp_b = opponents[0], opponents[1]
+
+    team_a = normalize_opponent(opp_a)
+    team_b = normalize_opponent(opp_b)
     if not team_a or not team_b:
         return None
 
@@ -658,42 +989,97 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
     status = compute_status(record.get("finished"), start_utc, now)
     games = record.get("match2games") or []
     countries = player_countries(opponents)
-    maps = normalize_maps(games, status, countries, game_id)
-    opponent_statuses = [str((opponents[i].get("status") or "")).upper() for i in range(2)]
-
-    score_a = _as_int(opponents[0].get("score"))
-    score_b = _as_int(opponents[1].get("score"))
-    result_a = (opponents[0].get("status") or "").strip().upper() or None
-    result_b = (opponents[1].get("status") or "").strip().upper() or None
+    team_a_name = (opp_a.get("name") or "").replace("_", " ").strip() if is_br else None
+    team_b_name = (opp_b.get("name") or "").replace("_", " ").strip() if is_br else None
+    maps = normalize_maps(
+        games, status, countries, game_id,
+        br_team_lookup=br_team_lookup,
+        opponents=opponents,
+        team_a_name=team_a_name,
+        team_b_name=team_b_name,
+    )
     best_of = to_best_of(record.get("bestof"), len(games))
     raw_winner = str(record.get("winner") or "")
-    forfeit_inferred = False
-    if status == "upcoming" and (start_utc is None or start_utc > now):
-        # Pas encore commencé : pas de scores
-        score_a = score_b = None
-        result_a = result_b = None
-    elif status == "done":
-        # LPDB peut signaler un vainqueur avec un score de série 0-0
-        # (forfait / default win). On convertit alors vers un score exploitable.
-        tie_like = score_a == score_b
-        if tie_like and raw_winner in ("1", "2"):
-            score_a, score_b = _scoreline_from_winner(best_of, raw_winner)
-            forfeit_inferred = True
 
-    forfeiting_side: str | None = None
-    if opponent_statuses[0] == "FF":
-        forfeiting_side = "a"
-    elif opponent_statuses[1] == "FF":
-        forfeiting_side = "b"
+    score_a = _as_int(opp_a.get("score"))
+    score_b = _as_int(opp_b.get("score"))
+    forfeit_inferred = False
+
+    if is_br:
+        result_a = result_b = None
+        opponent_statuses = [str((opp.get("status") or "")).upper() for opp in opponents]
+        opp_a_status = str((opp_a.get("status") or "")).upper()
+        opp_b_status = str((opp_b.get("status") or "")).upper()
+        if opp_a_status == "FF":
+            forfeiting_side: str | None = "a"
+        elif opp_b_status == "FF":
+            forfeiting_side = "b"
+        else:
+            forfeiting_side = None
+        if status == "upcoming" and (start_utc is None or start_utc > now):
+            score_a = score_b = None
+        elif status == "done":
+            tie_like = score_a == score_b
+            if tie_like and raw_winner in ("1", "2"):
+                score_a, score_b = _scoreline_from_winner(best_of, raw_winner)
+                forfeit_inferred = True
+    else:
+        result_a = (opp_a.get("status") or "").strip().upper() or None
+        result_b = (opp_b.get("status") or "").strip().upper() or None
+        opponent_statuses = [str((opponents[i].get("status") or "")).upper() for i in range(2)]
+        if status == "upcoming" and (start_utc is None or start_utc > now):
+            score_a = score_b = None
+            result_a = result_b = None
+        elif status == "done":
+            tie_like = score_a == score_b
+            if tie_like and raw_winner in ("1", "2"):
+                score_a, score_b = _scoreline_from_winner(best_of, raw_winner)
+                forfeit_inferred = True
+        forfeiting_side = None
+        if opponent_statuses[0] == "FF":
+            forfeiting_side = "a"
+        elif opponent_statuses[1] == "FF":
+            forfeiting_side = "b"
+
+    extra: dict[str, Any] = {
+        "wiki": record.get("wiki"),
+        "pagename": record.get("pagename"),
+        "tournament": record.get("tournament"),
+        "lpdb_finished": record.get("finished"),
+        "lpdb_winner": record.get("winner"),
+        "lpdb_status": record.get("status"),
+        "lpdb_opponent_statuses": opponent_statuses,
+        "forfeiting_side": forfeiting_side,
+        "raw_section": record.get("section"),
+        "forfeit_inferred": forfeit_inferred,
+    }
+    if is_br:
+        extra["format"] = "br"
+        if br_overall_standings:
+            extra["standings"] = br_overall_standings
+
+    # Pour les formats BR : upsert de toutes les équipes/joueurs, pas seulement top 2.
+    br_extra_opponents: list[dict[str, Any]] = []
+    if is_br:
+        for opp in opponents:
+            if opp is opp_a or opp is opp_b:
+                continue
+            team = normalize_opponent(opp)
+            if not team:
+                continue
+            br_extra_opponents.append({
+                "team": team,
+                "players": normalize_match_players(opp, team["id"], game_id),
+            })
 
     return {
         "id": f"{game_id}_{slugify(match2id)}",
         "game_id": game_id,
         "team_a": team_a,
         "team_b": team_b,
-        # Roster dérivé des joueurs alignés (source unique, 0 requête en plus).
-        "team_a_players": normalize_match_players(opponents[0], team_a["id"], game_id),
-        "team_b_players": normalize_match_players(opponents[1], team_b["id"], game_id),
+        "team_a_players": normalize_match_players(opp_a, team_a["id"], game_id),
+        "team_b_players": normalize_match_players(opp_b, team_b["id"], game_id),
+        "br_extra_opponents": br_extra_opponents or None,
         "status": status,
         "phase": translate_phase(record.get("section"), record.get("tickername")),
         "best_of": best_of,
@@ -704,20 +1090,8 @@ def normalize_match(record: dict[str, Any], game_id: str, now: datetime) -> dict
         "result_b": result_b,
         "maps": maps,
         "current_map_label": current_map_label(maps),
-        # LPDB ne fournit pas d'audience : champ optionnel, jamais inventé.
         "viewers": None,
         "streams": normalize_streams(record.get("stream")),
         "veto": normalize_veto(record.get("extradata")),
-        "extradata": {
-            "wiki": record.get("wiki"),
-            "pagename": record.get("pagename"),
-            "tournament": record.get("tournament"),
-            "lpdb_finished": record.get("finished"),
-            "lpdb_winner": record.get("winner"),
-            "lpdb_status": record.get("status"),
-            "lpdb_opponent_statuses": opponent_statuses,
-            "forfeiting_side": forfeiting_side,
-            "raw_section": record.get("section"),
-            "forfeit_inferred": forfeit_inferred,
-        },
+        "extradata": extra,
     }

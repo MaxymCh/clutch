@@ -113,3 +113,84 @@ async def test_match_ff_expose_result_dans_api(client, session_factory):
     m6 = (await client.get("/matches/m6")).json()
     assert "resultA" not in m6
     assert "resultB" not in m6
+
+
+async def test_match_br_derive_standings_depuis_maps(client, session_factory):
+    """Sans extradata.standings, l'API agrège maps[].standings pour les jeux BR."""
+    async with session_factory() as session:
+        await seed_catalog(session)
+        session.add(
+            make_match(
+                id="fn-br1",
+                game_id="fn",
+                team_a_id="flcn",
+                team_b_id="t1",
+                status="done",
+                phase="Results",
+                best_of="BO3",
+                start_time_utc=datetime(2026, 6, 13, 17, 10, tzinfo=UTC),
+                score_a=381,
+                score_b=363,
+                maps=[
+                    {
+                        "name": "Partie 1",
+                        "scoreA": 129,
+                        "scoreB": 64,
+                        "winner": "a",
+                        "standings": [
+                            {
+                                "name": "Malibuca / Vic0try0na",
+                                "tag": "MV",
+                                "totalPoints": 129,
+                                "killPoints": 64,
+                                "placementPoints": 65,
+                                "placement": 1,
+                            },
+                            {
+                                "name": "FoCuS / Th0masHD",
+                                "tag": "FT",
+                                "totalPoints": 64,
+                                "killPoints": 8,
+                                "placementPoints": 56,
+                                "placement": 2,
+                            },
+                        ],
+                    },
+                    {
+                        "name": "Partie 2",
+                        "scoreA": 150,
+                        "scoreB": 120,
+                        "winner": "a",
+                        "standings": [
+                            {
+                                "name": "Malibuca / Vic0try0na",
+                                "tag": "MV",
+                                "totalPoints": 150,
+                                "killPoints": 70,
+                                "placementPoints": 80,
+                                "placement": 1,
+                            },
+                            {
+                                "name": "FoCuS / Th0masHD",
+                                "tag": "FT",
+                                "totalPoints": 120,
+                                "killPoints": 40,
+                                "placementPoints": 80,
+                                "placement": 2,
+                            },
+                        ],
+                    },
+                ],
+                current_map_label=None,
+                viewers=None,
+                extradata=None,
+            )
+        )
+        await session.commit()
+
+    body = (await client.get("/matches/fn-br1")).json()
+    assert body["format"] == "br"
+    assert len(body["standings"]) == 2
+    assert body["standings"][0]["name"] == "Malibuca / Vic0try0na"
+    assert body["standings"][0]["totalPoints"] == 279
+    assert body["maps"][0]["standings"][0]["totalPoints"] == 129

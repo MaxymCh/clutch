@@ -101,6 +101,18 @@ class OpBanOut(ApiModel):
     type: str   # "atk" | "def"
 
 
+class BRStandingOut(ApiModel):
+    """Miroir de `BRStanding` (front) — classement équipe dans un match Battle Royale."""
+
+    placement: int
+    name: str
+    tag: str
+    logo_url: str | None = None     # JSON : logoUrl
+    total_points: int               # JSON : totalPoints
+    kill_points: int                # JSON : killPoints
+    placement_points: int           # JSON : placementPoints
+
+
 class MapScoreOut(ApiModel):
     """Miroir de `MapScore` (front)."""
 
@@ -125,6 +137,10 @@ class MapScoreOut(ApiModel):
     # R6 : bans d'opérateurs
     op_bans_a: list[OpBanOut] | None = None  # JSON : opBansA
     op_bans_b: list[OpBanOut] | None = None  # JSON : opBansB
+    # OW : mode de jeu
+    mode: str | None = None
+    # Battle Royale : classement de la partie
+    standings: list[BRStandingOut] | None = None
 
 
 class MatchOut(ApiModel):
@@ -158,3 +174,6 @@ class MatchOut(ApiModel):
     # Roster des joueurs alignés pour ce match (chargé uniquement sur /matches/{id})
     team_a_players: list[PlayerOut] | None = None  # JSON : teamAPlayers
     team_b_players: list[PlayerOut] | None = None  # JSON : teamBPlayers
+    # Battle Royale : format et classement général
+    format: str | None = None  # "br" pour les jeux BR
+    standings: list[BRStandingOut] | None = None

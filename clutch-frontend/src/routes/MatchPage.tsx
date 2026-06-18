@@ -50,7 +50,13 @@ export const MatchPage = () => {
             <MatchVeto veto={match.veto} teamA={match.teamA} teamB={match.teamB} gameId={match.gameId} />
           )}
           {match.maps && match.maps.length > 0 && (
-            <MatchMaps maps={match.maps} teamA={match.teamA} teamB={match.teamB} gameId={match.gameId} />
+            <MatchMaps
+              maps={match.maps}
+              teamA={match.teamA}
+              teamB={match.teamB}
+              gameId={match.gameId}
+              standings={match.standings}
+            />
           )}
           <PredictSheet match={predicting ? match : null} onClose={() => setPredicting(false)} />
         </>

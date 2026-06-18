@@ -204,3 +204,257 @@ def test_forfeit_inferred_from_winner_when_score_is_0_0():
     assert result["extradata"]["forfeit_inferred"] is True
     assert result["extradata"]["lpdb_opponent_statuses"] == ["W", "FF"]
     assert result["extradata"]["forfeiting_side"] == "b"
+
+
+def test_normalize_match_mlbb_draft():
+    """MLBB : draft picks/bans depuis extradata, parties sans scores LPDB."""
+    record = {
+        "match2id": "BBROLS0FD1_0001",
+        "wiki": "mobilelegends",
+        "date": "2026-04-21 15:00:00",
+        "finished": 1,
+        "winner": "2",
+        "bestof": 3,
+        "section": "Week 1",
+        "match2opponents": [
+            {
+                "name": "Aura Farmers",
+                "template": "aura farmers",
+                "score": 0,
+                "status": "S",
+                "match2players": [
+                    {"name": "Summer_(Russian_player)", "displayname": "Summer", "flag": "Russia"},
+                    {"name": "Inneskite", "displayname": "Inneskite", "flag": "Russia"},
+                    {"name": "Twizy", "displayname": "Twizy", "flag": "Russia"},
+                    {"name": "Gorьkiy", "displayname": "Gorьkiy", "flag": "Uzbekistan"},
+                    {"name": "NEIL", "displayname": "NEIL", "flag": "Russia"},
+                ],
+            },
+            {
+                "name": "Team Spirit",
+                "template": "team spirit",
+                "score": 2,
+                "status": "S",
+                "match2players": [
+                    {"name": "Kid_Bomba", "displayname": "Kid Bomba", "flag": "Germany"},
+                    {"name": "Zaur_egoist", "displayname": "zaur egoist", "flag": "Russia"},
+                    {"name": "Sunset_Lover", "displayname": "Sunset Lover", "flag": "Russia"},
+                    {"name": "Hiko", "displayname": "Hiko", "flag": "Russia"},
+                    {"name": "SAWO", "displayname": "SAWO", "flag": "Russia"},
+                ],
+            },
+        ],
+        "match2games": [
+            {
+                "map": "",
+                "scores": [],
+                "winner": "2",
+                "length": "11:20",
+                "opponents": [
+                    {
+                        "players": [
+                            [], [], [], [], [],
+                            {"champion": "Sora"},
+                            {"champion": "Fanny"},
+                            {"champion": "Yve"},
+                            {"champion": "Karrie"},
+                            {"champion": "Gatotkaca"},
+                        ],
+                    },
+                    {
+                        "players": [
+                            [], [], [], [], [],
+                            {"champion": "Freya"},
+                            {"champion": "Suyou"},
+                            {"champion": "Zhuxin"},
+                            {"champion": "Moskov"},
+                            {"champion": "Badang"},
+                        ],
+                    },
+                ],
+                "extradata": {
+                    "team1champion1": "Sora",
+                    "team1champion2": "Fanny",
+                    "team1champion3": "Yve",
+                    "team1champion4": "Karrie",
+                    "team1champion5": "Gatotkaca",
+                    "team2champion1": "Freya",
+                    "team2champion2": "Suyou",
+                    "team2champion3": "Zhuxin",
+                    "team2champion4": "Moskov",
+                    "team2champion5": "Badang",
+                    "team1ban1": "Baxia",
+                    "team1ban2": "Guinevere",
+                    "team2ban1": "Phoveus",
+                    "team2ban2": "Marcel",
+                    "team1side": "blue",
+                    "team2side": "red",
+                },
+            },
+            {
+                "map": "",
+                "scores": [],
+                "winner": "2",
+                "length": "10:45",
+                "extradata": {
+                    "team1champion1": "Alice",
+                    "team2champion1": "Freya",
+                    "team1side": "blue",
+                    "team2side": "red",
+                },
+            },
+            {
+                "map": "",
+                "scores": [],
+                "status": "notplayed",
+                "resulttype": "np",
+                "winner": "",
+            },
+        ],
+    }
+    now = datetime(2026, 4, 22, 12, 0, tzinfo=timezone.utc)
+    result = normalize_match(record, "mlbb", now)
+    assert result is not None
+    assert result["status"] == "done"
+    assert result["score_a"] == 0
+    assert result["score_b"] == 2
+    assert len(result["maps"]) == 2
+
+    game1 = result["maps"][0]
+    assert game1["name"] == "Partie 1"
+    assert game1["scoreA"] == 0 and game1["scoreB"] == 1
+    assert game1["winner"] == "b"
+    assert game1["heroesA"] == ["Sora", "Fanny", "Yve", "Karrie", "Gatotkaca"]
+    assert game1["heroesB"] == ["Freya", "Suyou", "Zhuxin", "Moskov", "Badang"]
+    assert game1["bansA"] == ["Baxia", "Guinevere"]
+    assert game1["bansB"] == ["Phoveus", "Marcel"]
+    assert game1["sideA"] == "blue"
+    assert game1["sideB"] == "red"
+    assert game1["length"] == "11:20"
+    assert any(p["champion"] == "Sora" and p["name"] == "Summer" for p in game1["players"])
+    assert any(p["champion"] == "Freya" and p["side"] == "b" for p in game1["players"])
+
+    assert result["maps"][1]["name"] == "Partie 2"
+
+
+def test_normalize_match_hok_draft():
+    """HoK : même schéma LPDB que MLBB (champions/bans extradata, scores par partie)."""
+    record = {
+        "match2id": "KPL26S2W01_0001",
+        "wiki": "honorofkings",
+        "date": "2026-06-17 06:11:00",
+        "finished": 1,
+        "winner": "2",
+        "bestof": 5,
+        "section": "Week 1",
+        "match2opponents": [
+            {
+                "name": "Dragon Ranger Gaming",
+                "template": "dragon ranger gaming orig",
+                "score": 1,
+                "status": "S",
+                "match2players": [
+                    {"name": "HuaYuan", "displayname": "Huayen", "flag": "China"},
+                    {"name": "XiaoXiaoYang", "displayname": "XiaoXiaoYang", "flag": "China"},
+                    {"name": "YouZi", "displayname": "YouZi", "flag": "China"},
+                    {"name": "MengLan", "displayname": "MoonLan", "flag": "China"},
+                    {"name": "ZiYang", "displayname": "ZiYang", "flag": "China"},
+                ],
+            },
+            {
+                "name": "Talent Gaming",
+                "template": "talent gaming jan 2022",
+                "score": 3,
+                "status": "S",
+                "match2players": [
+                    {"name": "LuoBo", "displayname": "LuoBo", "flag": "China"},
+                    {"name": "XiaoPang", "displayname": "Pang", "flag": "China"},
+                    {"name": "HeCi", "displayname": "Crane", "flag": "China"},
+                    {"name": "XiaoXue", "displayname": "Snowy", "flag": "China"},
+                    {"name": "Han_(Huang_Hanxi)", "displayname": "Han", "flag": "China"},
+                ],
+            },
+        ],
+        "match2games": [
+            {
+                "map": "",
+                "scores": [1, 0],
+                "participants": [],
+                "opponents": [{"status": "S", "score": 1}, {"status": "S", "score": 0}],
+                "winner": "1",
+                "length": "15:26",
+                "vod": "https://v.qq.com/x/page/t3283pjne4d.html",
+                "extradata": {
+                    "team1champion1": "Bai Qi",
+                    "team1champion2": "Ukyo Tachibana",
+                    "team1champion3": "Xiao Qiao",
+                    "team1champion4": "Ge Ya",
+                    "team1champion5": "Kui",
+                    "team2champion1": "Charlotte",
+                    "team2champion2": "Dun",
+                    "team2champion3": "Wu Ze Tian",
+                    "team2champion4": "Erin",
+                    "team2champion5": "Shieldun",
+                    "team1ban1": "Ao'yin",
+                    "team1ban2": "Master Luban",
+                    "team2ban1": "Guan Yu",
+                    "team2ban2": "Flowborn (Support)",
+                    "team1side": "red",
+                    "team2side": "blue",
+                },
+            },
+            {
+                "map": "",
+                "scores": [0, 1],
+                "participants": [],
+                "winner": "2",
+                "length": "15:11",
+                "extradata": {
+                    "team1champion1": "Sun Ce",
+                    "team2champion1": "Bai Qi",
+                    "team1side": "blue",
+                    "team2side": "red",
+                },
+            },
+            {
+                "map": "",
+                "scores": [0, 1],
+                "participants": [],
+                "winner": "2",
+                "length": "14:02",
+            },
+            {
+                "map": "",
+                "scores": [0, 1],
+                "participants": [],
+                "winner": "2",
+                "length": "12:49",
+            },
+            {
+                "map": "",
+                "scores": [],
+                "status": "notplayed",
+                "resulttype": "np",
+                "winner": "",
+            },
+        ],
+    }
+    now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
+    result = normalize_match(record, "hok", now)
+    assert result is not None
+    assert result["status"] == "done"
+    assert result["score_a"] == 1
+    assert result["score_b"] == 3
+    assert len(result["maps"]) == 4
+
+    game1 = result["maps"][0]
+    assert game1["name"] == "Partie 1"
+    assert game1["scoreA"] == 1 and game1["scoreB"] == 0
+    assert game1["winner"] == "a"
+    assert game1["heroesA"][0] == "Bai Qi"
+    assert game1["heroesB"][0] == "Charlotte"
+    assert game1["sideA"] == "red"
+    assert game1["sideB"] == "blue"
+    assert game1["vod"] == "https://v.qq.com/x/page/t3283pjne4d.html"
+    assert any(p["champion"] == "Bai Qi" and p["name"] == "Huayen" for p in game1["players"])
+    assert any(p["champion"] == "Charlotte" and p["side"] == "b" for p in game1["players"])

@@ -105,6 +105,12 @@ def upsert_match(session: Session, normalized: dict[str, Any], wiki: str) -> Non
     """Écrit le match au format du contrat (équipes embarquées via FK)."""
     team_a_id = upsert_team(session, normalized.pop("team_a"), wiki)
     team_b_id = upsert_team(session, normalized.pop("team_b"), wiki)
+
+    # BR : upsert de toutes les équipes participantes (pas seulement top 2).
+    for item in normalized.pop("br_extra_opponents", None) or []:
+        upsert_team(session, item["team"], wiki)
+        upsert_players(session, item["players"])
+
     session.flush()  # garantit l'existence des équipes avant la FK
 
     # Roster dérivé des joueurs alignés (déjà dans la réponse /match).

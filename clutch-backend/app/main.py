@@ -13,6 +13,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.assets import router as assets_router
 from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.community import router as community_router
@@ -81,6 +82,7 @@ async def attribution_header(request: Request, call_next) -> Response:
 
 
 app.include_router(auth_router)
+app.include_router(assets_router)
 app.include_router(catalog_router)
 app.include_router(community_router)
 app.include_router(webhook_router)

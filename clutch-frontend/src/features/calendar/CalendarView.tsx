@@ -8,8 +8,8 @@ import { useMatchFilters } from "../filters/useMatchFilters";
 import { MatchCard } from "../matches/MatchCard";
 import { PredictSheet } from "../prono/PredictSheet";
 import { usePredictions } from "../prono/predictionsContext";
-import { canPredictMatch, isMatchLive } from "../../lib/date";
-import { ALL_DAYS, DayTabs, type DayInfo } from "./DayTabs";
+import { canPredictMatch, isMatchLive, toIsoDateLocal } from "../../lib/date";
+import { ALL_DAYS, DayTabs, UPCOMING_DAYS, type DayInfo } from "./DayTabs";
 import { MatchSection } from "./MatchSection";
 
 // Tri date+heure : nécessaire en vue « Tous » (équivaut au tri horaire sur un seul jour)
@@ -39,7 +39,7 @@ export const CalendarView = () => {
     const cursor = new Date(`${matchDates[0]}T00:00:00`);
     const last = new Date(`${matchDates[matchDates.length - 1]}T00:00:00`);
     while (cursor <= last) {
-      const date = cursor.toISOString().slice(0, 10);
+      const date = toIsoDateLocal(cursor);
       result.push({
         date,
         liveCount: (matches ?? []).filter(
@@ -78,16 +78,20 @@ export const CalendarView = () => {
   // ou le dernier jour du tournoi si tout est terminé.
   const fallbackDay =
     activeDays[0]?.date ?? days[days.length - 1]?.date ?? days[0].date;
-  const allDays = day === ALL_DAYS;
-  const selectedDay = allDays
-    ? ALL_DAYS
+  const isUpcomingView = day === UPCOMING_DAYS;
+  const isAllView = day === ALL_DAYS;
+  const isSpecialView = isUpcomingView || isAllView;
+  const selectedDay = isSpecialView
+    ? day!
     : days.some((d) => d.date === day)
       ? (day as string)
       : fallbackDay;
 
-  let list = allDays
+  let list = isUpcomingView
     ? matches.filter((m) => m.status !== "done")
-    : matches.filter((m) => m.date === selectedDay);
+    : isAllView
+      ? matches
+      : matches.filter((m) => m.date === selectedDay);
   if (filterGames.length > 0)
     list = list.filter((m) => filterGames.includes(m.gameId));
   if (filterTeams.length > 0)
@@ -153,9 +157,11 @@ export const CalendarView = () => {
         <div className="px-5">
           {list.length === 0 && (
             <p className="py-14 text-center text-sm leading-relaxed font-medium text-dim">
-              {allDays
-                ? "Aucun match ne correspond à ces filtres."
-                : "Aucun match ne correspond à ces filtres ce jour-là."}
+              {isUpcomingView
+                ? "Aucun match à venir ne correspond à ces filtres."
+                : isAllView
+                  ? "Aucun match ne correspond à ces filtres."
+                  : "Aucun match ne correspond à ces filtres ce jour-là."}
               <br />
               Essaie un autre jeu ou une autre équipe.
             </p>

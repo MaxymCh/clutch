@@ -94,6 +94,17 @@ export interface MapPlayer {
   level?: number;
 }
 
+/** Classement d'une équipe dans un match Battle Royale (par partie ou global) */
+export interface BRStanding {
+  placement: number;
+  name: string;
+  tag: string;
+  logoUrl?: string;
+  totalPoints: number;
+  killPoints: number;
+  placementPoints: number;
+}
+
 /** Une étape du veto des cartes (ban / pick / decider) */
 export interface VetoStep {
   order: number;
@@ -131,6 +142,10 @@ export interface MapScore {
   /** R6 : bans d'opérateurs par équipe */
   opBansA?: { name: string; type: 'atk' | 'def' }[];
   opBansB?: { name: string; type: 'atk' | 'def' }[];
+  /** OW : mode de jeu de la carte ("Control", "Flashpoint", "Push"…) */
+  mode?: string;
+  /** Battle Royale : classement de la partie (16 équipes) */
+  standings?: BRStanding[];
 }
 
 export interface Match {
@@ -168,4 +183,8 @@ export interface Match {
   /** Roster des joueurs alignés pour ce match (présent uniquement sur /match/:id) */
   teamAPlayers?: Player[];
   teamBPlayers?: Player[];
+  /** "br" pour les jeux Battle Royale (PUBG, Fortnite, Free Fire, Apex) */
+  format?: 'br';
+  /** Battle Royale : classement général de la série */
+  standings?: BRStanding[];
 }

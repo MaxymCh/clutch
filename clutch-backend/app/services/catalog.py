@@ -8,12 +8,15 @@ from datetime import date as date_t
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+from typing import Any
+
 from sqlalchemy import asc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.catalog import Game, Match, Player, Team
 from app.schemas.esports import (
+    BRStandingOut,
     GameOut,
     MapScoreOut,
     MatchOut,
@@ -22,6 +25,8 @@ from app.schemas.esports import (
     TeamOut,
     VetoStepOut,
 )
+
+BR_GAME_IDS = frozenset({"pubg", "fn", "ff", "apex"})
 
 
 def _display_tz() -> ZoneInfo:
@@ -58,6 +63,34 @@ def _likely_forfeit(match: Match) -> bool | None:
     return None
 
 
+def _aggregate_br_standings_from_maps(maps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Agrège le classement général BR depuis maps[].standings (insertion directe en base)."""
+    agg: dict[str, dict[str, Any]] = {}
+    for map_entry in maps:
+        for entry in map_entry.get("standings") or []:
+            if not isinstance(entry, dict):
+                continue
+            name = str(entry.get("name") or "").strip()
+            if not name:
+                continue
+            if name not in agg:
+                agg[name] = {
+                    "name": name,
+                    "tag": entry.get("tag") or "",
+                    "logoUrl": entry.get("logoUrl"),
+                    "totalPoints": 0,
+                    "killPoints": 0,
+                    "placementPoints": 0,
+                }
+            agg[name]["totalPoints"] += int(entry.get("totalPoints") or 0)
+            agg[name]["killPoints"] += int(entry.get("killPoints") or 0)
+            agg[name]["placementPoints"] += int(entry.get("placementPoints") or 0)
+    standings = sorted(agg.values(), key=lambda x: (-x["totalPoints"], -x["killPoints"]))
+    for rank, row in enumerate(standings, 1):
+        row["placement"] = rank
+    return standings
+
+
 def match_to_schema(
     match: Match,
     players_a: list[Player] | None = None,
@@ -65,6 +98,13 @@ def match_to_schema(
 ) -> MatchOut:
     """ORM → schéma front : date/time dérivées du timestamp UTC en DISPLAY_TZ."""
     local = _as_utc(match.start_time_utc).astimezone(_display_tz())
+    extra = match.extradata if isinstance(match.extradata, dict) else {}
+    match_format = str(extra.get("format") or "") or None
+    if not match_format and match.game_id in BR_GAME_IDS:
+        match_format = "br"
+    standings_raw = extra.get("standings") or []
+    if not standings_raw and match.maps and match.game_id in BR_GAME_IDS:
+        standings_raw = _aggregate_br_standings_from_maps(match.maps)
     return MatchOut(
         id=match.id,
         game_id=match.game_id,
@@ -87,6 +127,8 @@ def match_to_schema(
         likely_forfeit=_likely_forfeit(match),
         team_a_players=[PlayerOut.model_validate(p) for p in players_a] if players_a else None,
         team_b_players=[PlayerOut.model_validate(p) for p in players_b] if players_b else None,
+        format=match_format,
+        standings=[BRStandingOut.model_validate(s) for s in standings_raw] if standings_raw else None,
     )
 
 

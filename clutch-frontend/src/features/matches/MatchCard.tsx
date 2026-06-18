@@ -92,11 +92,18 @@ export const MatchCard = ({
                 <span className="truncate">{phaseLabel}</span>
               </>
             )}
-            {match.bestOf && (
+            {match.format === 'br' ? (
               <>
                 <span className="size-0.75 shrink-0 rounded-full bg-dim" />
-                <span className="shrink-0">{match.bestOf}</span>
+                <span className="shrink-0">Battle Royale</span>
               </>
+            ) : (
+              match.bestOf && (
+                <>
+                  <span className="size-0.75 shrink-0 rounded-full bg-dim" />
+                  <span className="shrink-0">{match.bestOf}</span>
+                </>
+              )
             )}
           </span>
           <div className="shrink-0">
@@ -104,75 +111,128 @@ export const MatchCard = ({
           </div>
         </div>
 
-        {/* Équipes face-à-face : logo gros + nom en dessous */}
-        <div className="flex items-center justify-between">
-          {/* Équipe A */}
-          <div className="flex flex-1 flex-col items-center gap-1.5">
-            <TeamLogo
-              tag={match.teamA.tag}
-              size={44}
-              logoUrl={match.teamA.logoUrl}
-            />
-            <span
-              className={`max-w-full truncate text-center text-[13px] font-bold ${aIsLoser ? 'text-dim' : 'text-ink'}`}
-            >
-              {match.teamA.name}
-            </span>
-            {match.resultA === 'FF' && (
-              <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
-                FF
+        {/* Corps du match : layout adapté selon le format */}
+        {match.format === 'br' ? (
+          /* Battle Royale : classement vertical (1er / 2ème / + d'autres) */
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <span className={`w-4 shrink-0 text-center text-[11px] font-black tabular-nums ${isDone ? 'text-accent' : 'text-faint'}`}>
+                {isDone ? '1' : '·'}
               </span>
-            )}
-          </div>
-
-          {/* Score / heure au centre */}
-          <div className="shrink-0 px-3 text-center">
-            {showCountdown && (
-              <div className="mb-1.5 flex justify-center">
-                <Countdown date={match.date} time={match.time} />
-              </div>
-            )}
-            {live || isDone ? (
-              isFF ? (
-                <span className="text-sm font-bold uppercase tracking-wide text-dim">
-                  Forfait
+              <TeamLogo tag={match.teamA.tag} size={28} logoUrl={match.teamA.logoUrl} />
+              <span className={`flex-1 truncate text-[13px] font-bold ${aIsLoser ? 'text-dim' : 'text-ink'}`}>
+                {match.teamA.name}
+              </span>
+              {(isDone || live) && match.scoreA != null && (
+                <span className={`shrink-0 text-[13px] font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}>
+                  {match.scoreA}
                 </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 shrink-0 text-center text-[11px] font-semibold tabular-nums text-dim">
+                {isDone ? '2' : '·'}
+              </span>
+              <TeamLogo tag={match.teamB.tag} size={28} logoUrl={match.teamB.logoUrl} />
+              <span className={`flex-1 truncate text-[13px] font-semibold ${bIsLoser ? 'text-dim' : 'text-ink'}`}>
+                {match.teamB.name}
+              </span>
+              {(isDone || live) && match.scoreB != null && (
+                <span className="shrink-0 text-[13px] font-semibold tabular-nums text-dim">
+                  {match.scoreB}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-[10px] font-semibold text-faint">+ d'autres équipes</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <div className="text-center">
+              {showCountdown && (
+                <div className="mb-1 flex justify-center">
+                  <Countdown date={match.date} time={match.time} />
+                </div>
+              )}
+              {!live && !isDone && !showCountdown && (
+                <span className="text-[17px] font-semibold tabular-nums text-ink">{match.time}</span>
+              )}
+              <span className="block text-[11px] font-medium text-faint tabular-nums">
+                {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* Standard 1v1 : logo gros + nom en dessous + score centré */
+          <div className="flex items-center justify-between">
+            {/* Équipe A */}
+            <div className="flex flex-1 flex-col items-center gap-1.5">
+              <TeamLogo
+                tag={match.teamA.tag}
+                size={44}
+                logoUrl={match.teamA.logoUrl}
+              />
+              <span
+                className={`max-w-full truncate text-center text-[13px] font-bold ${aIsLoser ? 'text-dim' : 'text-ink'}`}
+              >
+                {match.teamA.name}
+              </span>
+              {match.resultA === 'FF' && (
+                <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
+                  FF
+                </span>
+              )}
+            </div>
+
+            {/* Score / heure au centre */}
+            <div className="shrink-0 px-3 text-center">
+              {showCountdown && (
+                <div className="mb-1.5 flex justify-center">
+                  <Countdown date={match.date} time={match.time} />
+                </div>
+              )}
+              {live || isDone ? (
+                isFF ? (
+                  <span className="text-sm font-bold uppercase tracking-wide text-dim">
+                    Forfait
+                  </span>
+                ) : (
+                  <span
+                    className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
+                  >
+                    {match.scoreA ?? 0} – {match.scoreB ?? 0}
+                  </span>
+                )
               ) : (
-                <span
-                  className={`text-xl font-bold tabular-nums ${live ? 'text-live' : 'text-ink'}`}
-                >
-                  {match.scoreA ?? 0} – {match.scoreB ?? 0}
+                <span className="text-xl font-semibold tabular-nums text-ink">
+                  {match.time}
                 </span>
-              )
-            ) : (
-              <span className="text-xl font-semibold tabular-nums text-ink">
-                {match.time}
+              )}
+              <span className="mt-0.5 block text-[11px] font-medium text-faint tabular-nums">
+                {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
               </span>
-            )}
-            <span className="mt-0.5 block text-[11px] font-medium text-faint tabular-nums">
-              {formatWeekdayShort(match.date)} {formatDDMM(match.date)}
-            </span>
-          </div>
+            </div>
 
-          {/* Équipe B */}
-          <div className="flex flex-1 flex-col items-center gap-1.5">
-            <TeamLogo
-              tag={match.teamB.tag}
-              size={44}
-              logoUrl={match.teamB.logoUrl}
-            />
-            <span
-              className={`max-w-full truncate text-center text-[13px] font-bold ${bIsLoser ? 'text-dim' : 'text-ink'}`}
-            >
-              {match.teamB.name}
-            </span>
-            {match.resultB === 'FF' && (
-              <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
-                FF
+            {/* Équipe B */}
+            <div className="flex flex-1 flex-col items-center gap-1.5">
+              <TeamLogo
+                tag={match.teamB.tag}
+                size={44}
+                logoUrl={match.teamB.logoUrl}
+              />
+              <span
+                className={`max-w-full truncate text-center text-[13px] font-bold ${bIsLoser ? 'text-dim' : 'text-ink'}`}
+              >
+                {match.teamB.name}
               </span>
-            )}
+              {match.resultB === 'FF' && (
+                <span className="rounded border border-dim/40 px-1 text-[9px] font-bold uppercase tracking-wider text-dim">
+                  FF
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Info live + streams */}
         {live && (
