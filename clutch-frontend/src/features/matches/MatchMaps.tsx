@@ -112,71 +112,32 @@ const TeamBoard = ({
   </div>
 );
 
-type MapCardProps = {
-  splash?: string;
-  map: MapScore;
-  teamA: Team;
-  teamB: Team;
-  mapLabel: string;
-};
+type MapHeroProps = { map: MapScore; teamA: Team; teamB: Team; mapLabel: string };
 
-/** Carte fusionnée image + score pour la manche sélectionnée. */
-const MapCardLayout = ({ splash, map, teamA, teamB, mapLabel }: MapCardProps) => {
-  const hasImage = Boolean(splash);
+/** Wrapper hook — résout l'image puis affiche la carte fusionnée image + score. */
+const MapHeroCard = ({ plugin, map, teamA, teamB, mapLabel }: { plugin: GamePlugin } & MapHeroProps) => {
+  const result = plugin.useMapImage!(map.name);
+  const splash = result?.splash;
+  if (!splash) return null;
   return (
     <div className="relative mt-3 h-28 overflow-hidden rounded-2xl">
-      {hasImage ? (
-        <>
-          <img
-            src={splash}
-            alt={mapLabel}
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 size-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-        </>
-      ) : (
-        <div className="absolute inset-0 rounded-2xl border border-line bg-surface" />
-      )}
-
-      <span className={`absolute left-3.5 top-3 text-[11px] font-bold uppercase tracking-widest ${hasImage ? 'text-white/50' : 'text-faint'}`}>
-        {mapLabel}
-      </span>
+      <img src={splash} alt={mapLabel} referrerPolicy="no-referrer" className="absolute inset-0 size-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      <span className="absolute left-3.5 top-3 text-[11px] font-bold uppercase tracking-widest text-white/50">{mapLabel}</span>
       {map.live && (
-        <span className="animate-live-blink absolute right-3.5 top-3 text-[9px] font-extrabold tracking-wide text-accent uppercase">
-          LIVE
-        </span>
+        <span className="animate-live-blink absolute right-3.5 top-3 text-[9px] font-extrabold tracking-wide text-accent uppercase">LIVE</span>
       )}
-
       <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-4 pb-3">
-        <span className={`text-[13px] font-bold ${hasImage ? 'text-white/80' : 'text-dim'}`}>{teamA.tag}</span>
+        <span className="text-[13px] font-bold text-white/80">{teamA.tag}</span>
         <div className="flex items-baseline gap-2">
-          <span className={`text-[32px] font-black tabular-nums leading-none ${
-            map.winner === 'a'
-              ? hasImage ? 'text-white' : 'text-ink'
-              : hasImage ? 'text-white/40' : 'text-faint'
-          }`}>
-            {map.scoreA ?? 0}
-          </span>
-          <span className={`text-[16px] font-semibold ${hasImage ? 'text-white/30' : 'text-faint'}`}>–</span>
-          <span className={`text-[32px] font-black tabular-nums leading-none ${
-            map.winner === 'b'
-              ? hasImage ? 'text-white' : 'text-ink'
-              : hasImage ? 'text-white/40' : 'text-faint'
-          }`}>
-            {map.scoreB ?? 0}
-          </span>
+          <span className={`text-[32px] font-black tabular-nums leading-none ${map.winner === 'a' ? 'text-white' : 'text-white/40'}`}>{map.scoreA ?? 0}</span>
+          <span className="text-[16px] font-semibold text-white/30">–</span>
+          <span className={`text-[32px] font-black tabular-nums leading-none ${map.winner === 'b' ? 'text-white' : 'text-white/40'}`}>{map.scoreB ?? 0}</span>
         </div>
-        <span className={`text-[13px] font-bold ${hasImage ? 'text-white/80' : 'text-dim'}`}>{teamB.tag}</span>
+        <span className="text-[13px] font-bold text-white/80">{teamB.tag}</span>
       </div>
     </div>
   );
-};
-
-/** Wrapper hook — résout l'image avant de passer au layout. */
-const MapHeroCard = ({ plugin, map, teamA, teamB, mapLabel }: { plugin: GamePlugin } & MapCardProps) => {
-  const result = plugin.useMapImage!(map.name);
-  return <MapCardLayout splash={result?.splash} map={map} teamA={teamA} teamB={teamB} mapLabel={mapLabel} />;
 };
 
 /** Manches du match : onglets cliquables + scoreboard joueur réactif. */
@@ -248,10 +209,8 @@ export const MatchMaps = ({
         })}
       </div>
 
-      {current && (
-        plugin?.useMapImage
-          ? <MapHeroCard plugin={plugin} map={current} teamA={teamA} teamB={teamB} mapLabel={unitLabel === 'carte' ? current.name : `Partie ${selected + 1}`} />
-          : <MapCardLayout map={current} teamA={teamA} teamB={teamB} mapLabel={unitLabel === 'carte' ? current.name : `Partie ${selected + 1}`} />
+      {plugin?.useMapImage && current && (
+        <MapHeroCard plugin={plugin} map={current} teamA={teamA} teamB={teamB} mapLabel={unitLabel === 'carte' ? current.name : `Partie ${selected + 1}`} />
       )}
 
       {plugin?.MapDetail && current && (
