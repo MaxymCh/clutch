@@ -11,9 +11,16 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
-    "gen:api": "npx -y openapi-typescript@7 http://localhost:8000/openapi.json -o src/api/generated/schema.ts"
+    "gen:api": "npx -y openapi-typescript@7 http://localhost:8000/openapi.json -o src/api/generated/schema.ts",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:android": "npm run mobile:sync && npx cap open android",
+    "mobile:ios": "npm run mobile:sync && npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^5.101.0",
