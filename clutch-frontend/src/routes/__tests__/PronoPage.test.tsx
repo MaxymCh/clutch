@@ -31,16 +31,6 @@ const predictionsValue: Predictions = {
   predictedWinnerId: () => null,
 };
 
-const todayIso = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-};
-
-const addHours = (hours: number): string => {
-  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
-
 const baseMatch: Match = {
   id: 'm-prono-page',
   gameId: 'dota',
