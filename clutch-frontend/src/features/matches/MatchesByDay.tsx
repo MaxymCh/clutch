@@ -19,21 +19,23 @@ export const MatchesByDay = ({ matches }: { matches: Match[] }) => {
           <h2 className="pt-4.5 pb-2 text-[17px] leading-none font-semibold tracking-tight text-ink">
             {formatDayFull(date)}
           </h2>
-          {matches
-            .filter((m) => m.date === date)
-            .sort((a, b) => a.time.localeCompare(b.time))
-            .map((m) => {
-              const g = gameOf(m);
-              return (
-                <MatchCard
-                  key={m.id}
-                  match={m}
-                  gameTag={g?.tag ?? m.gameId.toUpperCase()}
-                  gameLogoUrl={g?.logoUrl}
-                  predictedWinnerId={predictedWinnerId(m)}
-                />
-              );
-            })}
+          <div className="flex flex-col gap-3">
+            {matches
+              .filter((m) => m.date === date)
+              .sort((a, b) => a.time.localeCompare(b.time))
+              .map((m) => {
+                const g = gameOf(m);
+                return (
+                  <MatchCard
+                    key={m.id}
+                    match={m}
+                    gameTag={g?.tag ?? m.gameId.toUpperCase()}
+                    gameLogoUrl={g?.logoUrl}
+                    predictedWinnerId={predictedWinnerId(m)}
+                  />
+                );
+              })}
+          </div>
         </section>
       ))}
     </>

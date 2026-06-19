@@ -10,21 +10,6 @@ type FloatingNavProps = {
   themeToggle?: ReactNode;
 };
 
-/** Switcher EWC / ENC — les deux cliquables (ENC = no-op pour l'instant). */
-const CompSwitcher = () => {
-  // TODO: gérer l'état actif EWC/ENC via contexte quand l'API ENC sera prête
-  return (
-    <div className="flex items-center rounded-full bg-surface p-0.5">
-      <button className="cursor-pointer rounded-full bg-ink px-3 py-1.5 text-[11px] font-bold text-surface">
-        EWC
-      </button>
-      <button className="cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-semibold text-dim hover:text-ink">
-        ENC
-      </button>
-    </div>
-  );
-};
-
 /** Navigation desktop (≥ lg) : barre flottante centrée, style pill. */
 export const FloatingNav = ({
   agendaLive = false,
@@ -101,9 +86,8 @@ export const FloatingNav = ({
         </Link>
       </nav>
 
-      {/* Droite : Compétition switcher + Theme */}
+      {/* Droite : Theme */}
       <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
-        <CompSwitcher />
         {themeToggle}
       </div>
     </header>
