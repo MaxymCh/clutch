@@ -23,8 +23,8 @@ l'Esports World Cup 2026 en un calendrier unifié, filtrable par jeu et par
 
 ## 🏗️ Architecture (high-level)
 
-- **Ce dépôt = frontend uniquement.** Le backend (API + worker d'ingestion
-  Liquipedia) est un dépôt séparé.
+- **Monorepo.** Ce dossier `clutch-frontend/` est le front ; le backend (API +
+  worker d'ingestion Liquipedia) vit dans `../clutch-backend/`.
 - Le front consomme NOTRE API interne via un client typé généré depuis OpenAPI.
 - Flux de données : Liquipedia → worker backend → base → API interne → ce front.
   Le front ne connaît que l'API interne.
